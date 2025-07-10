@@ -1,25 +1,28 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
 
-export async function GET(request: NextRequest, { params }: { params: { slug: string } }) {
+export async function GET(request: NextRequest, { params }: { params: { identifier: string } }) {
   try {
+    // helper
+    const isNumeric = (value: string) => /^\d+$/.test(value)
+    const column = isNumeric(params.identifier) ? "id" : "slug"
+    const matchValue = isNumeric(params.identifier) ? Number.parseInt(params.identifier, 10) : params.identifier
+
     const { data, error } = await supabase
       .from("articles")
       .select(`
         *,
         article_categories(
-          categories(*)
+          categories(id, name, slug)
         )
       `)
-      .eq("slug", params.slug)
-      .eq("status", "published")
+      .eq(column, matchValue)
       .single()
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 404 })
     }
 
-    // Increment view count
     await supabase
       .from("articles")
       .update({ views: (data.views || 0) + 1 })
@@ -43,8 +46,13 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { slug: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: { identifier: string } }) {
   try {
+    // helper
+    const isNumeric = (value: string) => /^\d+$/.test(value)
+    const column = isNumeric(params.identifier) ? "id" : "slug"
+    const matchValue = isNumeric(params.identifier) ? Number.parseInt(params.identifier, 10) : params.identifier
+
     const body = await request.json()
     const { title, content, excerpt, image_url, author, publish_date, status, scheduled_date, featured } = body
 
@@ -62,7 +70,7 @@ export async function PUT(request: NextRequest, { params }: { params: { slug: st
         featured,
         updated_at: new Date().toISOString(),
       })
-      .eq("slug", params.slug)
+      .eq(column, matchValue)
       .select()
       .single()
 
@@ -76,9 +84,14 @@ export async function PUT(request: NextRequest, { params }: { params: { slug: st
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { slug: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: { identifier: string } }) {
   try {
-    const { error } = await supabase.from("articles").delete().eq("slug", params.slug)
+    // helper
+    const isNumeric = (value: string) => /^\d+$/.test(value)
+    const column = isNumeric(params.identifier) ? "id" : "slug"
+    const matchValue = isNumeric(params.identifier) ? Number.parseInt(params.identifier, 10) : params.identifier
+
+    const { error } = await supabase.from("articles").delete().eq(column, matchValue)
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
