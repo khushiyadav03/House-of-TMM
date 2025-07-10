@@ -30,9 +30,18 @@ interface Magazine {
   issue_date: string
 }
 
-interface HomepageContent {
-  section_name: string
-  content: any
+interface YoutubeVideo {
+  id: number
+  title: string
+  video_url: string
+  thumbnail_url: string
+  is_main_video: boolean
+}
+
+interface BrandImage {
+  id: number
+  title: string
+  image_url: string
 }
 
 export default function Home() {
@@ -48,6 +57,9 @@ export default function Home() {
   const [travelArticles, setTravelArticles] = useState<Article[]>([])
   const [healthWellnessArticles, setHealthWellnessArticles] = useState<Article[]>([])
   const [featuredMagazine, setFeaturedMagazine] = useState<Magazine | null>(null)
+  const [mainVideo, setMainVideo] = useState<YoutubeVideo | null>(null)
+  const [recommendedVideos, setRecommendedVideos] = useState<YoutubeVideo[]>([])
+  const [brandLogos, setBrandLogos] = useState<BrandImage[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -68,250 +80,84 @@ export default function Home() {
     try {
       setLoading(true)
 
-      // Fetch homepage content configuration
-      const homepageResponse = await fetch("/api/homepage-content")
-      const homepageData: HomepageContent[] = await homepageResponse.json()
+      // Fetch all data in parallel
+      const [articlesResponse, magazinesResponse, videosResponse, brandsResponse] = await Promise.all([
+        fetch("/api/articles?limit=100"),
+        fetch("/api/magazines"),
+        fetch("/api/youtube-videos"),
+        fetch("/api/brand-images"),
+      ])
 
-      // Fetch all articles
-      const articlesResponse = await fetch("/api/articles?limit=100")
       const articlesData = await articlesResponse.json()
-      const allArticles = articlesData.articles || []
-
-      // Fetch magazines
-      const magazinesResponse = await fetch("/api/magazines")
       const magazinesData = await magazinesResponse.json()
+      const videosData = await videosResponse.json()
+      const brandsData = await brandsResponse.json()
+
+      const allArticles = articlesData.articles || []
       const allMagazines = magazinesData || []
+      const allVideos = videosData || []
+      const allBrands = brandsData || []
 
-      // Process homepage content
-      homepageData.forEach((section) => {
-        const { section_name, content } = section
+      // Set carousel articles (first 8 articles)
+      setCarouselArticles(allArticles.slice(0, 8))
 
-        switch (section_name) {
-          case "carousel_articles":
-            if (content.selected_articles && content.selected_articles.length > 0) {
-              const selectedArticles = allArticles.filter((article: Article) =>
-                content.selected_articles.includes(article.id),
-              )
-              setCarouselArticles(selectedArticles.slice(0, 8))
-            } else {
-              // Fallback to latest articles
-              setCarouselArticles(allArticles.slice(0, 8))
-            }
-            break
+      // Set latest news (next 6 articles)
+      setLatestNews(allArticles.slice(8, 14))
 
-          case "latest_news":
-            if (content.selected_articles && content.selected_articles.length > 0) {
-              const selectedArticles = allArticles.filter((article: Article) =>
-                content.selected_articles.includes(article.id),
-              )
-              setLatestNews(selectedArticles.slice(0, 6))
-            } else {
-              setLatestNews(allArticles.slice(0, 6))
-            }
-            break
+      // Set fashion articles (filter by fashion category)
+      const fashionArticles = allArticles.filter((article: Article) =>
+        article.category?.toLowerCase().includes("fashion"),
+      )
+      setFashionArticles(fashionArticles.slice(0, 3))
 
-          case "fashion_section":
-            if (content.selected_articles && content.selected_articles.length > 0) {
-              const selectedArticles = allArticles.filter((article: Article) =>
-                content.selected_articles.includes(article.id),
-              )
-              setFashionArticles(selectedArticles.slice(0, 3))
-            } else {
-              const fashionArticles = allArticles.filter((article: Article) =>
-                article.category?.toLowerCase().includes("fashion"),
-              )
-              setFashionArticles(fashionArticles.slice(0, 3))
-            }
-            break
+      // Set tech & auto articles
+      const techArticles = allArticles.filter(
+        (article: Article) =>
+          article.category?.toLowerCase().includes("tech") || article.category?.toLowerCase().includes("auto"),
+      )
+      setTechAutoArticles(techArticles.slice(0, 8))
 
-          case "tech_auto_section":
-            if (content.selected_articles && content.selected_articles.length > 0) {
-              const selectedArticles = allArticles.filter((article: Article) =>
-                content.selected_articles.includes(article.id),
-              )
-              setTechAutoArticles(selectedArticles.slice(0, 8))
-            } else {
-              const techArticles = allArticles.filter(
-                (article: Article) =>
-                  article.category?.toLowerCase().includes("tech") || article.category?.toLowerCase().includes("auto"),
-              )
-              setTechAutoArticles(techArticles.slice(0, 8))
-            }
-            break
+      // Set sports articles
+      const sportsArticles = allArticles.filter((article: Article) => article.category?.toLowerCase().includes("sport"))
+      setSportsArticles(sportsArticles.slice(0, 8))
 
-          case "sports_section":
-            if (content.selected_articles && content.selected_articles.length > 0) {
-              const selectedArticles = allArticles.filter((article: Article) =>
-                content.selected_articles.includes(article.id),
-              )
-              setSportsArticles(selectedArticles.slice(0, 8))
-            } else {
-              const sportsArticles = allArticles.filter((article: Article) =>
-                article.category?.toLowerCase().includes("sport"),
-              )
-              setSportsArticles(sportsArticles.slice(0, 8))
-            }
-            break
+      // Set finance articles
+      const financeArticles = allArticles.filter((article: Article) =>
+        article.category?.toLowerCase().includes("finance"),
+      )
+      setFinanceArticles(financeArticles.slice(0, 4))
 
-          case "finance_section":
-            if (content.selected_articles && content.selected_articles.length > 0) {
-              const selectedArticles = allArticles.filter((article: Article) =>
-                content.selected_articles.includes(article.id),
-              )
-              setFinanceArticles(selectedArticles.slice(0, 4))
-            } else {
-              const financeArticles = allArticles.filter((article: Article) =>
-                article.category?.toLowerCase().includes("finance"),
-              )
-              setFinanceArticles(financeArticles.slice(0, 4))
-            }
-            break
+      // Set travel articles
+      const travelArticles = allArticles.filter((article: Article) =>
+        article.category?.toLowerCase().includes("travel"),
+      )
+      setTravelArticles(travelArticles.slice(0, 4))
 
-          case "travel_section":
-            if (content.selected_articles && content.selected_articles.length > 0) {
-              const selectedArticles = allArticles.filter((article: Article) =>
-                content.selected_articles.includes(article.id),
-              )
-              setTravelArticles(selectedArticles.slice(0, 4))
-            } else {
-              const travelArticles = allArticles.filter((article: Article) =>
-                article.category?.toLowerCase().includes("travel"),
-              )
-              setTravelArticles(travelArticles.slice(0, 4))
-            }
-            break
-
-          case "featured_magazine":
-            if (content.selected_magazine) {
-              const magazine = allMagazines.find((mag: Magazine) => mag.id === content.selected_magazine)
-              setFeaturedMagazine(magazine || allMagazines[0] || null)
-            } else {
-              setFeaturedMagazine(allMagazines[0] || null)
-            }
-            break
-        }
-      })
-
-      // Set health & wellness articles (sidebar)
+      // Set health & wellness articles
       const healthArticles = allArticles.filter(
         (article: Article) =>
           article.category?.toLowerCase().includes("health") || article.category?.toLowerCase().includes("wellness"),
       )
       setHealthWellnessArticles(healthArticles.slice(0, 3))
+
+      // Set featured magazine (first magazine)
+      setFeaturedMagazine(allMagazines[0] || null)
+
+      // Set videos
+      const mainVideo = allVideos.find((video: YoutubeVideo) => video.is_main_video)
+      setMainVideo(mainVideo || allVideos[0] || null)
+
+      const recommendedVideos = allVideos.filter((video: YoutubeVideo) => !video.is_main_video)
+      setRecommendedVideos(recommendedVideos.slice(0, 7))
+
+      // Set brand images
+      setBrandLogos(allBrands)
     } catch (error) {
       console.error("Failed to fetch homepage data:", error)
-      // Fallback to empty arrays
-      setCarouselArticles([])
-      setLatestNews([])
-      setFashionArticles([])
-      setTechAutoArticles([])
-      setSportsArticles([])
-      setFinanceArticles([])
-      setTravelArticles([])
-      setHealthWellnessArticles([])
-      setFeaturedMagazine(null)
     } finally {
       setLoading(false)
     }
   }
-
-  const brandLogos = [
-    {
-      id: "1",
-      title: "Brand A",
-      image: "https://picsum.photos/376/150?random=101",
-    },
-    {
-      id: "2",
-      title: "Brand B",
-      image: "https://picsum.photos/376/150?random=102",
-    },
-    {
-      id: "3",
-      title: "Brand C",
-      image: "https://picsum.photos/376/150?random=103",
-    },
-    {
-      id: "4",
-      title: "Brand D",
-      image: "https://picsum.photos/376/150?random=104",
-    },
-    {
-      id: "5",
-      title: "Brand E",
-      image: "https://picsum.photos/376/150?random=105",
-    },
-    {
-      id: "6",
-      title: "Brand F",
-      image: "https://picsum.photos/376/150?random=106",
-    },
-    {
-      id: "7",
-      title: "Brand G",
-      image: "https://picsum.photos/376/150?random=107",
-    },
-    {
-      id: "8",
-      title: "Brand H",
-      image: "https://picsum.photos/376/150?random=108",
-    },
-    {
-      id: "9",
-      title: "Brand I",
-      image: "https://picsum.photos/376/150?random=109",
-    },
-    {
-      id: "10",
-      title: "Brand J",
-      image: "https://picsum.photos/376/150?random=110",
-    },
-  ]
-
-  const recommendedVideos = [
-    {
-      id: 1,
-      title: "Sustainable Fashion Tips for 2025",
-      thumbnail: "https://picsum.photos/110/299?random=101",
-      url: "https://www.youtube.com/embed/abc123",
-    },
-    {
-      id: "2",
-      title: "Latest Electric Car Review",
-      thumbnail: "https://picsum.photos/110/300?random=102",
-      url: "https://www.youtube.com/embed/js123456",
-    },
-    {
-      id: "3",
-      title: "Healthy Summer Recipe",
-      thumbnail: "https://picsum.photos/299/110?random=59",
-      url: "https://www.youtube.com/embed/ghi789",
-    },
-    {
-      id: "4",
-      title: "Mindfulness Meditation Guide",
-      thumbnail: "https://picsum.photos/110/300?random=104",
-      url: "https://www.youtube.com/embed/jkl987",
-    },
-    {
-      id: "5",
-      title: "Top Fitness Gear for 2025",
-      thumbnail: "https://picsum.photos/110/300?random=105",
-      url: "https://www.youtube.com/embed/mno345",
-    },
-    {
-      id: "6",
-      title: "Best Travel Destination Tips",
-      thumbnail: "https://picsum.photos/110/100?random=101",
-      url: "https://www.youtube.com/watch?v=pqr678",
-    },
-    {
-      id: "7",
-      title: "How to Budget for Luxury Cars",
-      thumbnail: "https://picsum.photos/110/400?random=107",
-      url: "https://www.youtube.com/watch?=embed/stu901",
-    },
-  ]
 
   if (loading) {
     return (
@@ -632,8 +478,8 @@ export default function Home() {
               <div className="relative w-full h-0 pb-[56.25%]">
                 <iframe
                   className="absolute top-0 left-0 w-full h-full"
-                  src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                  title="Featured Video"
+                  src={mainVideo?.video_url || "https://www.youtube.com/embed/dQw4w9WgXcQ"}
+                  title={mainVideo?.title || "Featured Video"}
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
@@ -644,10 +490,15 @@ export default function Home() {
               <div className="recommended-videos-slider">
                 {recommendedVideos.map((video) => (
                   <div key={video.id} className="recommended-video-item mb-4">
-                    <a href={video.url} target="_blank" rel="noopener noreferrer" className="flex items-start gap-3">
+                    <a
+                      href={video.video_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-start gap-3"
+                    >
                       <div className="relative w-[120px] h-[80px] flex-shrink-0">
                         <Image
-                          src={video.thumbnail || "/placeholder.svg?height=80&width=120"}
+                          src={video.thumbnail_url || "/placeholder.svg?height=80&width=120"}
                           alt={video.title}
                           width={120}
                           height={80}
@@ -828,7 +679,7 @@ export default function Home() {
                     }}
                   >
                     <Image
-                      src={logo.image || "/placeholder.svg?height=150&width=376"}
+                      src={logo.image_url || "/placeholder.svg?height=150&width=376"}
                       alt={logo.title}
                       width={376}
                       height={150}
