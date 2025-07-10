@@ -6,6 +6,11 @@ export async function GET() {
     const { data, error } = await supabase.from("brand_images").select("*").eq("is_active", true).order("display_order")
 
     if (error) {
+      // Table missing ⇒ Postgres error code 42P01
+      if ((error as any).code === "42P01") {
+        console.warn("brand_images table not found – returning empty array")
+        return NextResponse.json([])
+      }
       console.error("Brand images fetch error:", error)
       return NextResponse.json({ error: "Failed to fetch brand images" }, { status: 500 })
     }
@@ -34,6 +39,9 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
+      if ((error as any).code === "42P01") {
+        return NextResponse.json({ error: "brand_images table does not exist" }, { status: 400 })
+      }
       console.error("Brand image insert error:", error)
       return NextResponse.json({ error: "Failed to create brand image" }, { status: 500 })
     }
