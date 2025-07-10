@@ -30,6 +30,8 @@ CREATE TABLE articles (
     publish_date DATE NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(20) DEFAULT 'published',
+    scheduled_date TIMESTAMP,
     likes INTEGER DEFAULT 0,
     views INTEGER DEFAULT 0,
     featured BOOLEAN DEFAULT FALSE
@@ -54,7 +56,7 @@ CREATE TABLE magazines (
     issue_date DATE NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    sales_count INTEGER DEFAULT 0
+    status VARCHAR(20) DEFAULT 'published'
 );
 
 -- Create magazine_purchases table
@@ -206,10 +208,13 @@ INSERT INTO homepage_content (section_name, content) VALUES
 -- Create indexes for better performance
 CREATE INDEX idx_articles_publish_date ON articles(publish_date);
 CREATE INDEX idx_articles_featured ON articles(featured);
+CREATE INDEX idx_articles_status ON articles(status);
 CREATE INDEX idx_article_categories_article_id ON article_categories(article_id);
 CREATE INDEX idx_article_categories_category_id ON article_categories(category_id);
 CREATE INDEX idx_magazines_issue_date ON magazines(issue_date);
+CREATE INDEX idx_magazines_status ON magazines(status);
 CREATE INDEX idx_youtube_videos_active ON youtube_videos(is_active);
 CREATE INDEX idx_youtube_videos_main ON youtube_videos(is_main_video);
+CREATE INDEX idx_youtube_videos_order ON youtube_videos(display_order);
 CREATE INDEX idx_brand_images_active ON brand_images(is_active);
 CREATE INDEX idx_brand_images_order ON brand_images(display_order);

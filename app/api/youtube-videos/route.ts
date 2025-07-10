@@ -10,10 +10,6 @@ export async function GET() {
       .order("display_order")
 
     if (error) {
-      if ((error as any).code === "42P01") {
-        console.warn("youtube_videos table not found – returning empty array")
-        return NextResponse.json([])
-      }
       console.error("YouTube videos fetch error:", error)
       return NextResponse.json({ error: "Failed to fetch videos" }, { status: 500 })
     }
@@ -30,6 +26,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { title, video_url, thumbnail_url, is_main_video, display_order } = body
 
+    // If setting as main video, first unset all other main videos
+    if (is_main_video) {
+      await supabase.from("youtube_videos").update({ is_main_video: false }).eq("is_main_video", true)
+    }
+
     const { data, error } = await supabase
       .from("youtube_videos")
       .insert({
@@ -44,9 +45,6 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
-      if ((error as any).code === "42P01") {
-        return NextResponse.json({ error: "youtube_videos table does not exist" }, { status: 400 })
-      }
       console.error("YouTube video insert error:", error)
       return NextResponse.json({ error: "Failed to create video" }, { status: 500 })
     }
