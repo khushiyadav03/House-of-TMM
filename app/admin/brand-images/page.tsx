@@ -6,6 +6,7 @@ import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Plus, Edit, Trash2, Eye, EyeOff, ImageIcon } from "lucide-react"
 import Footer from "../../../components/Footer"
+import ImageUpload from "../../../components/ImageUpload"
 
 interface BrandImage {
   id: number
@@ -17,7 +18,7 @@ interface BrandImage {
 }
 
 export default function AdminBrandImages() {
-  const [images, setImages] = useState<BrandImage[]>([])
+  const [brandImages, setBrandImages] = useState<BrandImage[]>([])
   const [isEditing, setIsEditing] = useState(false)
   const [currentImage, setCurrentImage] = useState<BrandImage | null>(null)
   const [formData, setFormData] = useState({
@@ -29,14 +30,14 @@ export default function AdminBrandImages() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchImages()
+    fetchBrandImages()
   }, [])
 
-  const fetchImages = async () => {
+  const fetchBrandImages = async () => {
     try {
       const response = await fetch("/api/brand-images")
       const data = await response.json()
-      setImages(data)
+      setBrandImages(data.sort((a: BrandImage, b: BrandImage) => a.display_order - b.display_order))
     } catch (error) {
       console.error("Failed to fetch brand images:", error)
     } finally {
@@ -60,7 +61,7 @@ export default function AdminBrandImages() {
       })
 
       if (response.ok) {
-        fetchImages()
+        fetchBrandImages()
         resetForm()
       } else {
         alert("Failed to save brand image")
@@ -101,7 +102,7 @@ export default function AdminBrandImages() {
         })
 
         if (response.ok) {
-          fetchImages()
+          fetchBrandImages()
         } else {
           alert("Failed to delete brand image")
         }
@@ -123,7 +124,7 @@ export default function AdminBrandImages() {
       })
 
       if (response.ok) {
-        fetchImages()
+        fetchBrandImages()
       }
     } catch (error) {
       console.error("Failed to update brand image:", error)
@@ -146,11 +147,11 @@ export default function AdminBrandImages() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Brand Images Management</h1>
-          <p className="text-xl text-gray-600">Manage brand carousel images on the homepage</p>
+          <p className="text-xl text-gray-600">Manage brand carousel images and partnerships</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Image Form */}
+          {/* Brand Image Form */}
           <div className="lg:col-span-1">
             <div className="bg-white shadow rounded-lg p-6">
               <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
@@ -160,28 +161,22 @@ export default function AdminBrandImages() {
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Title *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Brand Name *</label>
                   <input
                     type="text"
                     value={formData.title}
                     onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
                     required
-                    placeholder="Brand name"
+                    placeholder="Brand name or title"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Image URL *</label>
-                  <input
-                    type="url"
-                    value={formData.image_url}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, image_url: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-                    required
-                    placeholder="https://example.com/brand-logo.jpg"
-                  />
-                </div>
+                <ImageUpload
+                  label="Brand Image *"
+                  value={formData.image_url}
+                  onChange={(url) => setFormData((prev) => ({ ...prev, image_url: url }))}
+                />
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Display Order</label>
@@ -191,7 +186,9 @@ export default function AdminBrandImages() {
                     onChange={(e) => setFormData((prev) => ({ ...prev, display_order: Number(e.target.value) }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
                     min="0"
+                    placeholder="0"
                   />
+                  <p className="text-xs text-gray-500 mt-1">Lower numbers appear first in the carousel</p>
                 </div>
 
                 <div className="flex items-center">
@@ -202,7 +199,7 @@ export default function AdminBrandImages() {
                       onChange={(e) => setFormData((prev) => ({ ...prev, is_active: e.target.checked }))}
                       className="mr-2"
                     />
-                    Active
+                    Active (Show in carousel)
                   </label>
                 </div>
 
@@ -229,20 +226,20 @@ export default function AdminBrandImages() {
             </div>
           </div>
 
-          {/* Images List */}
+          {/* Brand Images List */}
           <div className="lg:col-span-2">
             <div className="bg-white shadow rounded-lg">
               <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-2xl font-bold">Brand Images ({images.length})</h2>
+                <h2 className="text-2xl font-bold">Brand Images ({brandImages.length})</h2>
               </div>
 
               <div className="divide-y divide-gray-200">
-                {images.map((image) => (
+                {brandImages.map((image) => (
                   <div key={image.id} className="p-6 hover:bg-gray-50">
                     <div className="flex items-start space-x-4">
-                      <div className="relative w-32 h-20 flex-shrink-0">
+                      <div className="relative w-24 h-16 flex-shrink-0">
                         <Image
-                          src={image.image_url || "/placeholder.svg?height=80&width=128"}
+                          src={image.image_url || "/placeholder.svg?height=64&width=96"}
                           alt={image.title}
                           fill
                           className="object-contain rounded border"
@@ -262,9 +259,8 @@ export default function AdminBrandImages() {
                                 {image.is_active ? "Active" : "Inactive"}
                               </span>
                             </div>
-                            <p className="text-sm text-gray-500 mb-2">Order: {image.display_order}</p>
-                            <p className="text-xs text-gray-400 break-all">{image.image_url}</p>
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-sm text-gray-500 mb-2">Display Order: {image.display_order}</p>
+                            <p className="text-xs text-gray-500">
                               Created: {new Date(image.created_at).toLocaleDateString()}
                             </p>
                           </div>
@@ -313,7 +309,7 @@ export default function AdminBrandImages() {
                   </div>
                 ))}
 
-                {images.length === 0 && (
+                {brandImages.length === 0 && (
                   <div className="p-12 text-center text-gray-500">
                     <ImageIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                     <p className="text-lg">No brand images found</p>
