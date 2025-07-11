@@ -1,31 +1,52 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 
 /**
- * We always have the anon key in the browser (`NEXT_PUBLIC_SUPABASE_ANON_KEY`)
- * and we sometimes have the Service-Role key on the server
- * (`SUPABASE_SERVICE_ROLE_KEY`).  Pick the strongest key that exists **once**
- * and re-use the client everywhere (singleton pattern).
+ * In the browser we can only expose the public ANON key.
+ * On the server (Route Handlers, Server Actions, RSC) we prefer
+ * the SERVICE-ROLE key if it exists to bypass RLS safely.
+ *
+ * We memo-ise per-runtime (one instance for the server process,
+ * one instance for the browser) to avoid re-creates on hot-reload.
  */
-let _client: SupabaseClient | undefined
 
-export const supabase = (() => {
-  if (_client) return _client
+const PUBLIC_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
+const PUBLIC_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY // server only
+const PRIVATE_URL = process.env.SUPABASE_URL // server only (optional)
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL // fallback for server only
+function createSupabase(isServer: boolean): SupabaseClient {
+  const url = (isServer ? (PRIVATE_URL ?? PUBLIC_URL) : PUBLIC_URL) as string
+  if (!url) throw new Error("Missing Supabase URL env-var")
 
-  if (!url) throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL - please add it to your env-vars.")
+  const key = isServer ? (SERVICE_ROLE ?? PUBLIC_ANON) : PUBLIC_ANON
+  if (!key) throw new Error("Missing Supabase key env-var")
 
-  const key =
-    // Prefer service-role key on the server when it exists
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    // Else fall back to the public anon key (works for reads + RLS-guarded writes)
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  return createClient(url, key, { auth: { persistSession: false } })
+}
 
-  if (!key)
-    throw new Error(
-      "Missing Supabase key. Add NEXT_PUBLIC_SUPABASE_ANON_KEY (and/or SUPABASE_SERVICE_ROLE_KEY) to your env-vars.",
-    )
-
-  _client = createClient(url, key)
-  return _client
+// server singleton
+let _serverClient: SupabaseClient | undefined
+export const supabaseServer = (() => {
+  if (typeof window !== "undefined") return undefined
+  if (!_serverClient) _serverClient = createSupabase(true)
+  return _serverClient
 })()
+
+// browser singleton
+let _browserClient: SupabaseClient | undefined
+export const supabaseBrowser = (() => {
+  if (typeof window === "undefined") return undefined
+  if (!_browserClient) _browserClient = createSupabase(false)
+  return _browserClient
+})()
+
+/* ------------------------------------------------------------------ */
+/* Shared domain types – keep the rest of the file as it was          */
+/* ------------------------------------------------------------------ */
+
+export type Article = {}
+export type Category = {}
+export type Magazine = {}
+export type CoverPhoto = {}
+export type YoutubeVideo = {}
+export type BrandImage = {}
