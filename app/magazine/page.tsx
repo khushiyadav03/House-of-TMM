@@ -37,7 +37,14 @@ export default function MagazinePage() {
   const handlePaymentSuccess = () => {
     if (selectedMagazine) {
       setShowFlipbook(true)
+      setShowPaymentModal(false)
     }
+  }
+
+  // Preview function for testing
+  const handlePreviewFlipbook = (magazine: Magazine) => {
+    setSelectedMagazine(magazine)
+    setShowFlipbook(true)
   }
 
   const totalPages = Math.ceil(magazines.length / articlesPerPage)
@@ -55,16 +62,36 @@ export default function MagazinePage() {
           </p>
         </div>
 
+        {/* Demo Flipbook Button */}
+        <div className="text-center mb-8">
+          <button
+            onClick={() =>
+              handlePreviewFlipbook({
+                id: 999,
+                title: "TMM India - Demo Issue",
+                description: "Preview the flipbook experience",
+                cover_image_url: "/placeholder.svg?height=400&width=300&text=Demo+Magazine",
+                pdf_file_path: "/demo.pdf",
+                price: 299,
+                issue_date: new Date().toISOString(),
+                status: "published",
+              })
+            }
+            className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-semibold"
+          >
+            🔍 Preview Flipbook Mode
+          </button>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {currentMagazines.map((magazine) => (
             <div
               key={magazine.id}
-              onClick={() => handleMagazineClick(magazine)}
-              className="bg-white shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 cursor-pointer"
+              className="bg-white shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300"
             >
               <div className="relative h-[360px] w-full">
                 <Image
-                  src={magazine.cover_image_url || "/placeholder.svg"}
+                  src={magazine.cover_image_url || "/placeholder.svg?height=360&width=300&text=Magazine+Cover"}
                   alt={magazine.title}
                   width={300}
                   height={360}
@@ -80,9 +107,22 @@ export default function MagazinePage() {
               <div className="p-4">
                 <h2 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">{magazine.title}</h2>
                 <p className="text-gray-600 mb-3 line-clamp-2 text-sm">{magazine.description}</p>
-                <div className="flex items-center justify-between text-xs text-gray-500">
+                <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
                   <span>Issue Date: {new Date(magazine.issue_date).toLocaleDateString()}</span>
-                  <span className="text-green-600 font-semibold">Click to Purchase</span>
+                </div>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => handleMagazineClick(magazine)}
+                    className="flex-1 bg-black text-white py-2 px-4 text-sm font-semibold hover:bg-gray-800 transition-colors"
+                  >
+                    Purchase
+                  </button>
+                  <button
+                    onClick={() => handlePreviewFlipbook(magazine)}
+                    className="bg-gray-200 text-gray-700 py-2 px-4 text-sm font-semibold hover:bg-gray-300 transition-colors"
+                  >
+                    Preview
+                  </button>
                 </div>
               </div>
             </div>
@@ -137,7 +177,7 @@ export default function MagazinePage() {
       {/* Flipbook Viewer */}
       {selectedMagazine && (
         <FlipbookViewer
-          pdfUrl={selectedMagazine.pdf_url}
+          pdfUrl={selectedMagazine.pdf_file_path || ""}
           isOpen={showFlipbook}
           onClose={() => {
             setShowFlipbook(false)
