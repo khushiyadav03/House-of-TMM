@@ -6,9 +6,12 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const category = searchParams.get("category")
     const page = Number.parseInt(searchParams.get("page") || "1")
-    const limit = Number.parseInt(searchParams.get("limit") || "12")
+    let limit = Number.parseInt(searchParams.get("limit") || "12")
     const search = searchParams.get("search")
     const sort = searchParams.get("sort") || "created_at_desc"
+
+    // Optional limit param e.g. /api/articles?limit=100
+    limit = Number(searchParams.get("limit") ?? limit)
 
     let query = supabase.from("articles").select(`
         *,

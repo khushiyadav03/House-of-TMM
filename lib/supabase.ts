@@ -1,72 +1,31 @@
-import { createClient } from "@supabase/supabase-js"
+import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 
 /**
- * Singleton Supabase client – works on both server & client.
- * Uses the public anon key only (read/write allowed by RLS).
- * We do NOT initialise with the service-role key inside API routes
- * to avoid “Invalid API key” errors and security risks.
+ * We always have the anon key in the browser (`NEXT_PUBLIC_SUPABASE_ANON_KEY`)
+ * and we sometimes have the Service-Role key on the server
+ * (`SUPABASE_SERVICE_ROLE_KEY`).  Pick the strongest key that exists **once**
+ * and re-use the client everywhere (singleton pattern).
  */
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+let _client: SupabaseClient | undefined
 
-// Prevent re-creating the client in dev hot-reload
-export const supabase =
-  (global as any)._supabase ||
-  createClient(supabaseUrl, supabaseAnonKey, {
-    auth: { persistSession: false },
-  })
+export const supabase = (() => {
+  if (_client) return _client
 
-if (process.env.NODE_ENV !== "production") {
-  ;(global as any)._supabase = supabase
-}
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL // fallback for server only
 
-// ---------- Domain Types ----------
-export interface Category {
-  id: number
-  name: string
-  slug: string
-  description?: string
-  created_at?: string
-}
+  if (!url) throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL - please add it to your env-vars.")
 
-export interface Article {
-  id: number
-  title: string
-  slug: string
-  content?: string
-  excerpt?: string
-  image_url?: string
-  author?: string
-  publish_date: string
-  created_at?: string
-  updated_at?: string
-  status: "published" | "draft" | "scheduled"
-  likes?: number
-  views?: number
-  featured: boolean
-  categories?: Category[]
-}
+  const key =
+    // Prefer service-role key on the server when it exists
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    // Else fall back to the public anon key (works for reads + RLS-guarded writes)
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-export interface Magazine {
-  id: number
-  title: string
-  description?: string
-  cover_image_url?: string
-  pdf_file_path?: string
-  price: number
-  issue_date: string
-  created_at?: string
-  updated_at?: string
-  status: "published" | "draft"
-}
+  if (!key)
+    throw new Error(
+      "Missing Supabase key. Add NEXT_PUBLIC_SUPABASE_ANON_KEY (and/or SUPABASE_SERVICE_ROLE_KEY) to your env-vars.",
+    )
 
-export interface CoverPhoto {
-  id: number
-  title: string
-  image_url: string
-  description?: string
-  category?: string
-  is_active: boolean
-  display_order: number
-  created_at?: string
-}
+  _client = createClient(url, key)
+  return _client
+})()

@@ -76,6 +76,15 @@ export default function Home() {
     }
   }, [])
 
+  // Safe JSON: returns null when body isn't valid JSON
+  async function safeJson(res: Response) {
+    try {
+      return await res.json()
+    } catch {
+      return null
+    }
+  }
+
   const fetchHomepageData = async () => {
     try {
       setLoading(true)
@@ -88,10 +97,16 @@ export default function Home() {
         fetch("/api/brand-images"),
       ])
 
-      const articlesData = await articlesResponse.json()
-      const magazinesData = await magazinesResponse.json()
-      const videosData = await videosResponse.json()
-      const brandsData = await brandsResponse.json()
+      const articlesData = await safeJson(articlesResponse)
+      const magazinesData = await safeJson(magazinesResponse)
+      const videosData = await safeJson(videosResponse)
+      const brandsData = await safeJson(brandsResponse)
+
+      // Bail early if any endpoint failed
+      if (!articlesResponse.ok) throw new Error(articlesData?.error ?? "Articles API error")
+      if (!magazinesResponse.ok) throw new Error(magazinesData?.error ?? "Magazines API error")
+      if (!videosResponse.ok) throw new Error(videosData?.error ?? "Videos API error")
+      if (!brandsResponse.ok) throw new Error(brandsData?.error ?? "Brands API error")
 
       const allArticles = articlesData.articles || []
       const allMagazines = magazinesData || []
@@ -152,7 +167,7 @@ export default function Home() {
 
       // Set brand images
       setBrandLogos(allBrands)
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Failed to fetch homepage data:", error)
     } finally {
       setLoading(false)
