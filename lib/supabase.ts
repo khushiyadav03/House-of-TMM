@@ -91,7 +91,7 @@ export const getArticlesByCategory = async (categorySlug: string, page = 1, limi
     )
     .eq("article_categories.categories.slug", categorySlug)
     .eq("status", "published")
-    .order("publish_date", { ascending: false })
+    .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1)
 
   if (error) throw error
@@ -127,7 +127,7 @@ export const getMagazines = async () => {
     .from("magazines")
     .select("*")
     .eq("status", "published")
-    .order("issue_date", { ascending: false })
+    .order("created_at", { ascending: false })
 
   if (error) throw error
   return data

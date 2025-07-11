@@ -24,6 +24,7 @@ interface MagazinePaymentModalProps {
   isOpen: boolean
   onClose: () => void
   magazine: Magazine | null
+  onSuccess: () => void
 }
 
 const stripePromise = getStripe()
@@ -43,7 +44,11 @@ const cardElementOptions = {
   },
 }
 
-function PaymentForm({ magazine, onClose }: { magazine: Magazine; onClose: () => void }) {
+function PaymentForm({
+  magazine,
+  onClose,
+  onSuccess,
+}: { magazine: Magazine; onClose: () => void; onSuccess: () => void }) {
   const stripe = useStripe()
   const elements = useElements()
   const [isProcessing, setIsProcessing] = useState(false)
@@ -123,6 +128,7 @@ function PaymentForm({ magazine, onClose }: { magazine: Magazine; onClose: () =>
 
         if (confirmResult.success) {
           alert(`Payment successful! You can now access ${magazine.title}`)
+          onSuccess()
           onClose()
         } else {
           throw new Error(confirmResult.error || "Payment confirmation failed")
@@ -197,12 +203,12 @@ function PaymentForm({ magazine, onClose }: { magazine: Magazine; onClose: () =>
   )
 }
 
-export default function MagazinePaymentModal({ isOpen, onClose, magazine }: MagazinePaymentModalProps) {
+export default function MagazinePaymentModal({ isOpen, onClose, magazine, onSuccess }: MagazinePaymentModalProps) {
   if (!magazine) return null
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md bg-white">
         <DialogHeader>
           <DialogTitle>Purchase Magazine</DialogTitle>
         </DialogHeader>
@@ -226,7 +232,7 @@ export default function MagazinePaymentModal({ isOpen, onClose, magazine }: Maga
           </Card>
 
           <Elements stripe={stripePromise}>
-            <PaymentForm magazine={magazine} onClose={onClose} />
+            <PaymentForm magazine={magazine} onClose={onClose} onSuccess={onSuccess} />
           </Elements>
         </div>
       </DialogContent>

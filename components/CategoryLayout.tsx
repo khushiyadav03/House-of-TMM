@@ -1,8 +1,11 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import Header from "./Header"
 import Footer from "./Footer"
 
 interface Article {
@@ -19,13 +22,14 @@ interface Article {
 interface CategoryLayoutProps {
   categoryName: string
   categorySlug: string
-  description?: string
+  description: string
+  children?: React.ReactNode
 }
 
-export default function CategoryLayout({ categoryName, categorySlug, description }: CategoryLayoutProps) {
+export default function CategoryLayout({ categoryName, categorySlug, description, children }: CategoryLayoutProps) {
   const [articles, setArticles] = useState<Article[]>([])
-  const [currentPage, setCurrentPage] = useState(1)
   const [loading, setLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const articlesPerPage = 12
 
@@ -34,14 +38,14 @@ export default function CategoryLayout({ categoryName, categorySlug, description
   }, [currentPage, categorySlug])
 
   const fetchArticles = async () => {
-    setLoading(true)
     try {
+      setLoading(true)
       const response = await fetch(
         `/api/articles?category=${categorySlug}&page=${currentPage}&limit=${articlesPerPage}`,
       )
       const data = await response.json()
       setArticles(data.articles || [])
-      setTotalPages(Math.ceil(data.total / articlesPerPage))
+      setTotalPages(data.totalPages || 1)
     } catch (error) {
       console.error("Failed to fetch articles:", error)
     } finally {
@@ -54,119 +58,51 @@ export default function CategoryLayout({ categoryName, categorySlug, description
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
-  const renderPagination = () => {
-    if (totalPages <= 1) return null
-
-    const pages = []
-    const maxVisiblePages = 5
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2))
-    const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1)
-
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1)
-    }
-
-    return (
-      <div className="flex justify-center items-center space-x-2 mt-12">
-        {/* Previous Button */}
-        <button
-          onClick={() => handlePageChange(currentPage - 1)}
-          className="px-3 py-2 text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={currentPage === 1}
-        >
-          Previous
-        </button>
-
-        {/* First Page */}
-        {startPage > 1 && (
-          <>
-            <button onClick={() => handlePageChange(1)} className="px-3 py-2 rounded text-gray-700 hover:bg-gray-100">
-              1
-            </button>
-            {startPage > 2 && <span className="px-2 text-gray-500">...</span>}
-          </>
-        )}
-
-        {/* Page Numbers */}
-        {Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i).map((page) => (
-          <button
-            key={page}
-            onClick={() => handlePageChange(page)}
-            className={`px-3 py-2 rounded ${
-              currentPage === page ? "bg-black text-white" : "text-gray-700 hover:bg-gray-100"
-            }`}
-          >
-            {page}
-          </button>
-        ))}
-
-        {/* Last Page */}
-        {endPage < totalPages && (
-          <>
-            {endPage < totalPages - 1 && <span className="px-2 text-gray-500">...</span>}
-            <button
-              onClick={() => handlePageChange(totalPages)}
-              className="px-3 py-2 rounded text-gray-700 hover:bg-gray-100"
-            >
-              {totalPages}
-            </button>
-          </>
-        )}
-
-        {/* Next Button */}
-        <button
-          onClick={() => handlePageChange(currentPage + 1)}
-          className="px-3 py-2 text-gray-700 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={currentPage === totalPages}
-        >
-          Next
-        </button>
-      </div>
-    )
-  }
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-black"></div>
-          <p className="mt-4 text-gray-600">Loading articles...</p>
+      <div className="min-h-screen bg-white">
+        <Header />
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-black"></div>
+            <p className="mt-4 text-gray-600">Loading {categoryName} articles...</p>
+          </div>
         </div>
+        <Footer />
       </div>
     )
   }
 
   return (
     <div className="min-h-screen bg-white">
+      <Header />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">{categoryName}</h1>
-          {description && <p className="text-xl text-gray-600 max-w-3xl mx-auto">{description}</p>}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">{categoryName}</h1>
+          <p className="text-xl text-gray-600">{description}</p>
         </div>
 
         {articles.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-xl text-gray-600">No articles found in this category.</p>
+            <p className="text-gray-500 text-lg">No {categoryName.toLowerCase()} articles found.</p>
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {articles.map((article) => (
                 <Link key={article.id} href={`/articles/${article.slug}`}>
-                  <article className="bg-white shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 cursor-pointer">
-                    <div className="relative w-full h-[320px]">
+                  <article className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 cursor-pointer">
+                    <div className="relative w-full h-[405px]">
                       <Image
-                        src={article.image_url || "/placeholder.svg?height=320&width=300"}
+                        src={article.image_url || "/placeholder.svg?height=405&width=270"}
                         alt={article.title}
-                        width={300}
-                        height={320}
-                        className="object-cover w-full h-full"
-                        loading="lazy"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        fill
+                        className="object-cover"
+                        sizes="270px"
                       />
                       <div className="absolute top-4 left-4">
                         <span className="bg-black text-white px-3 py-1 text-sm font-semibold rounded">
-                          {article.category}
+                          {categoryName}
                         </span>
                       </div>
                     </div>
@@ -183,10 +119,40 @@ export default function CategoryLayout({ categoryName, categorySlug, description
               ))}
             </div>
 
-            {/* Enhanced Pagination */}
-            {renderPagination()}
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center space-x-2 mt-12">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="px-3 py-2 text-gray-500 hover:text-gray-700 disabled:opacity-50"
+                >
+                  Previous
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => handlePageChange(page)}
+                    className={`px-3 py-2 rounded ${
+                      currentPage === page ? "bg-black text-white" : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-2 text-gray-700 hover:text-gray-900 disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </>
         )}
+
+        {children}
       </div>
       <Footer />
     </div>

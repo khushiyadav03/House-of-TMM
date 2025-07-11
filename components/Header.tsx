@@ -163,12 +163,12 @@ export default function Header() {
           item.subItems ? (
             <div key={item.name} className="group relative cursor-pointer">
               <span className="hover:text-gray-600">{item.name}</span>
-              <div className="absolute left-0 top-full mt-2 hidden group-hover:block bg-white border border-gray-300 shadow-lg rounded-md z-50 min-w-[160px]">
+              <div className="absolute left-0 top-full mt-2 hidden group-hover:block bg-white border border-gray-300 shadow-lg rounded-md z-50 min-w-[160px] py-2">
                 {item.subItems.map((subItem) => (
                   <Link
                     key={subItem.name}
                     href={subItem.href}
-                    className="block px-4 py-2 hover:bg-gray-100 text-gray-800 uppercase text-xs sm:text-sm"
+                    className="block px-4 py-3 hover:bg-gray-100 text-gray-800 uppercase text-xs sm:text-sm transition-colors"
                   >
                     {subItem.name}
                   </Link>
