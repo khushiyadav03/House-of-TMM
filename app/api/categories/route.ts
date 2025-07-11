@@ -1,56 +1,61 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { NextResponse, type NextRequest } from "next/server"
+import { getSupabaseServer } from "@/lib/supabase"
 
-export async function GET() {
+/**
+ * GET /api/categories
+ * Fetches all categories.
+ */
+export async function GET(request: NextRequest) {
   try {
-    const { data, error } = await supabase.from("categories").select("*").order("name")
+    const supabase = getSupabaseServer()
+    const { data: categories, error } = await supabase.from("categories").select("*").order("name", { ascending: true })
 
     if (error) {
-      console.error("Database error:", error)
-      return NextResponse.json({ error: "Failed to fetch categories" }, { status: 500 })
+      if ((error as any).code === "42P01") {
+        console.warn("categories table not found → returning []")
+        return NextResponse.json({ categories: [] })
+      }
+      console.error("Categories fetch error:", error)
+      return NextResponse.json({ error: "Failed to fetch categories", details: error.message }, { status: 500 })
     }
 
-    return NextResponse.json(data || [])
-  } catch (error) {
-    console.error("API error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json({ categories: categories ?? [] })
+  } catch (err) {
+    console.error("GET /api/categories crashed:", err)
+    return NextResponse.json(
+      { error: "Internal server error", details: (err as Error).message || "Unknown error" },
+      { status: 500 },
+    )
   }
 }
 
+/**
+ * POST /api/categories
+ * Creates a new category.
+ * Accepts: { name, slug, description }
+ */
 export async function POST(request: NextRequest) {
   try {
+    const supabase = getSupabaseServer()
     const body = await request.json()
     const { name, slug, description } = body
 
-    if (!name || !slug) {
-      return NextResponse.json({ error: "Missing required fields: name, slug" }, { status: 400 })
-    }
-
-    // Check if slug already exists
-    const { data: existingCategory } = await supabase.from("categories").select("id").eq("slug", slug).single()
-
-    if (existingCategory) {
-      return NextResponse.json({ error: "Category with this slug already exists" }, { status: 400 })
-    }
-
-    const { data, error } = await supabase
-      .from("categories")
-      .insert({
-        name,
-        slug,
-        description,
-      })
-      .select()
-      .single()
+    const { data, error } = await supabase.from("categories").insert({ name, slug, description }).select().single()
 
     if (error) {
-      console.error("Database error:", error)
-      return NextResponse.json({ error: "Failed to create category" }, { status: 500 })
+      if ((error as any).code === "23505") {
+        return NextResponse.json({ error: "Category with this slug already exists" }, { status: 409 })
+      }
+      console.error("Category insert error:", error)
+      return NextResponse.json({ error: "Failed to create category", details: error.message }, { status: 500 })
     }
 
-    return NextResponse.json(data, { status: 201 })
-  } catch (error) {
-    console.error("API error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json({ success: true, category: data })
+  } catch (err) {
+    console.error("POST /api/categories crashed:", err)
+    return NextResponse.json(
+      { error: "Internal server error", details: (err as Error).message || "Unknown error" },
+      { status: 500 },
+    )
   }
 }

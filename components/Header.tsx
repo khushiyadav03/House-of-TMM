@@ -24,7 +24,9 @@ export default function Header() {
       try {
         const response = await fetch("/api/categories")
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
+          // Attempt to read error details from response if available
+          const errorBody = await response.text()
+          throw new Error(`HTTP error! status: ${response.status}, details: ${errorBody}`)
         }
         const data = await response.json()
         setCategories(data.categories)

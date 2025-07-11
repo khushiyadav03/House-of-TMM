@@ -1,188 +1,205 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { useState, useRef, useEffect, useCallback } from "react"
+import { Document, Page, pdfjs } from "react-pdf"
+import "react-pdf/dist/Page/AnnotationLayer.css"
+import "react-pdf/dist/Page/TextLayer.css"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut, Maximize } from "lucide-react"
+import { Slider } from "@/components/ui/slider"
+import { ZoomIn, ZoomOut, RotateCw, RotateCcw, Maximize, Minimize, ChevronLeft, ChevronRight, X } from "lucide-react"
+
+// Configure PDF.js worker
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`
 
 interface FlipbookViewerProps {
-  isOpen: boolean
-  onClose: () => void
   pdfUrl: string
-  title: string
+  onClose: () => void
 }
 
-export default function FlipbookViewer({ isOpen, onClose, pdfUrl, title }: FlipbookViewerProps) {
-  const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages] = useState(20) // Demo: 20 pages
-  const [zoom, setZoom] = useState(1)
+export default function FlipbookViewer({ pdfUrl, onClose }: FlipbookViewerProps) {
+  const [numPages, setNumPages] = useState<number | null>(null)
+  const [pageNumber, setPageNumber] = useState(1)
+  const [scale, setScale] = useState(1.0)
+  const [rotation, setRotation] = useState(0)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const viewerRef = useRef<HTMLDivElement>(null)
 
-  // Demo magazine pages
-  const demoPages = Array.from({ length: totalPages }, (_, i) => ({
-    id: i + 1,
-    image: `/placeholder.svg?height=600&width=400&text=Page+${i + 1}`,
-    content: i === 0 ? "Cover Page" : i === 1 ? "Table of Contents" : `Article Page ${i + 1}`,
-  }))
+  const onDocumentLoadSuccess = useCallback(({ numPages }: { numPages: number }) => {
+    setNumPages(numPages)
+    setPageNumber(1) // Reset to first page on new document load
+  }, [])
+
+  const changePage = useCallback(
+    (offset: number) => {
+      setPageNumber((prevPageNumber) => {
+        const newPage = prevPageNumber + offset
+        if (numPages === null) return prevPageNumber
+        return Math.max(1, Math.min(numPages, newPage))
+      })
+    },
+    [numPages],
+  )
+
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (event.key === "ArrowLeft") {
+        changePage(-1)
+      } else if (event.key === "ArrowRight") {
+        changePage(1)
+      } else if (event.key === "Escape" && isFullscreen) {
+        setIsFullscreen(false)
+      }
+    },
+    [changePage, isFullscreen],
+  )
 
   useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (!isOpen) return
+    document.addEventListener("keydown", handleKeyDown)
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [handleKeyDown])
 
-      switch (e.key) {
-        case "ArrowLeft":
-          handlePrevPage()
-          break
-        case "ArrowRight":
-          handleNextPage()
-          break
-        case "Escape":
-          onClose()
-          break
-        case "+":
-          setZoom((prev) => Math.min(prev + 0.2, 3))
-          break
-        case "-":
-          setZoom((prev) => Math.max(prev - 0.2, 0.5))
-          break
+  useEffect(() => {
+    if (isFullscreen) {
+      if (viewerRef.current && !document.fullscreenElement) {
+        viewerRef.current.requestFullscreen().catch((err) => {
+          console.error(`Error attempting to enable fullscreen mode: ${err.message} (${err.name})`)
+          setIsFullscreen(false) // Revert if failed
+        })
+      }
+    } else {
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch((err) => {
+          console.error(`Error attempting to exit fullscreen mode: ${err.message} (${err.name})`)
+        })
       }
     }
+  }, [isFullscreen])
 
-    window.addEventListener("keydown", handleKeyPress)
-    return () => window.removeEventListener("keydown", handleKeyPress)
-  }, [isOpen, onClose])
+  const toggleFullscreen = useCallback(() => {
+    setIsFullscreen((prev) => !prev)
+  }, [])
 
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage((prev) => prev + 1)
-    }
-  }
+  const handleZoom = useCallback((value: number[]) => {
+    setScale(value[0] / 100) // Convert percentage to scale factor
+  }, [])
 
-  const handlePrevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage((prev) => prev - 1)
-    }
-  }
+  const rotateClockwise = useCallback(() => {
+    setRotation((prev) => (prev + 90) % 360)
+  }, [])
 
-  const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen)
-  }
+  const rotateCounterClockwise = useCallback(() => {
+    setRotation((prev) => (prev - 90 + 360) % 360)
+  }, [])
 
-  if (!isOpen) return null
+  const renderPage = useCallback(
+    ({ pageIndex }: { pageIndex: number }) => {
+      // Determine if it's a single page or a spread
+      const isSinglePage = numPages === 1 || pageIndex === 0 || pageIndex === numPages - 1
+      const isLeftPage = pageIndex % 2 === 0 // Assuming 0-indexed, even is left, odd is right for spreads
+
+      return (
+        <div
+          className={`flipbook-page ${isSinglePage ? "w-full" : "w-1/2"} h-full flex-shrink-0`}
+          style={{
+            transform: `scale(${scale}) rotate(${rotation}deg)`,
+            transformOrigin: "center",
+            transition: "transform 0.2s ease-out",
+          }}
+        >
+          <Page
+            pageNumber={pageIndex + 1} // react-pdf uses 1-indexed page numbers
+            renderAnnotationLayer={true}
+            renderTextLayer={true}
+            width={isFullscreen ? window.innerWidth / (isSinglePage ? 1 : 2) : undefined}
+            height={isFullscreen ? window.innerHeight : undefined}
+            scale={scale}
+            rotate={rotation}
+            className="w-full h-full object-contain"
+          />
+        </div>
+      )
+    },
+    [scale, rotation, isFullscreen, numPages],
+  )
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className={`${isFullscreen ? "max-w-full h-full" : "max-w-4xl"} bg-black text-white p-0`}>
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 bg-gray-900">
-          <h2 className="text-lg font-semibold">{title}</h2>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setZoom((prev) => Math.max(prev - 0.2, 0.5))}
-              className="text-white hover:bg-gray-700"
-            >
-              <ZoomOut className="h-4 w-4" />
-            </Button>
-            <span className="text-sm">{Math.round(zoom * 100)}%</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setZoom((prev) => Math.min(prev + 0.2, 3))}
-              className="text-white hover:bg-gray-700"
-            >
-              <ZoomIn className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="sm" onClick={toggleFullscreen} className="text-white hover:bg-gray-700">
-              <Maximize className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="sm" onClick={onClose} className="text-white hover:bg-gray-700">
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+    <div ref={viewerRef} className={`fixed inset-0 z-[9999] flex flex-col bg-gray-100 ${isFullscreen ? "p-0" : "p-4"}`}>
+      {/* Top Bar with Close Button */}
+      <div className="absolute top-4 right-4 z-50">
+        <Button variant="ghost" size="icon" onClick={onClose} className="bg-white rounded-full shadow-md">
+          <X className="h-6 w-6 text-gray-700" />
+          <span className="sr-only">Close Viewer</span>
+        </Button>
+      </div>
 
-        {/* Magazine Pages */}
-        <div className="flex-1 flex items-center justify-center p-4 bg-gray-800">
-          <div className="relative">
-            {/* Current Page */}
-            <div
-              className="bg-white shadow-2xl transition-transform duration-300 hover:scale-105"
-              style={{ transform: `scale(${zoom})` }}
-            >
-              <img
-                src={demoPages[currentPage - 1]?.image || "/placeholder.svg"}
-                alt={`Page ${currentPage}`}
-                className="w-[400px] h-[600px] object-cover"
-              />
-              <div className="absolute bottom-4 left-4 bg-black bg-opacity-70 text-white px-3 py-1 rounded">
-                {demoPages[currentPage - 1]?.content}
-              </div>
+      {/* PDF Viewer Area */}
+      <div className="flex-1 flex justify-center items-center overflow-hidden relative">
+        <Document
+          file={pdfUrl}
+          onLoadSuccess={onDocumentLoadSuccess}
+          className="flex justify-center items-center w-full h-full"
+        >
+          {numPages !== null && (
+            <div className="flex h-full w-full justify-center items-center">
+              {/* Render current page and potentially next page for spread */}
+              {pageNumber % 2 !== 0 && pageNumber < numPages ? ( // Odd page number, show spread
+                <div className="flex h-full">
+                  {renderPage({ pageIndex: pageNumber - 1 })}
+                  {renderPage({ pageIndex: pageNumber })}
+                </div>
+              ) : (
+                // Even page number or last page, show single page
+                <div className="flex h-full">{renderPage({ pageIndex: pageNumber - 1 })}</div>
+              )}
             </div>
+          )}
+        </Document>
+      </div>
 
-            {/* Navigation Arrows */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handlePrevPage}
-              disabled={currentPage === 1}
-              className="absolute left-[-60px] top-1/2 transform -translate-y-1/2 text-white hover:bg-gray-700 disabled:opacity-30"
-            >
-              <ChevronLeft className="h-8 w-8" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleNextPage}
-              disabled={currentPage === totalPages}
-              className="absolute right-[-60px] top-1/2 transform -translate-y-1/2 text-white hover:bg-gray-700 disabled:opacity-30"
-            >
-              <ChevronRight className="h-8 w-8" />
-            </Button>
-          </div>
+      {/* Controls */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-4 bg-gray-800 text-white p-3 rounded-lg shadow-lg z-50">
+        <Button variant="ghost" size="icon" onClick={() => changePage(-1)} disabled={pageNumber === 1}>
+          <ChevronLeft className="h-5 w-5" />
+          <span className="sr-only">Previous Page</span>
+        </Button>
+        <span className="text-sm font-medium">
+          Page {pageNumber} of {numPages || "..."}
+        </span>
+        <Button variant="ghost" size="icon" onClick={() => changePage(1)} disabled={pageNumber === numPages}>
+          <ChevronRight className="h-5 w-5" />
+          <span className="sr-only">Next Page</span>
+        </Button>
+
+        <div className="flex items-center gap-2 ml-4">
+          <Button variant="ghost" size="icon" onClick={() => setScale((prev) => Math.max(0.5, prev - 0.1))}>
+            <ZoomOut className="h-5 w-5" />
+            <span className="sr-only">Zoom Out</span>
+          </Button>
+          <Slider value={[scale * 100]} onValueChange={handleZoom} min={50} max={200} step={10} className="w-[100px]" />
+          <Button variant="ghost" size="icon" onClick={() => setScale((prev) => Math.min(2.0, prev + 0.1))}>
+            <ZoomIn className="h-5 w-5" />
+            <span className="sr-only">Zoom In</span>
+          </Button>
         </div>
 
-        {/* Footer Controls */}
-        <div className="flex items-center justify-between p-4 bg-gray-900">
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handlePrevPage}
-              disabled={currentPage === 1}
-              className="text-white hover:bg-gray-700"
-            >
-              <ChevronLeft className="h-4 w-4 mr-1" />
-              Previous
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleNextPage}
-              disabled={currentPage === totalPages}
-              className="text-white hover:bg-gray-700"
-            >
-              Next
-              <ChevronRight className="h-4 w-4 ml-1" />
-            </Button>
-          </div>
-
-          <div className="flex items-center space-x-4">
-            <span className="text-sm">
-              Page {currentPage} of {totalPages}
-            </span>
-            <input
-              type="range"
-              min="1"
-              max={totalPages}
-              value={currentPage}
-              onChange={(e) => setCurrentPage(Number.parseInt(e.target.value))}
-              className="w-32"
-            />
-          </div>
+        <div className="flex items-center gap-2 ml-4">
+          <Button variant="ghost" size="icon" onClick={rotateCounterClockwise}>
+            <RotateCcw className="h-5 w-5" />
+            <span className="sr-only">Rotate Counter-Clockwise</span>
+          </Button>
+          <Button variant="ghost" size="icon" onClick={rotateClockwise}>
+            <RotateCw className="h-5 w-5" />
+            <span className="sr-only">Rotate Clockwise</span>
+          </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+
+        <Button variant="ghost" size="icon" onClick={toggleFullscreen} className="ml-4">
+          {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
+          <span className="sr-only">{isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}</span>
+        </Button>
+      </div>
+    </div>
   )
 }

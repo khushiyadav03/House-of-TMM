@@ -34,13 +34,16 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ videos: [], total: 0 })
       }
       console.error("YouTube videos fetch error:", error)
-      return NextResponse.json({ error: "Failed to fetch YouTube videos" }, { status: 500 })
+      return NextResponse.json({ error: "Failed to fetch YouTube videos", details: error.message }, { status: 500 })
     }
 
     return NextResponse.json({ videos: data ?? [], total: count ?? 0 })
   } catch (err) {
     console.error("GET /api/youtube-videos crashed:", err)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Internal server error", details: (err as Error).message || "Unknown error" },
+      { status: 500 },
+    )
   }
 }
 
@@ -70,12 +73,15 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error("YouTube video insert error:", error)
-      return NextResponse.json({ error: "Failed to create YouTube video" }, { status: 500 })
+      return NextResponse.json({ error: "Failed to create YouTube video", details: error.message }, { status: 500 })
     }
 
     return NextResponse.json({ success: true, video: data })
   } catch (err) {
     console.error("POST /api/youtube-videos crashed:", err)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Internal server error", details: (err as Error).message || "Unknown error" },
+      { status: 500 },
+    )
   }
 }

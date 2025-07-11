@@ -1,37 +1,50 @@
--- Creates youtube_videos & brand_images only if they do NOT exist.
--- Safe to run repeatedly.
-
-create table if not exists youtube_videos (
-  id            serial primary key,
-  title         varchar(500) not null,
-  video_url     text         not null,
-  thumbnail_url text,
-  is_main_video boolean      default false,
-  display_order integer      default 0,
-  is_active     boolean      default true,
-  created_at    timestamp    default current_timestamp
+-- Create youtube_videos table if it doesn't exist
+CREATE TABLE IF NOT EXISTS public.youtube_videos (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title TEXT NOT NULL,
+    video_url TEXT NOT NULL,
+    thumbnail_url TEXT,
+    is_main_video BOOLEAN DEFAULT FALSE,
+    is_active BOOLEAN DEFAULT TRUE,
+    display_order INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-create table if not exists brand_images (
-  id            serial primary key,
-  title         varchar(255) not null,
-  image_url     text         not null,
-  display_order integer      default 0,
-  is_active     boolean      default true,
-  created_at    timestamp    default current_timestamp
+-- Create brand_images table if it doesn't exist
+CREATE TABLE IF NOT EXISTS public.brand_images (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title TEXT NOT NULL,
+    image_url TEXT NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    display_order INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Populate with 3 demo rows each (insert-on-conflict-do-nothing)
-insert into youtube_videos (id,title,video_url,thumbnail_url,is_main_video,display_order)
-values
-  (1,'Demo Main Video','https://www.youtube.com/embed/dQw4w9WgXcQ','https://picsum.photos/780/439?random=999',true,1),
-  (2,'Demo Video #2','https://www.youtube.com/embed/abc123','https://picsum.photos/110/90?random=998',false,2),
-  (3,'Demo Video #3','https://www.youtube.com/embed/ghi789','https://picsum.photos/110/90?random=997',false,3)
-on conflict (id) do nothing;
+-- Add updated_at trigger for youtube_videos
+DO $$ BEGIN
+    CREATE TRIGGER update_youtube_videos_updated_at
+    BEFORE UPDATE ON public.youtube_videos
+    FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
 
-insert into brand_images (id,title,image_url,display_order)
-values
-  (1,'Demo Brand A','https://picsum.photos/376/150?random=901',1),
-  (2,'Demo Brand B','https://picsum.photos/376/150?random=902',2),
-  (3,'Demo Brand C','https://picsum.photos/376/150?random=903',3)
-on conflict (id) do nothing;
+-- Add updated_at trigger for brand_images
+DO $$ BEGIN
+    CREATE TRIGGER update_brand_images_updated_at
+    BEFORE UPDATE ON public.brand_images
+    FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
+
+-- Create the update_updated_at_column function if it doesn't exist
+CREATE OR REPLACE FUNCTION public.update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;

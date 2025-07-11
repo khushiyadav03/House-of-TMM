@@ -1,123 +1,118 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useCallback } from "react"
-import { useDropzone } from "react-dropzone"
-import { X, ImageIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import Image from "next/image"
+import { XCircle } from "lucide-react"
 
 interface ImageUploadProps {
-  onImageUpload: (url: string) => void
-  currentImage?: string
-  className?: string
+  onUploadSuccess: (url: string) => void
+  initialImageUrl?: string
+  label?: string
+  folder?: string // Optional folder for organization in storage
 }
 
-export default function ImageUpload({ onImageUpload, currentImage, className = "" }: ImageUploadProps) {
+export default function ImageUpload({
+  onUploadSuccess,
+  initialImageUrl,
+  label = "Upload Image",
+  folder = "misc",
+}: ImageUploadProps) {
+  const [imageUrl, setImageUrl] = useState<string | null>(initialImageUrl || null)
+  const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const onDrop = useCallback(
-    async (acceptedFiles: File[]) => {
-      const file = acceptedFiles[0]
-      if (!file) return
-
-      // Validate file type
-      if (!file.type.startsWith("image/")) {
-        setError("Please select an image file")
-        return
-      }
-
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        setError("File size must be less than 5MB")
-        return
-      }
-
-      setUploading(true)
+  const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0]
+    if (selectedFile) {
+      setFile(selectedFile)
+      setImageUrl(URL.createObjectURL(selectedFile))
       setError(null)
+    } else {
+      setFile(null)
+      setImageUrl(null)
+    }
+  }, [])
 
-      try {
-        const formData = new FormData()
-        formData.append("file", file)
+  const handleUpload = useCallback(async () => {
+    if (!file) {
+      setError("Please select a file to upload.")
+      return
+    }
 
-        const response = await fetch("/api/upload", {
-          method: "POST",
-          body: formData,
-        })
+    setUploading(true)
+    setError(null)
 
-        if (!response.ok) {
-          const errorData = await response.json()
-          throw new Error(errorData.error || "Upload failed")
-        }
+    const formData = new FormData()
+    formData.append("file", file)
+    formData.append("folder", folder) // Pass the folder to the API route
 
-        const data = await response.json()
-        onImageUpload(data.url)
-      } catch (err) {
-        console.error("Upload error:", err)
-        setError(err instanceof Error ? err.message : "Upload failed")
-      } finally {
-        setUploading(false)
+    try {
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Image upload failed.")
       }
-    },
-    [onImageUpload],
-  )
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      "image/*": [".jpeg", ".jpg", ".png", ".gif", ".webp"],
-    },
-    multiple: false,
-  })
+      const data = await response.json()
+      onUploadSuccess(data.url)
+      setImageUrl(data.url) // Update preview with the actual uploaded URL
+      setFile(null) // Clear the file input
+    } catch (err: any) {
+      setError(err.message)
+      console.error("Upload error:", err)
+    } finally {
+      setUploading(false)
+    }
+  }, [file, onUploadSuccess, folder])
 
-  const removeImage = () => {
-    onImageUpload("")
-  }
+  const handleRemoveImage = useCallback(() => {
+    setImageUrl(null)
+    setFile(null)
+    // Optionally, call onUploadSuccess with null or a placeholder to clear the parent's state
+    onUploadSuccess("")
+  }, [onUploadSuccess])
 
   return (
-    <div className={`space-y-4 ${className}`}>
-      {currentImage ? (
-        <div className="relative">
-          <img
-            src={currentImage || "/placeholder.svg"}
-            alt="Uploaded"
-            className="w-full h-48 object-cover rounded-lg border"
-          />
+    <div className="space-y-4">
+      <Label htmlFor="image-upload">{label}</Label>
+      <div className="flex items-center space-x-2">
+        <Input
+          id="image-upload"
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+          className="flex-1"
+          disabled={uploading}
+        />
+        <Button onClick={handleUpload} disabled={!file || uploading}>
+          {uploading ? "Uploading..." : "Upload"}
+        </Button>
+      </div>
+      {imageUrl && (
+        <div className="relative w-full h-48 border rounded-md overflow-hidden flex items-center justify-center bg-gray-100">
+          <Image src={imageUrl || "/placeholder.svg"} alt="Preview" layout="fill" objectFit="contain" />
           <Button
-            type="button"
-            variant="destructive"
-            size="sm"
-            onClick={removeImage}
-            className="absolute top-2 right-2"
+            variant="ghost"
+            size="icon"
+            className="absolute top-2 right-2 text-red-500 hover:text-red-700"
+            onClick={handleRemoveImage}
+            aria-label="Remove image"
           >
-            <X className="h-4 w-4" />
+            <XCircle className="h-6 w-6" />
           </Button>
         </div>
-      ) : (
-        <div
-          {...getRootProps()}
-          className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-            isDragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-gray-400"
-          }`}
-        >
-          <input {...getInputProps()} />
-          <div className="space-y-4">
-            {uploading ? (
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto" />
-            ) : (
-              <ImageIcon className="h-12 w-12 text-gray-400 mx-auto" />
-            )}
-            <div>
-              <p className="text-lg font-medium text-gray-900">{uploading ? "Uploading..." : "Upload Image"}</p>
-              <p className="text-sm text-gray-500">
-                {isDragActive ? "Drop the image here" : "Drag & drop an image here, or click to select"}
-              </p>
-              <p className="text-xs text-gray-400 mt-2">Supports: JPEG, PNG, GIF, WebP (max 5MB)</p>
-            </div>
-          </div>
-        </div>
       )}
-
-      {error && <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md">{error}</div>}
+      {error && <p className="text-red-500 text-sm">{error}</p>}
     </div>
   )
 }

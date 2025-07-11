@@ -57,9 +57,9 @@
     "react": "^19",
     "react-day-picker": "latest",
     "react-dom": "^19",
-    "react-dropzone": "latest",
     "react-hook-form": "latest",
     "react-icons": "latest",
+    "react-pdf": "latest",
     "react-resizable-panels": "latest",
     "recharts": "latest",
     "sonner": "latest",
@@ -67,6 +67,7 @@
     "swiper": "latest",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
+    "uuid": "latest",
     "vaul": "latest",
     "zod": "^3.22.4"
   },

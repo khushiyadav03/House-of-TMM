@@ -1,54 +1,84 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { NextResponse, type NextRequest } from "next/server"
+import { getSupabaseServer } from "@/lib/supabase"
 
-export async function GET() {
+/**
+ * GET /api/brand-images
+ * Fetches brand images.
+ * Query parameters:
+ * - limit: number of images to return (default: 10)
+ * - offset: number of images to skip (default: 0)
+ */
+export async function GET(request: NextRequest) {
   try {
-    const { data, error } = await supabase.from("brand_images").select("*").eq("is_active", true).order("display_order")
+    const supabase = getSupabaseServer()
+    const { searchParams } = new URL(request.url)
+    const limit = Number.parseInt(searchParams.get("limit") || "10")
+    const offset = Number.parseInt(searchParams.get("offset") || "0")
+
+    const {
+      data: brandImages,
+      error,
+      count,
+    } = await supabase
+      .from("brand_images")
+      .select("*", { count: "exact" })
+      .eq("is_active", true)
+      .order("display_order", { ascending: true })
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1)
 
     if (error) {
-      // Table missing ⇒ Postgres error code 42P01
       if ((error as any).code === "42P01") {
-        console.warn("brand_images table not found – returning empty array")
-        return NextResponse.json([])
+        console.warn("brand_images table not found → returning []")
+        return NextResponse.json({ brandImages: [], total: 0 })
       }
       console.error("Brand images fetch error:", error)
-      return NextResponse.json({ error: "Failed to fetch brand images" }, { status: 500 })
+      return NextResponse.json({ error: "Failed to fetch brand images", details: error.message }, { status: 500 })
     }
 
-    return NextResponse.json(data || [])
-  } catch (error) {
-    console.error("API error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json({ brandImages: brandImages ?? [], total: count ?? 0 })
+  } catch (err) {
+    console.error("GET /api/brand-images crashed:", err)
+    return NextResponse.json(
+      { error: "Internal server error", details: (err as Error).message || "Unknown error" },
+      { status: 500 },
+    )
   }
 }
 
+/**
+ * POST /api/brand-images
+ * Creates a new brand image entry.
+ * Accepts: { title, image_url, is_active, display_order }
+ */
 export async function POST(request: NextRequest) {
   try {
+    const supabase = getSupabaseServer()
     const body = await request.json()
-    const { title, image_url, display_order } = body
+    const { title, image_url, is_active, display_order } = body
 
     const { data, error } = await supabase
       .from("brand_images")
       .insert({
         title,
         image_url,
-        display_order: display_order || 0,
-        is_active: true,
+        is_active: Boolean(is_active),
+        display_order: Number(display_order),
       })
       .select()
       .single()
 
     if (error) {
-      if ((error as any).code === "42P01") {
-        return NextResponse.json({ error: "brand_images table does not exist" }, { status: 400 })
-      }
       console.error("Brand image insert error:", error)
-      return NextResponse.json({ error: "Failed to create brand image" }, { status: 500 })
+      return NextResponse.json({ error: "Failed to create brand image", details: error.message }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true, image: data })
-  } catch (error) {
-    console.error("API error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json({ success: true, brandImage: data })
+  } catch (err) {
+    console.error("POST /api/brand-images crashed:", err)
+    return NextResponse.json(
+      { error: "Internal server error", details: (err as Error).message || "Unknown error" },
+      { status: 500 },
+    )
   }
 }
