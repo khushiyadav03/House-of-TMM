@@ -1,7 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useRef, useEffect } from "react"
 import { ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut, RotateCw } from "lucide-react"
+import Image from "next/image"
+import Button from "./Button" // Assuming Button component is imported from another file
 
 interface FlipbookViewerProps {
   pdfUrl: string
@@ -11,18 +13,20 @@ interface FlipbookViewerProps {
 }
 
 export default function FlipbookViewer({ pdfUrl, isOpen, onClose, title }: FlipbookViewerProps) {
-  const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages] = useState(24) // Mock total pages
+  const [currentPage, setCurrentPage] = useState(0)
+  const [pages, setPages] = useState<string[]>([]) // Array of image URLs for pages
+  const viewerRef = useRef<HTMLDivElement>(null)
   const [zoom, setZoom] = useState(1)
   const [rotation, setRotation] = useState(0)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
-  // Mock magazine pages with sample content
-  const mockPages = Array.from({ length: totalPages }, (_, i) => ({
-    pageNumber: i + 1,
-    content: `Page ${i + 1}`,
-    imageUrl: `/placeholder.svg?height=405&width=270&text=Page+${i + 1}`,
-  }))
+  // Mock PDF loading and page generation (replace with actual PDF rendering logic)
+  useEffect(() => {
+    // In a real application, you would use a library like pdf.js to render PDF pages to canvas/images
+    // For this example, we'll simulate pages with placeholder images
+    const mockPages = Array.from({ length: 10 }, (_, i) => `/placeholder.svg?height=800&width=600&text=Page%20${i + 1}`)
+    setPages(mockPages)
+  }, [pdfUrl])
 
   useEffect(() => {
     if (isOpen) {
@@ -42,10 +46,10 @@ export default function FlipbookViewer({ pdfUrl, isOpen, onClose, title }: Flipb
 
       switch (e.key) {
         case "ArrowLeft":
-          prevPage()
+          goToPreviousPage()
           break
         case "ArrowRight":
-          nextPage()
+          goToNextPage()
           break
         case "Escape":
           onClose()
@@ -63,18 +67,12 @@ export default function FlipbookViewer({ pdfUrl, isOpen, onClose, title }: Flipb
     return () => window.removeEventListener("keydown", handleKeyPress)
   }, [isOpen])
 
-  if (!isOpen) return null
-
-  const nextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1)
-    }
+  const goToNextPage = () => {
+    setCurrentPage((prev) => Math.min(prev + 1, pages.length - 1))
   }
 
-  const prevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1)
-    }
+  const goToPreviousPage = () => {
+    setCurrentPage((prev) => Math.max(prev - 1, 0))
   }
 
   const zoomIn = () => setZoom((prev) => Math.min(prev + 0.2, 3))
@@ -91,6 +89,12 @@ export default function FlipbookViewer({ pdfUrl, isOpen, onClose, title }: Flipb
     }
   }
 
+  if (!isOpen) return null
+
+  if (pages.length === 0) {
+    return <div className="flex items-center justify-center h-full text-gray-500">Loading magazine...</div>
+  }
+
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col">
       {/* Header */}
@@ -102,7 +106,7 @@ export default function FlipbookViewer({ pdfUrl, isOpen, onClose, title }: Flipb
 
         <div className="flex items-center space-x-4">
           <span className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded">
-            Page {currentPage} of {totalPages}
+            Page {currentPage + 1} of {pages.length}
           </span>
 
           {/* Zoom Controls */}
@@ -145,8 +149,8 @@ export default function FlipbookViewer({ pdfUrl, isOpen, onClose, title }: Flipb
       <div className="flex-1 flex items-center justify-center bg-gray-900 relative overflow-hidden">
         {/* Navigation Buttons */}
         <button
-          onClick={prevPage}
-          disabled={currentPage === 1}
+          onClick={goToPreviousPage}
+          disabled={currentPage === 0}
           className="absolute left-4 z-10 bg-white/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           title="Previous Page"
         >
@@ -154,8 +158,8 @@ export default function FlipbookViewer({ pdfUrl, isOpen, onClose, title }: Flipb
         </button>
 
         <button
-          onClick={nextPage}
-          disabled={currentPage === totalPages}
+          onClick={goToNextPage}
+          disabled={currentPage === pages.length - 1}
           className="absolute right-4 z-10 bg-white/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           title="Next Page"
         >
@@ -163,164 +167,73 @@ export default function FlipbookViewer({ pdfUrl, isOpen, onClose, title }: Flipb
         </button>
 
         {/* Magazine Page Display */}
-        <div
-          className="bg-white shadow-2xl transition-all duration-300 ease-in-out"
-          style={{
-            transform: `scale(${zoom}) rotate(${rotation}deg) rotateY(${currentPage % 2 === 0 ? 0 : 180}deg)`,
-            transformStyle: "preserve-3d",
-            perspective: "1000px",
-            transition: "transform 0.6s ease-in-out",
-            aspectRatio: "270/405",
-            maxWidth: "270px",
-            width: "90%",
-            maxHeight: "90vh",
-          }}
-        >
-          <div className="w-full h-full relative overflow-hidden">
-            {/* Sample Magazine Content */}
-            <div className="absolute inset-0 p-8 flex flex-col">
-              {/* Header */}
-              <div className="text-center mb-6">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">TMM INDIA</h1>
-                <div className="w-20 h-1 bg-red-600 mx-auto mb-4"></div>
-                <p className="text-sm text-gray-600 uppercase tracking-wider">
-                  {currentPage === 1
-                    ? "Cover Story"
-                    : currentPage === 2
-                      ? "Table of Contents"
-                      : currentPage <= 5
-                        ? "Fashion Feature"
-                        : currentPage <= 10
-                          ? "Lifestyle"
-                          : currentPage <= 15
-                            ? "Brand Spotlight"
-                            : currentPage <= 20
-                              ? "Interviews"
-                              : "Back Cover"}
-                </p>
-              </div>
-
-              {/* Page Content */}
-              {currentPage === 1 ? (
-                // Cover Page
-                <div className="flex-1 flex flex-col items-center justify-center text-center">
-                  <div className="w-full h-64 bg-gradient-to-br from-red-500 to-pink-600 rounded-lg mb-6 flex items-center justify-center">
-                    <span className="text-white text-4xl font-bold">COVER</span>
-                  </div>
-                  <h2 className="text-2xl font-bold mb-4">The Future of Indian Fashion</h2>
-                  <p className="text-gray-600 max-w-md">
-                    Exploring the intersection of tradition and modernity in contemporary Indian style.
-                  </p>
-                </div>
-              ) : currentPage === 2 ? (
-                // Table of Contents
-                <div className="flex-1">
-                  <h2 className="text-2xl font-bold mb-6">Contents</h2>
-                  <div className="space-y-3">
-                    <div className="flex justify-between border-b border-gray-200 pb-2">
-                      <span>Fashion Forward</span>
-                      <span>04</span>
-                    </div>
-                    <div className="flex justify-between border-b border-gray-200 pb-2">
-                      <span>Lifestyle Trends</span>
-                      <span>12</span>
-                    </div>
-                    <div className="flex justify-between border-b border-gray-200 pb-2">
-                      <span>Brand Spotlight</span>
-                      <span>18</span>
-                    </div>
-                    <div className="flex justify-between border-b border-gray-200 pb-2">
-                      <span>Celebrity Interview</span>
-                      <span>24</span>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                // Regular Pages
-                <div className="flex-1">
-                  <h2 className="text-xl font-bold mb-4">Page {currentPage}</h2>
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div className="bg-gray-200 h-[405px] w-[270px] rounded flex items-center justify-center">
-                      <span className="text-gray-500">Image Placeholder</span>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="bg-gray-200 h-4 rounded"></div>
-                      <div className="bg-gray-200 h-4 rounded w-3/4"></div>
-                      <div className="bg-gray-200 h-4 rounded w-1/2"></div>
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    <p className="text-sm text-gray-700 leading-relaxed">
-                      This is a sample magazine page demonstrating the flipbook viewer functionality. In a real
-                      implementation, this would display the actual PDF content or pre-rendered page images.
-                    </p>
-                    <div className="bg-gray-100 p-4 rounded">
-                      <h3 className="font-semibold mb-2">Featured Content</h3>
-                      <p className="text-sm text-gray-600">
-                        Sample article content would appear here with proper formatting, images, and layout.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Page Number */}
-              <div className="text-center mt-auto pt-4">
-                <span className="text-xs text-gray-400">{currentPage}</span>
-              </div>
+        <div ref={viewerRef} className="relative w-full h-full max-w-[600px] max-h-[800px] overflow-hidden shadow-lg">
+          {pages.map((pageSrc, index) => (
+            <div
+              key={index}
+              className={`absolute inset-0 backface-hidden transition-transform duration-700 ease-in-out transform-gpu ${
+                index === currentPage
+                  ? "z-10 rotate-y-0"
+                  : index < currentPage
+                    ? "z-0 rotate-y-180" // Page has turned
+                    : "z-0 rotate-y-0" // Page is yet to turn
+              }`}
+              style={{
+                transformOrigin: "left center",
+                // Basic page turn effect:
+                // When current page, it's flat (rotateY(0))
+                // When it's a previous page, it's "flipped" (rotateY(180deg))
+                // This is a simplified visual. A true flipbook needs more complex 3D transforms and z-indexing.
+              }}
+            >
+              <Image
+                src={pageSrc || "/placeholder.svg"}
+                alt={`Magazine Page ${index + 1}`}
+                fill
+                className="object-contain"
+                priority={index === currentPage || index === currentPage + 1} // Prioritize current and next page
+              />
             </div>
-          </div>
+          ))}
         </div>
       </div>
 
       {/* Footer Controls */}
       <div className="bg-white p-4 flex justify-center items-center space-x-6 shadow-lg">
         <div className="flex items-center space-x-4">
-          <button
-            onClick={() => setCurrentPage(1)}
-            className="px-4 py-2 text-sm border border-gray-300 hover:bg-gray-50 rounded transition-colors"
-            disabled={currentPage === 1}
-          >
+          <Button onClick={() => setCurrentPage(0)} disabled={currentPage === 0}>
+            <ChevronLeft className="h-5 w-5" />
             First
-          </button>
-          <button
-            onClick={prevPage}
-            className="px-4 py-2 text-sm border border-gray-300 hover:bg-gray-50 rounded transition-colors"
-            disabled={currentPage === 1}
-          >
+          </Button>
+          <Button onClick={goToPreviousPage} disabled={currentPage === 0}>
+            <ChevronLeft className="h-5 w-5" />
             Previous
-          </button>
+          </Button>
         </div>
 
         <div className="flex items-center space-x-4">
           <input
             type="range"
             min="1"
-            max={totalPages}
-            value={currentPage}
-            onChange={(e) => setCurrentPage(Number.parseInt(e.target.value))}
+            max={pages.length}
+            value={currentPage + 1}
+            onChange={(e) => setCurrentPage(Number.parseInt(e.target.value) - 1)}
             className="w-64 accent-red-600"
           />
           <div className="text-sm text-gray-600 min-w-[80px] text-center">
-            {currentPage} / {totalPages}
+            {currentPage + 1} / {pages.length}
           </div>
         </div>
 
         <div className="flex items-center space-x-4">
-          <button
-            onClick={nextPage}
-            className="px-4 py-2 text-sm border border-gray-300 hover:bg-gray-50 rounded transition-colors"
-            disabled={currentPage === totalPages}
-          >
+          <Button onClick={goToNextPage} disabled={currentPage === pages.length - 1}>
             Next
-          </button>
-          <button
-            onClick={() => setCurrentPage(totalPages)}
-            className="px-4 py-2 text-sm border border-gray-300 hover:bg-gray-50 rounded transition-colors"
-            disabled={currentPage === totalPages}
-          >
+            <ChevronRight className="h-5 w-5" />
+          </Button>
+          <Button onClick={() => setCurrentPage(pages.length - 1)} disabled={currentPage === pages.length - 1}>
             Last
-          </button>
+            <ChevronRight className="h-5 w-5" />
+          </Button>
         </div>
       </div>
 

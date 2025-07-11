@@ -1,7 +1,5 @@
 "use client"
 
-import Link from "next/link"
-
 import CategoryLayout from "../../../components/CategoryLayout"
 
 const digitalCoverArticles = [
@@ -9,9 +7,9 @@ const digitalCoverArticles = [
     id: 1,
     title: "Digital Fashion Week: Virtual Runway Revolution",
     slug: "digital-fashion-week-virtual-runway",
-    image: "https://picsum.photos/400/300?random=11",
+    image_url: "https://picsum.photos/270/405?random=11", // Changed to image_url for consistency
     author: "Alexandra Smith",
-    date: "December 18, 2024",
+    publish_date: "2024-12-18", // Changed to consistent date format
     category: "Digital Cover",
     excerpt: "How virtual fashion shows are changing the industry landscape...",
   },
@@ -19,9 +17,9 @@ const digitalCoverArticles = [
     id: 2,
     title: "NFT Fashion: The Future of Digital Couture",
     slug: "nft-fashion-digital-couture",
-    image: "https://picsum.photos/400/300?random=12",
+    image_url: "https://picsum.photos/270/405?random=12",
     author: "Marcus Johnson",
-    date: "December 16, 2024",
+    publish_date: "2024-12-16",
     category: "Digital Cover",
     excerpt: "Exploring the intersection of blockchain technology and fashion...",
   },
@@ -29,9 +27,9 @@ const digitalCoverArticles = [
     id: 3,
     title: "Virtual Influencers: The New Face of Fashion",
     slug: "virtual-influencers-fashion",
-    image: "https://picsum.photos/400/300?random=13",
+    image_url: "https://picsum.photos/270/405?random=13",
     author: "Sophie Chen",
-    date: "December 14, 2024",
+    publish_date: "2024-12-14",
     category: "Digital Cover",
     excerpt: "How AI-generated personalities are reshaping fashion marketing...",
   },
@@ -39,15 +37,16 @@ const digitalCoverArticles = [
     id: 4,
     title: "Augmented Reality Shopping Experience",
     slug: "ar-shopping-experience",
-    image: "https://picsum.photos/400/300?random=14",
+    image_url: "https://picsum.photos/270/405?random=14",
     author: "Ryan Martinez",
-    date: "December 12, 2024",
+    publish_date: "2024-12-12",
     category: "Digital Cover",
     excerpt: "The future of retail through augmented reality technology...",
   },
 ]
 
-digitalCoverArticles.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+// Sort articles by publish_date in descending order (newest first)
+digitalCoverArticles.sort((a, b) => new Date(b.publish_date).getTime() - new Date(a.publish_date).getTime())
 
 export default function DigitalCoverPage() {
   return (
@@ -55,45 +54,7 @@ export default function DigitalCoverPage() {
       categoryName="Digital Cover"
       categorySlug="digital-cover"
       description="Explore the cutting-edge world of digital fashion and virtual experiences that are shaping the future of style."
-    >
-      <div className="min-h-screen bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {digitalCoverArticles.map((article) => (
-              <Link key={article.id} href={`/articles/${article.slug}`}>
-                <article className="bg-white shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 cursor-pointer">
-                  <div className="relative h-[360px] w-full">
-                    <img
-                      src={article.image || "/placeholder.svg"}
-                      alt={article.title}
-                      className="object-cover w-full h-full"
-                      width="270"
-                      height="405"
-                    />
-                  </div>
-                  <div className="p-6">
-                    <h2 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2">{article.title}</h2>
-                    <p className="text-gray-600 mb-4 line-clamp-3">{article.excerpt}</p>
-                    <div className="flex items-center justify-between text-sm text-gray-500">
-                      <span>{article.author}</span>
-                      <span>{article.date}</span>
-                    </div>
-                  </div>
-                </article>
-              </Link>
-            ))}
-          </div>
-          {/* Pagination */}
-          <div className="flex justify-center items-center space-x-2 mt-12">
-            <button className="px-3 py-2 text-gray-500 hover:text-gray-700 disabled:opacity-50" disabled>
-              Previous
-            </button>
-            <button className="px-3 py-2 bg-black text-white rounded">1</button>
-            <button className="px-3 py-2 text-gray-700 hover:bg-gray-100 rounded">2</button>
-            <button className="px-3 py-2 text-gray-700 hover:text-gray-900">Next</button>
-          </div>
-        </div>
-      </div>
-    </CategoryLayout>
+      initialArticles={digitalCoverArticles} // Pass static articles to CategoryLayout
+    />
   )
 }

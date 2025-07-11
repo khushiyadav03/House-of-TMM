@@ -2,152 +2,144 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-// Removed Footer and Header imports as they are now in app/layout.tsx
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
 import MagazinePaymentModal from "../../components/MagazinePaymentModal"
 import FlipbookViewer from "../../components/FlipbookViewer"
-import type { Magazine } from "@/lib/supabase"
+// Removed Header and Footer imports as they are now in app/layout.tsx
+
+interface Magazine {
+  id: number
+  title: string
+  issue_date: string
+  cover_image_url: string
+  pdf_url: string
+  price: number
+}
 
 export default function MagazinePage() {
   const [magazines, setMagazines] = useState<Magazine[]>([])
-  magazines.sort((a, b) => new Date(b.issue_date).getTime() - new Date(a.issue_date).getTime())
+  const [loading, setLoading] = useState(true)
   const [selectedMagazine, setSelectedMagazine] = useState<Magazine | null>(null)
-  const [showPaymentModal, setShowPaymentModal] = useState(false)
-  const [showFlipbook, setShowFlipbook] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
-  const articlesPerPage = 12
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
+  const [purchasedMagazines, setPurchasedMagazines] = useState<number[]>([]) // Store IDs of purchased magazines
 
   useEffect(() => {
     fetchMagazines()
+    // Load purchased magazines from local storage
+    const storedPurchases = localStorage.getItem("purchasedMagazines")
+    if (storedPurchases) {
+      setPurchasedMagazines(JSON.parse(storedPurchases))
+    }
   }, [])
 
   const fetchMagazines = async () => {
     try {
+      setLoading(true)
       const response = await fetch("/api/magazines")
       const data = await response.json()
-      setMagazines(data)
+      // Sort magazines by issue_date in descending order (newest first)
+      const sortedMagazines = data.magazines.sort(
+        (a: Magazine, b: Magazine) => new Date(b.issue_date).getTime() - new Date(a.issue_date).getTime(),
+      )
+      setMagazines(sortedMagazines)
     } catch (error) {
       console.error("Failed to fetch magazines:", error)
+    } finally {
+      setLoading(false)
     }
   }
 
-  const handleMagazineClick = (magazine: Magazine) => {
+  const handlePurchaseClick = (magazine: Magazine) => {
     setSelectedMagazine(magazine)
-    setShowPaymentModal(true)
+    setIsPaymentModalOpen(true)
   }
 
-  const handlePaymentSuccess = () => {
-    if (selectedMagazine) {
-      setShowFlipbook(true)
-    }
+  const handlePaymentSuccess = (magazineId: number) => {
+    const updatedPurchases = [...purchasedMagazines, magazineId]
+    setPurchasedMagazines(updatedPurchases)
+    localStorage.setItem("purchasedMagazines", JSON.stringify(updatedPurchases))
+    setIsPaymentModalOpen(false)
+    setSelectedMagazine(null) // Clear selected magazine after purchase
   }
 
-  const totalPages = Math.ceil(magazines.length / articlesPerPage)
-  const startIndex = (currentPage - 1) * articlesPerPage
-  const currentMagazines = magazines.slice(startIndex, startIndex + articlesPerPage)
+  const isMagazinePurchased = (magazineId: number) => {
+    return purchasedMagazines.includes(magazineId)
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-black"></div>
+          <p className="mt-4 text-gray-600">Loading magazines...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Removed Header */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Magazine</h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Browse our magazine issues, special editions, and exclusive editorial content that defines contemporary
-            Indian style and culture.
-          </p>
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Our Magazines</h1>
+          <p className="text-xl text-gray-600">Explore our collection of digital magazines.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {currentMagazines.map((magazine) => (
-            <div
-              key={magazine.id}
-              onClick={() => handleMagazineClick(magazine)}
-              className="bg-white shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 cursor-pointer"
-            >
-              <div className="relative w-full h-[405px]">
-                <Image
-                  src={magazine.cover_image_url || "/placeholder.svg?height=405&width=270"}
-                  alt={magazine.title}
-                  width={270}
-                  height={405}
-                  className="object-cover"
-                />
-                {/* Removed category label */}
-                <div className="absolute bottom-4 right-4">
-                  <span className="bg-green-600 text-white px-3 py-1 text-sm font-semibold">₹{magazine.price}</span>
-                </div>
-              </div>
-              <div className="p-4">
-                <h2 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">{magazine.title}</h2>
-                <p className="text-gray-600 mb-3 line-clamp-2 text-sm">{magazine.description}</p>
-                <div className="flex items-center justify-between text-xs text-gray-500">
-                  <span>Issue Date: {new Date(magazine.issue_date).toLocaleDateString()}</span>
-                  <span className="text-green-600 font-semibold">Click to Purchase</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex justify-center items-center space-x-2 mt-12">
-            <button
-              onClick={() => setCurrentPage(currentPage - 1)}
-              className="px-3 py-2 text-gray-500 hover:text-gray-700 disabled:opacity-50"
-              disabled={currentPage === 1}
-            >
-              Previous
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`px-3 py-2 ${
-                  currentPage === page ? "bg-black text-white" : "text-gray-700 hover:bg-gray-100"
-                }`}
+        {magazines.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500 text-lg">No magazines found.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {magazines.map((magazine) => (
+              <div
+                key={magazine.id}
+                className="bg-white shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 cursor-pointer"
               >
-                {page}
-              </button>
+                <div className="relative w-full h-[405px]">
+                  <Image
+                    src={magazine.cover_image_url || "/placeholder.svg?height=405&width=270"}
+                    alt={magazine.title}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  />
+                </div>
+                <div className="p-4">
+                  <h2 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">{magazine.title}</h2>
+                  <p className="text-gray-600 mb-3 text-sm">Issue Date: {magazine.issue_date}</p>
+                  <div className="flex items-center justify-between">
+                    {isMagazinePurchased(magazine.id) ? (
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button className="w-full bg-green-600 hover:bg-green-700 text-white">Read Magazine</Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-4xl h-[90vh] p-0">
+                          <FlipbookViewer pdfUrl={magazine.pdf_url} />
+                        </DialogContent>
+                      </Dialog>
+                    ) : (
+                      <Button onClick={() => handlePurchaseClick(magazine)} className="w-full">
+                        Purchase for ₹{magazine.price.toFixed(2)}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
             ))}
-            <button
-              onClick={() => setCurrentPage(currentPage + 1)}
-              className="px-3 py-2 text-gray-700 hover:text-gray-900"
-              disabled={currentPage === totalPages}
-            >
-              Next
-            </button>
           </div>
         )}
       </div>
 
-      {/* Payment Modal */}
       {selectedMagazine && (
         <MagazinePaymentModal
+          isOpen={isPaymentModalOpen}
+          onClose={() => setIsPaymentModalOpen(false)}
           magazine={selectedMagazine}
-          isOpen={showPaymentModal}
-          onClose={() => {
-            setShowPaymentModal(false)
-            setSelectedMagazine(null)
-          }}
-          onSuccess={handlePaymentSuccess}
+          onPaymentSuccess={handlePaymentSuccess}
         />
       )}
-
-      {/* Flipbook Viewer */}
-      {selectedMagazine && (
-        <FlipbookViewer
-          pdfUrl={selectedMagazine.pdf_file_path}
-          isOpen={showFlipbook}
-          onClose={() => {
-            setShowFlipbook(false)
-            setSelectedMagazine(null)
-          }}
-          title={selectedMagazine.title}
-        />
-      )}
-
-      {/* Removed Footer */}
     </div>
   )
 }
