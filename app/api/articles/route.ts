@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getSupabaseServer } from "@/lib/supabase"
+import { supabase } from "@/lib/supabase"
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,27 +9,21 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get("category")
     const status = searchParams.get("status") // only add a filter when it’s provided
     const featured = searchParams.get("featured")
-    const sort = searchParams.get("sort") || "created_at_desc" // Default sort by latest
 
-    const supabase = getSupabaseServer()
+    const offset = (page - 1) * limit
 
-    let query = supabase.from("articles").select(
-      `
-      *,
-      article_categories(
-        categories(*)
+    let query = supabase
+      .from("articles")
+      .select(
+        `
+        *,
+        article_categories(
+          categories(*)
+        )
+      `,
+        { count: "exact" },
       )
-    `,
-      { count: "exact" },
-    )
-
-    // Apply sorting
-    if (sort === "created_at_desc") {
-      query = query.order("created_at", { ascending: false })
-    } else if (sort === "publish_date_desc") {
-      query = query.order("publish_date", { ascending: false })
-    }
-    // Add more sorting options as needed
+      .order("publish_date", { ascending: false })
 
     // Apply status filter only when explicitly supplied
     if (status && status !== "all") {
@@ -37,19 +31,31 @@ export async function GET(request: NextRequest) {
     }
 
     if (category) {
-      query = query.eq("article_categories.categories.slug", category)
+      query = supabase
+        .from("articles")
+        .select(
+          `
+          *,
+          article_categories!inner(
+            categories!inner(slug)
+          )
+        `,
+          { count: "exact" },
+        )
+        .eq("article_categories.categories.slug", category)
+        .order("publish_date", { ascending: false })
+
+      // If status is supplied, add that filter to the category query as well
+      if (status && status !== "all") {
+        query = query.eq("status", status)
+      }
     }
 
     if (featured === "true") {
       query = query.eq("featured", true)
     }
 
-    const startIndex = (page - 1) * limit
-    const endIndex = startIndex + limit - 1
-
-    query = query.range(startIndex, endIndex)
-
-    const { data, error, count } = await query
+    const { data, error, count } = await query.range(offset, offset + limit - 1)
 
     if (error) {
       console.error("Database error:", error)
@@ -91,8 +97,6 @@ export async function POST(request: NextRequest) {
       featured = false,
       category_ids = [],
     } = body
-
-    const supabase = getSupabaseServer()
 
     // Validate required fields
     if (!title || !slug || !publish_date) {

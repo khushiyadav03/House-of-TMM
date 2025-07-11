@@ -1,7 +1,6 @@
 "use client"
 
 import Link from "next/link"
-import Footer from "../../../components/Footer"
 
 import CategoryLayout from "../../../components/CategoryLayout"
 
@@ -48,30 +47,29 @@ const editorialShootArticles = [
   },
 ]
 
+editorialShootArticles.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
 export default function EditorialShootPage() {
   return (
     <CategoryLayout
       categoryName="Editorial Shoot"
       categorySlug="editorial-shoot"
-      description="Behind the scenes of our most captivating editorial photography sessions."
+      description="Dive into the creative process behind our most stunning editorial photography and fashion storytelling."
     >
       <div className="min-h-screen bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {editorialShootArticles.map((article) => (
               <Link key={article.id} href={`/articles/${article.slug}`}>
-                <article className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 cursor-pointer">
+                <article className="bg-white shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 cursor-pointer">
                   <div className="relative h-[360px] w-full">
                     <img
                       src={article.image || "/placeholder.svg"}
                       alt={article.title}
                       className="object-cover w-full h-full"
+                      width="270"
+                      height="405"
                     />
-                    <div className="absolute top-4 left-4">
-                      <span className="bg-pink-600 text-white px-3 py-1 text-sm font-semibold rounded">
-                        {article.category}
-                      </span>
-                    </div>
                   </div>
                   <div className="p-6">
                     <h2 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2">{article.title}</h2>
@@ -95,7 +93,6 @@ export default function EditorialShootPage() {
             <button className="px-3 py-2 text-gray-700 hover:text-gray-900">Next</button>
           </div>
         </div>
-        <Footer />
       </div>
     </CategoryLayout>
   )

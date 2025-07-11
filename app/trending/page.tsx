@@ -1,6 +1,9 @@
 "use client"
 
 import CategoryLayout from "../../components/CategoryLayout"
+import Image from "next/image"
+import Link from "next/link"
+import { useState } from "react"
 
 const trendingArticlesData = [
   {
@@ -145,12 +148,84 @@ const trendingArticlesData = [
   },
 ]
 
+trendingArticlesData.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
 export default function TrendingPage() {
+  const [currentPage, setCurrentPage] = useState(1)
+  const articlesPerPage = 12
+  const totalArticles = trendingArticlesData.length
+  const totalPages = Math.ceil(totalArticles / articlesPerPage)
+
+  const startIndex = (currentPage - 1) * articlesPerPage
+  const endIndex = startIndex + articlesPerPage
+  const trendingArticles = trendingArticlesData.slice(startIndex, endIndex)
+
+  const handlePageChange = (pageNumber: number) => {
+    setCurrentPage(pageNumber)
+  }
+
   return (
     <CategoryLayout
       categoryName="Trending"
       categorySlug="trending"
       description="Stay ahead of the curve with the latest trends in fashion, lifestyle, technology, and culture that everyone's talking about."
-    />
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {trendingArticles.map((article) => (
+            <Link key={article.id} href={`/articles/${article.slug}`}>
+              <article className="bg-white shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 cursor-pointer">
+                <div className="relative h-[360px] w-full">
+                  <Image
+                    src={article.image || "/placeholder.svg"}
+                    alt={article.title}
+                    width={270}
+                    height={405}
+                    className="object-cover w-full h-full"
+                  />
+                </div>
+                <div className="p-4">
+                  <h2 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">{article.title}</h2>
+                  <p className="text-gray-600 mb-3 line-clamp-2 text-sm">{article.excerpt}</p>
+                  <div className="flex items-center justify-between text-xs text-gray-500">
+                    <span>{article.author}</span>
+                    <span>{article.date}</span>
+                  </div>
+                </div>
+              </article>
+            </Link>
+          ))}
+        </div>
+
+        {/* Pagination */}
+        <div className="flex justify-center items-center space-x-2 mt-12">
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            className="px-3 py-2 text-gray-500 hover:text-gray-700 disabled:opacity-50"
+            disabled={currentPage === 1}
+          >
+            Previous
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            <button
+              key={page}
+              onClick={() => handlePageChange(page)}
+              className={`px-3 py-2 rounded ${
+                currentPage === page ? "bg-black text-white" : "text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              {page}
+            </button>
+          ))}
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            className="px-3 py-2 text-gray-700 hover:text-gray-900"
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    </CategoryLayout>
   )
 }

@@ -1,37 +1,56 @@
-import { NextResponse } from "next/server"
-import { getSupabaseServer } from "@/lib/supabase"
+import { type NextRequest, NextResponse } from "next/server"
+import { supabase } from "@/lib/supabase"
 
 export async function GET() {
-  const supabase = getSupabaseServer()
   try {
-    const { data: categories, error } = await supabase.from("categories").select("*").order("name", { ascending: true })
+    const { data, error } = await supabase.from("categories").select("*").order("name")
 
     if (error) {
-      console.error("Categories fetch error:", error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error("Database error:", error)
+      return NextResponse.json({ error: "Failed to fetch categories" }, { status: 500 })
     }
 
-    return NextResponse.json(categories)
-  } catch (error: any) {
-    console.error("Categories fetch error:", error)
-    return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 })
+    return NextResponse.json(data || [])
+  } catch (error) {
+    console.error("API error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
-export async function POST(request: Request) {
-  const supabase = getSupabaseServer()
+export async function POST(request: NextRequest) {
   try {
-    const newCategory = await request.json()
-    const { data, error } = await supabase.from("categories").insert(newCategory).select().single()
+    const body = await request.json()
+    const { name, slug, description } = body
+
+    if (!name || !slug) {
+      return NextResponse.json({ error: "Missing required fields: name, slug" }, { status: 400 })
+    }
+
+    // Check if slug already exists
+    const { data: existingCategory } = await supabase.from("categories").select("id").eq("slug", slug).single()
+
+    if (existingCategory) {
+      return NextResponse.json({ error: "Category with this slug already exists" }, { status: 400 })
+    }
+
+    const { data, error } = await supabase
+      .from("categories")
+      .insert({
+        name,
+        slug,
+        description,
+      })
+      .select()
+      .single()
 
     if (error) {
-      console.error("Error creating category:", error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error("Database error:", error)
+      return NextResponse.json({ error: "Failed to create category" }, { status: 500 })
     }
 
     return NextResponse.json(data, { status: 201 })
-  } catch (error: any) {
-    console.error("Error creating category:", error)
-    return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 })
+  } catch (error) {
+    console.error("API error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

@@ -1,46 +1,59 @@
-import { NextResponse } from "next/server"
-import { getSupabaseServer } from "@/lib/supabase"
+import { type NextRequest, NextResponse } from "next/server"
+import { supabase } from "@/lib/supabase"
 
 export async function GET() {
-  const supabase = getSupabaseServer()
   try {
-    const { data: youtubeVideos, error } = await supabase
+    const { data, error } = await supabase
       .from("youtube_videos")
       .select("*")
-      .order("created_at", { ascending: false }) // Sort by latest
+      .eq("is_active", true)
+      .order("display_order")
 
     if (error) {
-      // If the table doesn't exist, return an empty array instead of an error
-      if (error.code === "42P01") {
-        // PostgreSQL error code for "undefined_table"
-        console.warn("Table 'youtube_videos' does not exist. Returning empty array.")
-        return NextResponse.json({ youtubeVideos: [] })
+      if ((error as any).code === "42P01") {
+        console.warn("youtube_videos table not found – returning empty array")
+        return NextResponse.json([])
       }
       console.error("YouTube videos fetch error:", error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ error: "Failed to fetch videos" }, { status: 500 })
     }
 
-    return NextResponse.json({ youtubeVideos })
-  } catch (error: any) {
-    console.error("YouTube videos fetch error:", error)
-    return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 })
+    return NextResponse.json(data || [])
+  } catch (error) {
+    console.error("API error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
-export async function POST(request: Request) {
-  const supabase = getSupabaseServer()
+export async function POST(request: NextRequest) {
   try {
-    const newVideo = await request.json()
-    const { data, error } = await supabase.from("youtube_videos").insert(newVideo).select().single()
+    const body = await request.json()
+    const { title, video_url, thumbnail_url, is_main_video, display_order } = body
+
+    const { data, error } = await supabase
+      .from("youtube_videos")
+      .insert({
+        title,
+        video_url,
+        thumbnail_url,
+        is_main_video: is_main_video || false,
+        display_order: display_order || 0,
+        is_active: true,
+      })
+      .select()
+      .single()
 
     if (error) {
-      console.error("Error creating YouTube video:", error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      if ((error as any).code === "42P01") {
+        return NextResponse.json({ error: "youtube_videos table does not exist" }, { status: 400 })
+      }
+      console.error("YouTube video insert error:", error)
+      return NextResponse.json({ error: "Failed to create video" }, { status: 500 })
     }
 
-    return NextResponse.json(data, { status: 201 })
-  } catch (error: any) {
-    console.error("Error creating YouTube video:", error)
-    return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 })
+    return NextResponse.json({ success: true, video: data })
+  } catch (error) {
+    console.error("API error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

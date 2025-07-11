@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+
 import { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -78,8 +79,8 @@ function PaymentForm({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          amount: magazine.price, // Amount is already in correct unit (e.g., INR)
-          currency: "inr", // Changed to INR
+          amount: magazine.price,
+          currency: "inr",
           magazineId: magazine.id,
           customerEmail: email,
         }),
@@ -182,7 +183,7 @@ function PaymentForm({
           <Lock className="w-4 h-4 mr-1" />
           Secured by Stripe
         </div>
-        <div className="text-lg font-semibold">₹{magazine.price.toFixed(2)}</div> {/* Changed to ₹ */}
+        <div className="text-lg font-semibold">₹{magazine.price.toFixed(2)}</div>
       </div>
 
       <Button type="submit" disabled={!stripe || isProcessing} className="w-full" size="lg">
@@ -194,7 +195,7 @@ function PaymentForm({
         ) : (
           <>
             <CreditCard className="w-4 h-4 mr-2" />
-            Pay ₹{magazine.price.toFixed(2)} {/* Changed to ₹ */}
+            Pay ₹{magazine.price.toFixed(2)}
           </>
         )}
       </Button>
@@ -224,8 +225,7 @@ export default function MagazinePaymentModal({ isOpen, onClose, magazine, onSucc
                 <div className="flex-1">
                   <h3 className="font-semibold">{magazine.title}</h3>
                   {magazine.description && <p className="text-sm text-gray-600 mt-1">{magazine.description}</p>}
-                  <p className="text-lg font-bold text-green-600 mt-2">₹{magazine.price.toFixed(2)}</p>{" "}
-                  {/* Changed to ₹ */}
+                  <p className="text-lg font-bold text-green-600 mt-2">₹{magazine.price.toFixed(2)}</p>
                 </div>
               </div>
             </CardContent>

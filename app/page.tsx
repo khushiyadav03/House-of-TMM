@@ -1,17 +1,26 @@
 "use client"
 
-import type React from "react"
-
 import Image from "next/image"
 import Link from "next/link"
-import { Swiper } from "swiper/react"
+import { useEffect, useRef, useState } from "react"
+import type { Swiper as SwiperInstance } from "swiper"
+import { Swiper, SwiperSlide } from "swiper/react"
 import { Autoplay, Pagination } from "swiper/modules"
 import "swiper/css"
 import "swiper/css/pagination"
 import "swiper/css/scrollbar"
 import Footer from "../components/Footer"
-import { getSupabaseServer, type Article, type YoutubeVideo, type BrandImage } from "@/lib/supabase"
-import { safeJson } from "@/lib/utils"
+
+interface Article {
+  id: number
+  title: string
+  slug: string
+  image_url: string
+  author: string
+  publish_date: string
+  excerpt: string
+  category: string
+}
 
 interface Magazine {
   id: number
@@ -21,154 +30,148 @@ interface Magazine {
   issue_date: string
 }
 
-function PlayIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <polygon points="5 3 19 12 5 21 5 3" />
-    </svg>
-  )
+interface YoutubeVideo {
+  id: number
+  title: string
+  video_url: string
+  thumbnail_url: string
+  is_main_video: boolean
 }
 
-export default async function HomePage() {
-  const { articles, youtubeVideos, brandImages } = await fetchHomepageData()
+interface BrandImage {
+  id: number
+  title: string
+  image_url: string
+}
+
+export default function Home() {
+  const swiperRef = useRef<SwiperInstance | null>(null)
+  const brandsSwiperRef = useRef<SwiperInstance | null>(null)
+
+  const [carouselArticles, setCarouselArticles] = useState<Article[]>([])
+  const [latestNews, setLatestNews] = useState<Article[]>([])
+  const [fashionArticles, setFashionArticles] = useState<Article[]>([])
+  const [techAutoArticles, setTechAutoArticles] = useState<Article[]>([])
+  const [sportsArticles, setSportsArticles] = useState<Article[]>([])
+  const [financeArticles, setFinanceArticles] = useState<Article[]>([])
+  const [travelArticles, setTravelArticles] = useState<Article[]>([])
+  const [healthWellnessArticles, setHealthWellnessArticles] = useState<Article[]>([])
+  const [featuredMagazine, setFeaturedMagazine] = useState<Magazine | null>(null)
+  const [mainVideo, setMainVideo] = useState<YoutubeVideo | null>(null)
+  const [recommendedVideos, setRecommendedVideos] = useState<YoutubeVideo[]>([])
+  const [brandLogos, setBrandLogos] = useState<BrandImage[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchHomepageData()
+    return () => {
+      if (swiperRef.current) {
+        swiperRef.current.destroy(true, true)
+        swiperRef.current = null
+      }
+      if (brandsSwiperRef.current) {
+        brandsSwiperRef.current.destroy(true, true)
+        brandsSwiperRef.current = null
+      }
+    }
+  }, [])
+
+  const fetchHomepageData = async () => {
+    try {
+      setLoading(true)
+
+      // Fetch all data in parallel
+      const [articlesResponse, magazinesResponse, videosResponse, brandsResponse] = await Promise.all([
+        fetch("/api/articles?limit=100"),
+        fetch("/api/magazines"),
+        fetch("/api/youtube-videos"),
+        fetch("/api/brand-images"),
+      ])
+
+      const articlesData = await articlesResponse.json()
+      const magazinesData = await magazinesResponse.json()
+      const videosData = await videosResponse.json()
+      const brandsData = await brandsResponse.json()
+
+      const allArticles = articlesData.articles || []
+      const allMagazines = magazinesData || []
+      const allVideos = videosData || []
+      const allBrands = brandsData || []
+
+      // Set carousel articles (first 8 articles)
+      setCarouselArticles(allArticles.slice(0, 8))
+
+      // Set latest news (next 6 articles)
+      setLatestNews(allArticles.slice(8, 14))
+
+      // Set fashion articles (filter by fashion category)
+      const fashionArticles = allArticles.filter((article: Article) =>
+        article.category?.toLowerCase().includes("fashion"),
+      )
+      setFashionArticles(fashionArticles.slice(0, 3))
+
+      // Set tech & auto articles
+      const techArticles = allArticles.filter(
+        (article: Article) =>
+          article.category?.toLowerCase().includes("tech") || article.category?.toLowerCase().includes("auto"),
+      )
+      setTechAutoArticles(techArticles.slice(0, 8))
+
+      // Set sports articles
+      const sportsArticles = allArticles.filter((article: Article) => article.category?.toLowerCase().includes("sport"))
+      setSportsArticles(sportsArticles.slice(0, 8))
+
+      // Set finance articles
+      const financeArticles = allArticles.filter((article: Article) =>
+        article.category?.toLowerCase().includes("finance"),
+      )
+      setFinanceArticles(financeArticles.slice(0, 4))
+
+      // Set travel articles
+      const travelArticles = allArticles.filter((article: Article) =>
+        article.category?.toLowerCase().includes("travel"),
+      )
+      setTravelArticles(travelArticles.slice(0, 4))
+
+      // Set health & wellness articles
+      const healthArticles = allArticles.filter(
+        (article: Article) =>
+          article.category?.toLowerCase().includes("health") || article.category?.toLowerCase().includes("wellness"),
+      )
+      setHealthWellnessArticles(healthArticles.slice(0, 3))
+
+      // Set featured magazine (first magazine)
+      setFeaturedMagazine(allMagazines[0] || null)
+
+      // Set videos
+      const mainVideo = allVideos.find((video: YoutubeVideo) => video.is_main_video)
+      setMainVideo(mainVideo || allVideos[0] || null)
+
+      const recommendedVideos = allVideos.filter((video: YoutubeVideo) => !video.is_main_video)
+      setRecommendedVideos(recommendedVideos.slice(0, 7))
+
+      // Set brand images
+      setBrandLogos(allBrands)
+    } catch (error) {
+      console.error("Failed to fetch homepage data:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-black"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="min-h-screen bg-white text-gray-700">
-      {/* Hero Section */}
-      <section className="relative h-[500px] md:h-[600px] lg:h-[700px] overflow-hidden">
-        <Image
-          src="/placeholder.svg?height=700&width=1920"
-          alt="Hero Background"
-          fill
-          className="object-cover"
-          priority
-        />
-        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-          <div className="text-center text-white px-4">
-            <h1 className="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg">House of TMM</h1>
-            <p className="text-lg md:text-xl max-w-2xl mx-auto drop-shadow-md">
-              Your ultimate destination for the latest in fashion, lifestyle, and culture.
-            </p>
-            <Link
-              href="/magazine"
-              className="mt-8 inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-red-600 hover:bg-red-700 transition-colors"
-            >
-              Explore Magazine
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Latest Articles Section */}
-      <section className="py-12 md:py-16 lg:py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-8 text-center">Latest Articles</h2>
-        {articles.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">No articles found.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {articles.map((article) => (
-              <Link key={article.id} href={`/articles/${article.slug}`}>
-                <article className="bg-white shadow-lg rounded-none overflow-hidden hover:shadow-xl transition-shadow duration-300 cursor-pointer">
-                  <div className="relative w-full h-[405px]">
-                    <Image
-                      src={article.image_url || "/placeholder.svg?height=405&width=270"}
-                      alt={article.title}
-                      fill
-                      className="object-cover article-card-image"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    />
-                  </div>
-                  <div className="p-4">
-                    <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">{article.title}</h3>
-                    <p className="text-gray-600 mb-3 line-clamp-2 text-sm">{article.excerpt}</p>
-                    <div className="flex items-center justify-between text-xs text-gray-500">
-                      <span>{article.author}</span>
-                      <span>{new Date(article.publish_date).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                </article>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* YouTube Videos Section */}
-      <section className="bg-gray-100 py-12 md:py-16 lg:py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-8 text-center">Our Latest Videos</h2>
-          {youtubeVideos.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500 text-lg">No videos found.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {youtubeVideos.map((video) => (
-                <div key={video.id} className="bg-white shadow-lg rounded-lg overflow-hidden">
-                  <div className="relative w-full aspect-video">
-                    <Image
-                      src={video.thumbnail_url || "/placeholder.svg?height=360&width=640"}
-                      alt={video.title}
-                      fill
-                      className="object-cover"
-                    />
-                    <a
-                      href={video.video_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="absolute inset-0 flex items-center justify-center bg-black/50 hover:bg-black/70 transition-colors"
-                    >
-                      <PlayIcon className="h-12 w-12 text-white" />
-                    </a>
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-semibold text-lg mb-2 line-clamp-2">{video.title}</h3>
-                    <p className="text-gray-600 text-sm line-clamp-3">{video.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Brand Feature Section */}
-      <section className="py-12 md:py-16 lg:py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-8 text-center">Featured Brands</h2>
-        {brandImages.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">No brand images found.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 items-center justify-center">
-            {brandImages.map((brand) => (
-              <div key={brand.id} className="flex justify-center items-center p-4 bg-white rounded-lg shadow-md">
-                <Image
-                  src={brand.image_url || "/placeholder.svg?height=100&width=150"}
-                  alt={brand.alt_text}
-                  width={150}
-                  height={100}
-                  className="object-contain max-h-[100px] max-w-[150px]"
-                />
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
+    <div>
       {/* Carousel Section */}
       <section className="w-full pt-0 pb-4">
         <div className="carousel-wrapper">
@@ -188,10 +191,34 @@ export default async function HomePage() {
               0: { slidesPerView: 1, spaceBetween: 0 },
             }}
             onSwiper={(swiper) => {
-              // swiperRef.current = swiper
+              swiperRef.current = swiper
             }}
           >
-            {/* Carousel Articles will be fetched from the server */}
+            {carouselArticles.map((article, index) => (
+              <SwiperSlide key={article.id} style={{ width: "324px", height: "500px" }}>
+                <Link href={`/articles/${article.slug}`} className="block">
+                  <div className="landscape-cover bg-none">
+                    <Image
+                      src={article.image_url || "/placeholder.svg?height=500&width=324"}
+                      alt={article.title}
+                      width={324}
+                      height={500}
+                      className="w-full h-full object-cover !rounded-none mx-auto"
+                      priority={index === 0}
+                      loading={index === 0 ? "eager" : "lazy"}
+                      sizes="324px"
+                    />
+                    <div className="article-overlay absolute bottom-0 left-0 w-full p-4 sm:p-5 md:p-6 text-center">
+                      <span className="article-overlay-span text-xs sm:text-sm">{article.category}</span>
+                      <h3 className="article-heading mt-1 text-lg sm:text-xl md:text-2xl lg:text-3xl font-extrabold">
+                        {article.title}
+                      </h3>
+                    </div>
+                  </div>
+                </Link>
+              </SwiperSlide>
+            ))}
+            <div className="swiper-pagination"></div>
           </Swiper>
         </div>
       </section>
@@ -218,7 +245,37 @@ export default async function HomePage() {
                 </Link>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {/* Latest News Articles will be fetched from the server */}
+                {latestNews.map((article) => (
+                  <article key={article.id} className="news-card !rounded-none">
+                    <Link href={`/articles/${article.slug}`} className="block">
+                      <div className="news-image-container">
+                        <Image
+                          src={article.image_url || "/placeholder.svg?height=400&width=283"}
+                          alt={article.title}
+                          width={283}
+                          height={400}
+                          className="w-full h-auto object-cover !rounded-none"
+                          loading="lazy"
+                          sizes="283px"
+                        />
+                      </div>
+                      <div className="news-content">
+                        <span className="news-category">{article.category}</span>
+                        <h3 className="news-title">
+                          {article.title}
+                          <div className="news-tooltip">
+                            {article.title}
+                            <div className="news-tooltip-arrow"></div>
+                          </div>
+                        </h3>
+                        <div className="news-meta">
+                          <span className="news-author">{article.author}</span>
+                          <span className="news-date">{new Date(article.publish_date).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                    </Link>
+                  </article>
+                ))}
               </div>
             </div>
 
@@ -231,7 +288,63 @@ export default async function HomePage() {
                   View All Posts
                 </Link>
               </div>
-              {/* Fashion Articles will be fetched from the server */}
+              {fashionArticles.length > 0 && (
+                <div className="flex flex-col md:flex-row gap-6">
+                  {/* Main Fashion Article */}
+                  <article className="news-card-large md:w-3/5 !rounded-none">
+                    <Link href={`/articles/${fashionArticles[0].slug}`}>
+                      <div className="news-image-container-large">
+                        <Image
+                          src={fashionArticles[0].image_url || "/placeholder.svg?height=520&width=483"}
+                          alt={fashionArticles[0].title}
+                          width={483}
+                          height={520}
+                          className="w-full h-auto object-cover !rounded-none"
+                          loading="lazy"
+                          sizes="483px"
+                        />
+                      </div>
+                      <div className="news-content-large text-center">
+                        <h3 className="news-title-large">{fashionArticles[0].title}</h3>
+                        <div className="news-meta">
+                          <span className="news-author">{fashionArticles[0].author}</span>
+                          <span className="news-date">
+                            {new Date(fashionArticles[0].publish_date).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    </Link>
+                  </article>
+
+                  {/* Side Fashion Articles */}
+                  <div className="md:w-2/5 flex flex-col gap-3">
+                    {fashionArticles.slice(1).map((article) => (
+                      <article key={article.id} className="news-card-small !rounded-none">
+                        <Link href={`/articles/${article.slug}`}>
+                          <div className="news-image-container-small">
+                            <Image
+                              src={article.image_url || "/placeholder.svg?height=208&width=300"}
+                              alt={article.title}
+                              width={300}
+                              height={208}
+                              className="w-full h-[208px] object-cover"
+                              loading="lazy"
+                              sizes="300px"
+                            />
+                          </div>
+                          <div className="news-content-small">
+                            <h3 className="news-title">{article.title}</h3>
+                            <div className="news-meta-small">
+                              <span className="news-author">{article.author}</span>
+                              <span className="news-date">{new Date(article.publish_date).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                        </Link>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -239,13 +352,72 @@ export default async function HomePage() {
           <div className="lg:w-1/3 flex flex-col items-stretch gap-6 min-h-full">
             {/* Featured Magazine */}
             <div className="magazine-cover-container bg-gray-100">
-              {/* Featured Magazine will be fetched from the server */}
+              {featuredMagazine ? (
+                <>
+                  <Image
+                    src={featuredMagazine.cover_image_url || "/placeholder.svg?height=500&width=350"}
+                    alt={featuredMagazine.title}
+                    width={350}
+                    height={500}
+                    className="w-full max-w-full h-auto object-cover mb-2 !rounded-none aspect-[7/10]"
+                    loading="lazy"
+                    sizes="350px"
+                  />
+                  <Link
+                    href="/magazine"
+                    className="inline-block w-full text-center py-3 bg-black text-white font-montserrat font-semibold hover:bg-gray-800 transition-colors !rounded-none"
+                  >
+                    Get It - ₹{featuredMagazine.price}
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Image
+                    src="/placeholder.svg?height=500&width=350"
+                    alt="Magazine Cover"
+                    width={350}
+                    height={500}
+                    className="w-full max-w-full h-auto object-cover mb-2 !rounded-none aspect-[7/10]"
+                    loading="lazy"
+                    sizes="350px"
+                  />
+                  <Link
+                    href="/magazine"
+                    className="inline-block w-full text-center py-3 bg-black text-white font-montserrat font-semibold hover:bg-gray-800 transition-colors !rounded-none"
+                  >
+                    Get It
+                  </Link>
+                </>
+              )}
             </div>
 
             {/* Health & Wellness */}
             <div className="health-wellness-sidebar">
               <h2 className="text-3xl font-montserrat font-extrabold mb-6">Health & Wellness</h2>
-              {/* Health & Wellness Articles will be fetched from the server */}
+              {healthWellnessArticles.map((article) => (
+                <article key={article.id} className="health-wellness-article flex gap-4 mb-6">
+                  <Link href={`/articles/${article.slug}`}>
+                    <Image
+                      src={article.image_url || "/placeholder.svg?height=109&width=146"}
+                      alt={article.title}
+                      width={146}
+                      height={109}
+                      className="health-wellness-image object-cover !rounded-none"
+                      loading="lazy"
+                      sizes="146px"
+                    />
+                  </Link>
+                  <div className="flex flex-col justify-between">
+                    <Link href={`/articles/${article.slug}`}>
+                      <h3 className="news-title">{article.title}</h3>
+                    </Link>
+                    <div className="news-meta">
+                      <span className="news-author">{article.author}</span>
+                      <span className="news-date">{new Date(article.publish_date).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                </article>
+              ))}
             </div>
 
             {/* Sidebar Ad */}
@@ -269,7 +441,30 @@ export default async function HomePage() {
               </Link>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
-              {/* Tech & Auto Articles will be fetched from the server */}
+              {techAutoArticles.map((article) => (
+                <article key={article.id} className="news-card !rounded-none">
+                  <Link href={`/articles/${article.slug}`} className="block">
+                    <div className="news-image-container">
+                      <Image
+                        src={article.image_url || "/placeholder.svg?height=400&width=283"}
+                        alt={article.title}
+                        width={283}
+                        height={400}
+                        className="w-full h-auto object-cover !rounded-none"
+                        loading="lazy"
+                        sizes="283px"
+                      />
+                    </div>
+                    <div className="news-content">
+                      <h3 className="news-title">{article.title}</h3>
+                      <div className="news-meta">
+                        <span className="news-author">{article.author}</span>
+                        <span className="news-date">{new Date(article.publish_date).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  </Link>
+                </article>
+              ))}
             </div>
           </div>
         </div>
@@ -283,8 +478,8 @@ export default async function HomePage() {
               <div className="relative w-full h-0 pb-[56.25%]">
                 <iframe
                   className="absolute top-0 left-0 w-full h-full"
-                  src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                  title="Featured Video"
+                  src={mainVideo?.video_url || "https://www.youtube.com/embed/dQw4w9WgXcQ"}
+                  title={mainVideo?.title || "Featured Video"}
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
@@ -293,7 +488,30 @@ export default async function HomePage() {
             </div>
             <div className="lg:w-[380px] w-full recommended-videos-container">
               <div className="recommended-videos-slider">
-                {/* Recommended Videos will be fetched from the server */}
+                {recommendedVideos.map((video) => (
+                  <div key={video.id} className="recommended-video-item mb-4">
+                    <a
+                      href={video.video_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-start gap-3"
+                    >
+                      <div className="relative w-[120px] h-[80px] flex-shrink-0">
+                        <Image
+                          src={video.thumbnail_url || "/placeholder.svg?height=80&width=120"}
+                          alt={video.title}
+                          width={120}
+                          height={80}
+                          className="absolute top-0 left-0 w-full h-full object-cover"
+                          sizes="120px"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="text-sm font-semibold text-white line-clamp-2">{video.title}</h4>
+                      </div>
+                    </a>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -312,7 +530,30 @@ export default async function HomePage() {
               </Link>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {/* Sports Articles will be fetched from the server */}
+              {sportsArticles.map((article) => (
+                <article key={article.id} className="news-card !rounded-none">
+                  <Link href={`/articles/${article.slug}`} className="block">
+                    <div className="news-image-container">
+                      <Image
+                        src={article.image_url || "/placeholder.svg?height=400&width=283"}
+                        alt={article.title}
+                        width={283}
+                        height={400}
+                        className="w-full h-auto object-cover !rounded-none"
+                        loading="lazy"
+                        sizes="283px"
+                      />
+                    </div>
+                    <div className="news-content">
+                      <h3 className="news-title">{article.title}</h3>
+                      <div className="news-meta">
+                        <span className="news-author">{article.author}</span>
+                        <span className="news-date">{new Date(article.publish_date).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  </Link>
+                </article>
+              ))}
             </div>
           </div>
         </div>
@@ -330,7 +571,32 @@ export default async function HomePage() {
                 View All Posts
               </Link>
             </div>
-            {/* Finance Articles will be fetched from the server */}
+            {financeArticles.map((article) => (
+              <article key={article.id} className="finance-article flex flex-row lg:items-start gap-4 mb-6">
+                <Link href={`/articles/${article.slug}`}>
+                  <Image
+                    src={article.image_url || "/placeholder.svg?height=250&width=226"}
+                    alt={article.title}
+                    width={226}
+                    height={250}
+                    className="object-cover !rounded-none flex-shrink-0 w-[226px] h-[250px]"
+                    loading="lazy"
+                    sizes="226px"
+                  />
+                </Link>
+                <div className="flex flex-col justify-start">
+                  <Link href={`/articles/${article.slug}`}>
+                    <h3 className="news-title text-lg font-extrabold text-gray-900 hover:text-gray-600 line-clamp-2">
+                      {article.title}
+                    </h3>
+                  </Link>
+                  <div className="news-meta flex gap-4 text-sm text-gray-600">
+                    <span className="news-author">{article.author}</span>
+                    <span className="news-date">{new Date(article.publish_date).toLocaleDateString()}</span>
+                  </div>
+                </div>
+              </article>
+            ))}
           </div>
 
           {/* Travel */}
@@ -342,7 +608,32 @@ export default async function HomePage() {
                 View All Posts
               </Link>
             </div>
-            {/* Travel Articles will be fetched from the server */}
+            {travelArticles.map((article) => (
+              <article key={article.id} className="travel-article relative mb-16 mx-auto max-w-[300px] pb-4">
+                <Link href={`/articles/${article.slug}`}>
+                  <div className="relative">
+                    <Image
+                      src={article.image_url || "/placeholder.svg?height=230&width=300"}
+                      alt={article.title}
+                      width={300}
+                      height={230}
+                      className="object-cover !rounded-none !w-full"
+                      loading="lazy"
+                      sizes="300px"
+                    />
+                    <div className="travel-overlay absolute top-[60%] left-0 w-[260px] mx-5 h-[153px] bg-white text-center flex flex-col justify-center pb-2 hover:border hover:border-black transition-all duration-200">
+                      <h3 className="text-lg font-montserrat font-extrabold text-gray-800 mb-2 hover:text-gray-900 line-clamp-3">
+                        {article.title}
+                      </h3>
+                      <div className="text-sm text-gray-600 flex justify-center items-center gap-2">
+                        <span>{article.author}</span>
+                        <span>{new Date(article.publish_date).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              </article>
+            ))}
           </div>
         </div>
 
@@ -364,10 +655,45 @@ export default async function HomePage() {
               speed={5000}
               freeMode={true}
               onSwiper={(swiper) => {
-                // brandsSwiperRef.current = swiper
+                brandsSwiperRef.current = swiper
               }}
             >
-              {/* Brand Logos will be fetched from the server */}
+              {[...brandLogos, ...brandLogos].map((logo, index) => (
+                <SwiperSlide
+                  key={`${logo.id}-${index}`}
+                  style={{
+                    width: "376.66px",
+                    height: "150.66px",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Image
+                      src={logo.image_url || "/placeholder.svg?height=150&width=376"}
+                      alt={logo.title}
+                      width={376}
+                      height={150}
+                      className="object-contain"
+                      loading="lazy"
+                      sizes="376px"
+                      style={{
+                        maxWidth: "100%",
+                        maxHeight: "100%",
+                      }}
+                    />
+                  </div>
+                </SwiperSlide>
+              ))}
             </Swiper>
           </div>
         </section>
@@ -375,55 +701,4 @@ export default async function HomePage() {
       <Footer />
     </div>
   )
-}
-
-async function fetchHomepageData() {
-  const supabase = getSupabaseServer() // Use server client for fetching data on the server
-
-  try {
-    // Fetch articles
-    const articlesResponse = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/api/articles?limit=6&sort=created_at_desc`,
-      {
-        next: { revalidate: 3600 }, // Revalidate every hour
-      },
-    )
-    const articlesData = await safeJson(articlesResponse)
-    if (articlesData.error) {
-      throw new Error(`Articles fetch error: ${articlesData.error}`)
-    }
-    const articles: Article[] = articlesData.articles || []
-
-    // Fetch YouTube videos
-    const youtubeVideosResponse = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/api/youtube-videos?limit=3&sort=created_at_desc`,
-      {
-        next: { revalidate: 3600 },
-      },
-    )
-    const youtubeVideosData = await safeJson(youtubeVideosResponse)
-    if (youtubeVideosData.error) {
-      throw new Error(`YouTube videos fetch error: ${youtubeVideosData.error}`)
-    }
-    const youtubeVideos: YoutubeVideo[] = youtubeVideosData.youtubeVideos || []
-
-    // Fetch brand images
-    const brandImagesResponse = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/api/brand-images?limit=5&sort=created_at_desc`,
-      {
-        next: { revalidate: 3600 },
-      },
-    )
-    const brandImagesData = await safeJson(brandImagesResponse)
-    if (brandImagesData.error) {
-      throw new Error(`Brand images fetch error: ${brandImagesData.error}`)
-    }
-    const brandImages: BrandImage[] = brandImagesData.brandImages || []
-
-    return { articles, youtubeVideos, brandImages }
-  } catch (error: any) {
-    console.error("Failed to fetch homepage data:", error)
-    // Return empty arrays on error to prevent crashing the UI
-    return { articles: [], youtubeVideos: [], brandImages: [] }
-  }
 }
