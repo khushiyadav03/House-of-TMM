@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 
 import CategoryLayout from "../../../components/CategoryLayout"
 import Footer from "../../../components/Footer"
