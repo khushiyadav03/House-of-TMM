@@ -78,10 +78,14 @@ export default function Home() {
 
   // Safe JSON: returns null when body isn't valid JSON
   async function safeJson(res: Response) {
+    // Clone the response so we can read the body multiple times if needed
+    const clonedRes = res.clone()
     try {
-      return await res.json()
+      return await res.json() // Try to parse as JSON
     } catch (e) {
-      console.error("Failed to parse JSON response:", e, "Response text:", await res.text())
+      // If JSON parsing fails, log the raw text for debugging
+      const text = await clonedRes.text() // Read text from the cloned response
+      console.error("Failed to parse JSON response:", e, "Raw response text:", text)
       return null
     }
   }

@@ -3,7 +3,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 const PUBLIC_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 const PUBLIC_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY // server only
-const PRIVATE_URL = process.env.SUPABASE_URL // server only (optional)
+const PRIVATE_URL = process.env.SUPABASE_URL // server only (optional, usually same as PUBLIC_URL)
 
 let _serverClient: SupabaseClient | undefined
 let _browserClient: SupabaseClient | undefined
@@ -15,10 +15,29 @@ let _browserClient: SupabaseClient | undefined
  */
 export function getSupabaseServer(): SupabaseClient {
   if (!_serverClient) {
-    const url = (PRIVATE_URL ?? PUBLIC_URL) as string
-    if (!url) throw new Error("Missing Supabase URL env-var for server client")
-    const key = (SERVICE_ROLE ?? PUBLIC_ANON) as string
-    if (!key) throw new Error("Missing Supabase key env-var for server client")
+    const url = (PRIVATE_URL || PUBLIC_URL) as string
+    if (!url) {
+      console.error(
+        "Missing Supabase URL env-var for server client. Please set NEXT_PUBLIC_SUPABASE_URL or SUPABASE_URL.",
+      )
+      throw new Error("Supabase URL not configured for server.")
+    }
+
+    let key: string | undefined
+    if (SERVICE_ROLE) {
+      key = SERVICE_ROLE
+    } else if (PUBLIC_ANON) {
+      key = PUBLIC_ANON
+      console.warn(
+        "SUPABASE_SERVICE_ROLE_KEY not found. Falling back to NEXT_PUBLIC_SUPABASE_ANON_KEY for server client. Ensure RLS policies allow operations.",
+      )
+    } else {
+      console.error(
+        "Missing Supabase key env-var for server client. Please set SUPABASE_SERVICE_ROLE_KEY or NEXT_PUBLIC_SUPABASE_ANON_KEY.",
+      )
+      throw new Error("Supabase key not configured for server.")
+    }
+
     _serverClient = createClient(url, key, { auth: { persistSession: false } })
   }
   return _serverClient
@@ -35,9 +54,15 @@ export function getSupabaseBrowser(): SupabaseClient {
   }
   if (!_browserClient) {
     const url = PUBLIC_URL as string
-    if (!url) throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL env-var for browser client")
+    if (!url) {
+      console.error("Missing NEXT_PUBLIC_SUPABASE_URL env-var for browser client.")
+      throw new Error("Supabase URL not configured for browser.")
+    }
     const key = PUBLIC_ANON as string
-    if (!key) throw new Error("Missing NEXT_PUBLIC_SUPABASE_ANON_KEY env-var for browser client")
+    if (!key) {
+      console.error("Missing NEXT_PUBLIC_SUPABASE_ANON_KEY env-var for browser client.")
+      throw new Error("Supabase key not configured for browser.")
+    }
     _browserClient = createClient(url, key, { auth: { persistSession: false } })
   }
   return _browserClient
