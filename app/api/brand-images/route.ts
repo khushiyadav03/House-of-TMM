@@ -1,84 +1,46 @@
-import { NextResponse, type NextRequest } from "next/server"
+import { NextResponse } from "next/server"
 import { getSupabaseServer } from "@/lib/supabase"
 
-/**
- * GET /api/brand-images
- * Fetches brand images.
- * Query parameters:
- * - limit: number of images to return (default: 10)
- * - offset: number of images to skip (default: 0)
- */
-export async function GET(request: NextRequest) {
+export async function GET() {
+  const supabase = getSupabaseServer()
   try {
-    const supabase = getSupabaseServer()
-    const { searchParams } = new URL(request.url)
-    const limit = Number.parseInt(searchParams.get("limit") || "10")
-    const offset = Number.parseInt(searchParams.get("offset") || "0")
-
-    const {
-      data: brandImages,
-      error,
-      count,
-    } = await supabase
+    const { data: brandImages, error } = await supabase
       .from("brand_images")
-      .select("*", { count: "exact" })
-      .eq("is_active", true)
-      .order("display_order", { ascending: true })
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1)
+      .select("*")
+      .order("created_at", { ascending: false }) // Sort by latest
 
     if (error) {
-      if ((error as any).code === "42P01") {
-        console.warn("brand_images table not found → returning []")
-        return NextResponse.json({ brandImages: [], total: 0 })
+      // If the table doesn't exist, return an empty array instead of an error
+      if (error.code === "42P01") {
+        // PostgreSQL error code for "undefined_table"
+        console.warn("Table 'brand_images' does not exist. Returning empty array.")
+        return NextResponse.json({ brandImages: [] })
       }
       console.error("Brand images fetch error:", error)
-      return NextResponse.json({ error: "Failed to fetch brand images", details: error.message }, { status: 500 })
+      return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json({ brandImages: brandImages ?? [], total: count ?? 0 })
-  } catch (err) {
-    console.error("GET /api/brand-images crashed:", err)
-    return NextResponse.json(
-      { error: "Internal server error", details: (err as Error).message || "Unknown error" },
-      { status: 500 },
-    )
+    return NextResponse.json({ brandImages })
+  } catch (error: any) {
+    console.error("Brand images fetch error:", error)
+    return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 })
   }
 }
 
-/**
- * POST /api/brand-images
- * Creates a new brand image entry.
- * Accepts: { title, image_url, is_active, display_order }
- */
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
+  const supabase = getSupabaseServer()
   try {
-    const supabase = getSupabaseServer()
-    const body = await request.json()
-    const { title, image_url, is_active, display_order } = body
-
-    const { data, error } = await supabase
-      .from("brand_images")
-      .insert({
-        title,
-        image_url,
-        is_active: Boolean(is_active),
-        display_order: Number(display_order),
-      })
-      .select()
-      .single()
+    const newImage = await request.json()
+    const { data, error } = await supabase.from("brand_images").insert(newImage).select().single()
 
     if (error) {
-      console.error("Brand image insert error:", error)
-      return NextResponse.json({ error: "Failed to create brand image", details: error.message }, { status: 500 })
+      console.error("Error creating brand image:", error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true, brandImage: data })
-  } catch (err) {
-    console.error("POST /api/brand-images crashed:", err)
-    return NextResponse.json(
-      { error: "Internal server error", details: (err as Error).message || "Unknown error" },
-      { status: 500 },
-    )
+    return NextResponse.json(data, { status: 201 })
+  } catch (error: any) {
+    console.error("Error creating brand image:", error)
+    return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 })
   }
 }

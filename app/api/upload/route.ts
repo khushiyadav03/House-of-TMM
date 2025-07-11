@@ -1,46 +1,70 @@
-import { NextResponse, type NextRequest } from "next/server"
-import { getSupabaseServer } from "@/lib/supabase"
-import { v4 as uuidv4 } from "uuid"
+import { type NextRequest, NextResponse } from "next/server"
+import { supabase } from "@/lib/supabase"
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = getSupabaseServer()
     const formData = await request.formData()
-    const file = formData.get("file") as File | null
-    const folder = (formData.get("folder") as string) || "misc" // Get folder from formData, default to 'misc'
+    const file = formData.get("file") as File
+    const type = (formData.get("type") as string) || "image"
 
     if (!file) {
-      return NextResponse.json({ error: "No file uploaded." }, { status: 400 })
+      return NextResponse.json({ error: "No file provided" }, { status: 400 })
     }
 
-    const fileExtension = file.name.split(".").pop()
-    const fileName = `${uuidv4()}.${fileExtension}`
-    const filePath = `${folder}/${fileName}` // Use the specified folder
+    // Validate file type
+    if (type === "image" && !file.type.startsWith("image/")) {
+      return NextResponse.json({ error: "Invalid file type. Please upload an image." }, { status: 400 })
+    }
 
-    const { data, error } = await supabase.storage.from("tmm-india-bucket").upload(filePath, file, {
-      cacheControl: "3600",
-      upsert: false,
+    if (type === "pdf" && file.type !== "application/pdf") {
+      return NextResponse.json({ error: "Invalid file type. Please upload a PDF." }, { status: 400 })
+    }
+
+    // Validate file size (10MB for images, 50MB for PDFs)
+    const maxSize = type === "pdf" ? 50 * 1024 * 1024 : 10 * 1024 * 1024
+    if (file.size > maxSize) {
+      return NextResponse.json(
+        { error: `File too large. Maximum size is ${type === "pdf" ? "50MB" : "10MB"}` },
+        { status: 400 },
+      )
+    }
+
+    // Generate unique filename
+    const timestamp = Date.now()
+    const randomString = Math.random().toString(36).substring(2, 15)
+    const fileExtension = file.name.split(".").pop()
+    const fileName = `${timestamp}-${randomString}.${fileExtension}`
+
+    // Determine bucket based on file type
+    const bucketName = type === "pdf" ? "magazines" : "images"
+
+    // Convert file to buffer
+    const arrayBuffer = await file.arrayBuffer()
+    const buffer = new Uint8Array(arrayBuffer)
+
+    // Upload to Supabase Storage
+    const { data, error } = await supabase.storage.from(bucketName).upload(fileName, buffer, {
       contentType: file.type,
+      upsert: false,
     })
 
     if (error) {
-      console.error("Supabase storage upload error:", error)
-      return NextResponse.json({ error: `Failed to upload file: ${error.message}` }, { status: 500 })
+      console.error("Supabase upload error:", error)
+      return NextResponse.json({ error: "Failed to upload file" }, { status: 500 })
     }
 
     // Get public URL
-    const { data: publicUrlData } = supabase.storage.from("tmm-india-bucket").getPublicUrl(filePath)
+    const { data: urlData } = supabase.storage.from(bucketName).getPublicUrl(fileName)
 
-    if (!publicUrlData || !publicUrlData.publicUrl) {
-      return NextResponse.json({ error: "Failed to get public URL for the uploaded file." }, { status: 500 })
-    }
-
-    return NextResponse.json({ success: true, url: publicUrlData.publicUrl }, { status: 200 })
-  } catch (err) {
-    console.error("POST /api/upload crashed:", err)
-    return NextResponse.json(
-      { error: "Internal server error", details: (err as Error).message || "Unknown error" },
-      { status: 500 },
-    )
+    return NextResponse.json({
+      success: true,
+      url: urlData.publicUrl,
+      fileName: fileName,
+      fileSize: file.size,
+      fileType: file.type,
+    })
+  } catch (error) {
+    console.error("Upload error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

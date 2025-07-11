@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { Document, Page, pdfjs } from "react-pdf"
 import "react-pdf/dist/Page/AnnotationLayer.css"
 import "react-pdf/dist/Page/TextLayer.css"
@@ -13,10 +13,12 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/b
 
 interface FlipbookViewerProps {
   pdfUrl: string
+  isOpen: boolean
   onClose: () => void
+  title: string
 }
 
-export default function FlipbookViewer({ pdfUrl, onClose }: FlipbookViewerProps) {
+export default function FlipbookViewer({ pdfUrl, isOpen, onClose, title }: FlipbookViewerProps) {
   const [numPages, setNumPages] = useState<number | null>(null)
   const [pageNumber, setPageNumber] = useState(1)
   const [scale, setScale] = useState(1.0)
@@ -42,43 +44,67 @@ export default function FlipbookViewer({ pdfUrl, onClose }: FlipbookViewerProps)
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
-      if (event.key === "ArrowLeft") {
-        changePage(-1)
-      } else if (event.key === "ArrowRight") {
-        changePage(1)
-      } else if (event.key === "Escape" && isFullscreen) {
-        setIsFullscreen(false)
+      if (!isOpen) return
+
+      switch (event.key) {
+        case "ArrowLeft":
+          changePage(-1)
+          break
+        case "ArrowRight":
+          changePage(1)
+          break
+        case "Escape":
+          if (isFullscreen) {
+            setIsFullscreen(false)
+          } else {
+            onClose()
+          }
+          break
+        case "+":
+          setScale((prev) => Math.min(prev + 0.2, 3))
+          break
+        case "-":
+          setScale((prev) => Math.max(prev - 0.2, 0.5))
+          break
       }
     },
-    [changePage, isFullscreen],
+    [changePage, isOpen, isFullscreen, onClose],
   )
 
   useEffect(() => {
-    document.addEventListener("keydown", handleKeyDown)
+    if (isOpen) {
+      document.addEventListener("keydown", handleKeyDown)
+      document.body.style.overflow = "hidden" // Prevent body scrolling when modal is open
+    } else {
+      document.removeEventListener("keydown", handleKeyDown)
+      document.body.style.overflow = "unset"
+    }
     return () => {
       document.removeEventListener("keydown", handleKeyDown)
+      document.body.style.overflow = "unset"
     }
-  }, [handleKeyDown])
+  }, [isOpen, handleKeyDown])
 
   useEffect(() => {
-    if (isFullscreen) {
-      if (viewerRef.current && !document.fullscreenElement) {
-        viewerRef.current.requestFullscreen().catch((err) => {
-          console.error(`Error attempting to enable fullscreen mode: ${err.message} (${err.name})`)
-          setIsFullscreen(false) // Revert if failed
-        })
-      }
-    } else {
-      if (document.fullscreenElement) {
-        document.exitFullscreen().catch((err) => {
-          console.error(`Error attempting to exit fullscreen mode: ${err.message} (${err.name})`)
-        })
-      }
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement)
     }
-  }, [isFullscreen])
+    document.addEventListener("fullscreenchange", handleFullscreenChange)
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange)
+    }
+  }, [])
 
   const toggleFullscreen = useCallback(() => {
-    setIsFullscreen((prev) => !prev)
+    if (!document.fullscreenElement) {
+      viewerRef.current?.requestFullscreen().catch((err) => {
+        console.error(`Error attempting to enable fullscreen mode: ${err.message} (${err.name})`)
+      })
+    } else {
+      document.exitFullscreen().catch((err) => {
+        console.error(`Error attempting to exit fullscreen mode: ${err.message} (${err.name})`)
+      })
+    }
   }, [])
 
   const handleZoom = useCallback((value: number[]) => {
@@ -93,49 +119,48 @@ export default function FlipbookViewer({ pdfUrl, onClose }: FlipbookViewerProps)
     setRotation((prev) => (prev - 90 + 360) % 360)
   }, [])
 
-  const renderPage = useCallback(
-    ({ pageIndex }: { pageIndex: number }) => {
-      // Determine if it's a single page or a spread
-      const isSinglePage = numPages === 1 || pageIndex === 0 || pageIndex === numPages - 1
-      const isLeftPage = pageIndex % 2 === 0 // Assuming 0-indexed, even is left, odd is right for spreads
-
-      return (
-        <div
-          className={`flipbook-page ${isSinglePage ? "w-full" : "w-1/2"} h-full flex-shrink-0`}
-          style={{
-            transform: `scale(${scale}) rotate(${rotation}deg)`,
-            transformOrigin: "center",
-            transition: "transform 0.2s ease-out",
-          }}
-        >
-          <Page
-            pageNumber={pageIndex + 1} // react-pdf uses 1-indexed page numbers
-            renderAnnotationLayer={true}
-            renderTextLayer={true}
-            width={isFullscreen ? window.innerWidth / (isSinglePage ? 1 : 2) : undefined}
-            height={isFullscreen ? window.innerHeight : undefined}
-            scale={scale}
-            rotate={rotation}
-            className="w-full h-full object-contain"
-          />
-        </div>
-      )
-    },
-    [scale, rotation, isFullscreen, numPages],
-  )
+  if (!isOpen) return null
 
   return (
     <div ref={viewerRef} className={`fixed inset-0 z-[9999] flex flex-col bg-gray-100 ${isFullscreen ? "p-0" : "p-4"}`}>
-      {/* Top Bar with Close Button */}
-      <div className="absolute top-4 right-4 z-50">
-        <Button variant="ghost" size="icon" onClick={onClose} className="bg-white rounded-full shadow-md">
-          <X className="h-6 w-6 text-gray-700" />
-          <span className="sr-only">Close Viewer</span>
-        </Button>
+      {/* Top Bar with Controls */}
+      <div className="absolute top-0 left-0 right-0 p-4 bg-gray-900 text-white flex justify-between items-center shadow-lg z-50">
+        <h2 className="text-lg font-semibold">{title}</h2>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setScale((prev) => Math.max(0.5, prev - 0.1))}
+            className="text-white hover:bg-gray-700"
+          >
+            <ZoomOut className="h-4 w-4" />
+          </Button>
+          <span className="text-sm">{Math.round(scale * 100)}%</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setScale((prev) => Math.min(3.0, prev + 0.1))}
+            className="text-white hover:bg-gray-700"
+          >
+            <ZoomIn className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={rotateCounterClockwise} className="text-white hover:bg-gray-700">
+            <RotateCcw className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={rotateClockwise} className="text-white hover:bg-gray-700">
+            <RotateCw className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={toggleFullscreen} className="text-white hover:bg-gray-700">
+            {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={onClose} className="text-white hover:bg-gray-700">
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* PDF Viewer Area */}
-      <div className="flex-1 flex justify-center items-center overflow-hidden relative">
+      <div className="flex-1 flex justify-center items-center overflow-hidden relative bg-gray-800">
         <Document
           file={pdfUrl}
           onLoadSuccess={onDocumentLoadSuccess}
@@ -146,58 +171,77 @@ export default function FlipbookViewer({ pdfUrl, onClose }: FlipbookViewerProps)
               {/* Render current page and potentially next page for spread */}
               {pageNumber % 2 !== 0 && pageNumber < numPages ? ( // Odd page number, show spread
                 <div className="flex h-full">
-                  {renderPage({ pageIndex: pageNumber - 1 })}
-                  {renderPage({ pageIndex: pageNumber })}
+                  <Page
+                    pageNumber={pageNumber}
+                    scale={scale}
+                    rotate={rotation}
+                    renderAnnotationLayer={true}
+                    renderTextLayer={true}
+                    className="react-pdf__Page"
+                  />
+                  <Page
+                    pageNumber={pageNumber + 1}
+                    scale={scale}
+                    rotate={rotation}
+                    renderAnnotationLayer={true}
+                    renderTextLayer={true}
+                    className="react-pdf__Page"
+                  />
                 </div>
               ) : (
                 // Even page number or last page, show single page
-                <div className="flex h-full">{renderPage({ pageIndex: pageNumber - 1 })}</div>
+                <div className="flex h-full">
+                  <Page
+                    pageNumber={pageNumber}
+                    scale={scale}
+                    rotate={rotation}
+                    renderAnnotationLayer={true}
+                    renderTextLayer={true}
+                    className="react-pdf__Page"
+                  />
+                </div>
               )}
             </div>
           )}
         </Document>
       </div>
 
-      {/* Controls */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-4 bg-gray-800 text-white p-3 rounded-lg shadow-lg z-50">
-        <Button variant="ghost" size="icon" onClick={() => changePage(-1)} disabled={pageNumber === 1}>
-          <ChevronLeft className="h-5 w-5" />
-          <span className="sr-only">Previous Page</span>
-        </Button>
-        <span className="text-sm font-medium">
-          Page {pageNumber} of {numPages || "..."}
-        </span>
-        <Button variant="ghost" size="icon" onClick={() => changePage(1)} disabled={pageNumber === numPages}>
-          <ChevronRight className="h-5 w-5" />
-          <span className="sr-only">Next Page</span>
+      {/* Footer Controls */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gray-900 text-white flex justify-center items-center space-x-6 shadow-lg z-50">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => changePage(-1)}
+          disabled={pageNumber === 1}
+          className="text-white hover:bg-gray-700"
+        >
+          <ChevronLeft className="h-4 w-4 mr-1" />
+          Previous
         </Button>
 
-        <div className="flex items-center gap-2 ml-4">
-          <Button variant="ghost" size="icon" onClick={() => setScale((prev) => Math.max(0.5, prev - 0.1))}>
-            <ZoomOut className="h-5 w-5" />
-            <span className="sr-only">Zoom Out</span>
-          </Button>
-          <Slider value={[scale * 100]} onValueChange={handleZoom} min={50} max={200} step={10} className="w-[100px]" />
-          <Button variant="ghost" size="icon" onClick={() => setScale((prev) => Math.min(2.0, prev + 0.1))}>
-            <ZoomIn className="h-5 w-5" />
-            <span className="sr-only">Zoom In</span>
-          </Button>
+        <div className="flex items-center space-x-4">
+          <span className="text-sm">
+            Page {pageNumber} of {numPages || "..."}
+          </span>
+          <Slider
+            value={[pageNumber]}
+            onValueChange={(val) => setPageNumber(val[0])}
+            min={1}
+            max={numPages || 1}
+            step={1}
+            className="w-32"
+          />
         </div>
 
-        <div className="flex items-center gap-2 ml-4">
-          <Button variant="ghost" size="icon" onClick={rotateCounterClockwise}>
-            <RotateCcw className="h-5 w-5" />
-            <span className="sr-only">Rotate Counter-Clockwise</span>
-          </Button>
-          <Button variant="ghost" size="icon" onClick={rotateClockwise}>
-            <RotateCw className="h-5 w-5" />
-            <span className="sr-only">Rotate Clockwise</span>
-          </Button>
-        </div>
-
-        <Button variant="ghost" size="icon" onClick={toggleFullscreen} className="ml-4">
-          {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
-          <span className="sr-only">{isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}</span>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => changePage(1)}
+          disabled={pageNumber === numPages}
+          className="text-white hover:bg-gray-700"
+        >
+          Next
+          <ChevronRight className="h-4 w-4 ml-1" />
         </Button>
       </div>
     </div>
