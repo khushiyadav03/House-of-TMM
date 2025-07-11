@@ -80,7 +80,8 @@ export default function Home() {
   async function safeJson(res: Response) {
     try {
       return await res.json()
-    } catch {
+    } catch (e) {
+      console.error("Failed to parse JSON response:", e, "Response text:", await res.text())
       return null
     }
   }
@@ -102,11 +103,12 @@ export default function Home() {
       const videosData = await safeJson(videosResponse)
       const brandsData = await safeJson(brandsResponse)
 
-      // Bail early if any endpoint failed
-      if (!articlesResponse.ok) throw new Error(articlesData?.error ?? "Articles API error")
-      if (!magazinesResponse.ok) throw new Error(magazinesData?.error ?? "Magazines API error")
-      if (!videosResponse.ok) throw new Error(videosData?.error ?? "Videos API error")
-      if (!brandsResponse.ok) throw new Error(brandsData?.error ?? "Brands API error")
+      // Bail early if any endpoint failed or returned null JSON
+      if (!articlesResponse.ok || articlesData === null) throw new Error(articlesData?.error ?? "Articles API error")
+      if (!magazinesResponse.ok || magazinesData === null)
+        throw new Error(magazinesData?.error ?? "Magazines API error")
+      if (!videosResponse.ok || videosData === null) throw new Error(videosData?.error ?? "Videos API error")
+      if (!brandsResponse.ok || brandsData === null) throw new Error(brandsData?.error ?? "Brands API error")
 
       const allArticles = articlesData.articles || []
       const allMagazines = magazinesData || []

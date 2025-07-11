@@ -1,81 +1,94 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { NextResponse, type NextRequest } from "next/server"
+import { getSupabaseServer } from "@/lib/supabase" // Import the function
 
+/**
+ * GET /api/articles
+ * Fetches articles with optional filtering, pagination, and sorting.
+ * Query parameters:
+ * - limit: number of articles to return (default: 10)
+ * - offset: number of articles to skip (default: 0)
+ * - category: filter by category slug
+ * - search: search by title or excerpt
+ * - sort: 'created_at_desc' (default) or 'publish_date_desc'
+ */
 export async function GET(request: NextRequest) {
   try {
+    const supabase = getSupabaseServer() // Get the server-side Supabase client
     const { searchParams } = new URL(request.url)
-    const category = searchParams.get("category")
-    const page = Number.parseInt(searchParams.get("page") || "1")
-    let limit = Number.parseInt(searchParams.get("limit") || "12")
-    const search = searchParams.get("search")
+    const limit = Number.parseInt(searchParams.get("limit") || "10")
+    const offset = Number.parseInt(searchParams.get("offset") || "0")
+    const categorySlug = searchParams.get("category")
+    const searchTerm = searchParams.get("search")
     const sort = searchParams.get("sort") || "created_at_desc"
 
-    // Optional limit param e.g. /api/articles?limit=100
-    limit = Number(searchParams.get("limit") ?? limit)
-
-    let query = supabase.from("articles").select(`
+    let query = supabase
+      .from("articles")
+      .select(
+        `
         *,
-        categories!inner(*)
-      `)
+        article_categories(
+          categories(name, slug)
+        )
+      `,
+        { count: "exact" },
+      )
+      .eq("status", "published")
 
-    // Filter by category if provided
-    if (category) {
-      query = query.eq("categories.slug", category)
+    if (categorySlug) {
+      query = query.eq("article_categories.categories.slug", categorySlug)
     }
 
-    // Search functionality
-    if (search) {
-      query = query.or(`title.ilike.%${search}%,content.ilike.%${search}%,author.ilike.%${search}%`)
+    if (searchTerm) {
+      query = query.or(`title.ilike.%${searchTerm}%,excerpt.ilike.%${searchTerm}%`)
     }
 
-    // Sorting
     if (sort === "created_at_desc") {
       query = query.order("created_at", { ascending: false })
     } else if (sort === "publish_date_desc") {
       query = query.order("publish_date", { ascending: false })
+    } else {
+      query = query.order("created_at", { ascending: false }) // Default sort
     }
 
-    // Pagination
-    const from = (page - 1) * limit
-    const to = from + limit - 1
-    query = query.range(from, to)
+    query = query.range(offset, offset + limit - 1)
 
-    const { data: articles, error, count } = await query
+    const { data, error, count } = await query
 
     if (error) {
-      console.error("Database error:", error)
+      if ((error as any).code === "42P01") {
+        console.warn("articles table not found → returning []")
+        return NextResponse.json({ articles: [], total: 0 })
+      }
+      console.error("Articles fetch error:", error)
       return NextResponse.json({ error: "Failed to fetch articles" }, { status: 500 })
     }
 
-    return NextResponse.json({
-      articles: articles || [],
-      total: count || 0,
-      totalPages: Math.ceil((count || 0) / limit),
-      currentPage: page,
-    })
-  } catch (error) {
-    console.error("API error:", error)
+    // Flatten categories for easier consumption
+    const articles = data?.map((article) => ({
+      ...article,
+      category: article.article_categories?.[0]?.categories?.name || "Uncategorized",
+      slug: article.slug, // Ensure slug is always present
+    }))
+
+    return NextResponse.json({ articles: articles ?? [], total: count ?? 0 })
+  } catch (err) {
+    console.error("GET /api/articles crashed:", err)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
+/**
+ * POST /api/articles
+ * Creates a new article.
+ * Accepts: { title, slug, content, excerpt, image_url, author, publish_date, status, featured, category_ids }
+ */
 export async function POST(request: NextRequest) {
   try {
+    const supabase = getSupabaseServer() // Get the server-side Supabase client
     const body = await request.json()
-    const { title, content, excerpt, image_url, author, categories, featured = false } = body
+    const { title, slug, content, excerpt, image_url, author, publish_date, status, featured, category_ids } = body
 
-    if (!title || !content || !author) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
-    }
-
-    // Generate slug from title
-    const slug = title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "")
-
-    // Insert article
-    const { data: article, error: articleError } = await supabase
+    const { data: articleData, error: articleError } = await supabase
       .from("articles")
       .insert({
         title,
@@ -84,34 +97,41 @@ export async function POST(request: NextRequest) {
         excerpt,
         image_url,
         author,
-        featured,
-        publish_date: new Date().toISOString().split("T")[0],
+        publish_date,
+        status,
+        featured: Boolean(featured),
+        likes: 0,
+        views: 0,
       })
       .select()
       .single()
 
     if (articleError) {
+      if ((articleError as any).code === "23505") {
+        return NextResponse.json({ error: "Article with this slug already exists" }, { status: 409 })
+      }
       console.error("Article insert error:", articleError)
       return NextResponse.json({ error: "Failed to create article" }, { status: 500 })
     }
 
-    // Link categories if provided
-    if (categories && categories.length > 0) {
-      const categoryLinks = categories.map((categoryId: number) => ({
-        article_id: article.id,
+    // Link categories
+    if (category_ids && category_ids.length > 0) {
+      const articleCategories = category_ids.map((categoryId: number) => ({
+        article_id: articleData.id,
         category_id: categoryId,
       }))
+      const { error: linkError } = await supabase.from("article_categories").insert(articleCategories)
 
-      const { error: categoryError } = await supabase.from("article_categories").insert(categoryLinks)
-
-      if (categoryError) {
-        console.error("Category link error:", categoryError)
+      if (linkError) {
+        console.error("Article category link error:", linkError)
+        // Optionally, roll back the article creation or handle this gracefully
+        return NextResponse.json({ error: "Failed to link categories to article" }, { status: 500 })
       }
     }
 
-    return NextResponse.json(article, { status: 201 })
-  } catch (error) {
-    console.error("API error:", error)
+    return NextResponse.json({ success: true, article: articleData })
+  } catch (err) {
+    console.error("POST /api/articles crashed:", err)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

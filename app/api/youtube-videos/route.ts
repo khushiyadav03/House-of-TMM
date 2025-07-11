@@ -1,12 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { supabaseServer as supabase } from "@/lib/supabase"
+import { getSupabaseServer } from "@/lib/supabase" // Import the function
 
 /**
  * GET – list active YouTube videos (main + recommended)
  */
 export async function GET() {
   try {
-    const { data, error } = await supabase!
+    const supabase = getSupabaseServer() // Get the server-side Supabase client
+    const { data, error } = await supabase
       .from("youtube_videos")
       .select("*")
       .eq("is_active", true)
@@ -35,10 +36,11 @@ export async function GET() {
  */
 export async function POST(request: NextRequest) {
   try {
+    const supabase = getSupabaseServer() // Get the server-side Supabase client
     const body = await request.json()
     const { title, video_url, thumbnail_url, is_main_video, display_order } = body
 
-    const { data, error } = await supabase!
+    const { data, error } = await supabase
       .from("youtube_videos")
       .insert(
         {

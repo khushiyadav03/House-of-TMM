@@ -1,52 +1,115 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 
-/**
- * In the browser we can only expose the public ANON key.
- * On the server (Route Handlers, Server Actions, RSC) we prefer
- * the SERVICE-ROLE key if it exists to bypass RLS safely.
- *
- * We memo-ise per-runtime (one instance for the server process,
- * one instance for the browser) to avoid re-creates on hot-reload.
- */
-
 const PUBLIC_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 const PUBLIC_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY // server only
 const PRIVATE_URL = process.env.SUPABASE_URL // server only (optional)
 
-function createSupabase(isServer: boolean): SupabaseClient {
-  const url = (isServer ? (PRIVATE_URL ?? PUBLIC_URL) : PUBLIC_URL) as string
-  if (!url) throw new Error("Missing Supabase URL env-var")
+let _serverClient: SupabaseClient | undefined
+let _browserClient: SupabaseClient | undefined
 
-  const key = isServer ? (SERVICE_ROLE ?? PUBLIC_ANON) : PUBLIC_ANON
-  if (!key) throw new Error("Missing Supabase key env-var")
-
-  return createClient(url, key, { auth: { persistSession: false } })
+/**
+ * Returns a Supabase client instance for server-side operations (API Routes, Server Components, Server Actions).
+ * It prioritizes the SERVICE_ROLE_KEY for RLS bypass, falling back to the public ANON key.
+ * This client is a singleton for the server environment.
+ */
+export function getSupabaseServer(): SupabaseClient {
+  if (!_serverClient) {
+    const url = (PRIVATE_URL ?? PUBLIC_URL) as string
+    if (!url) throw new Error("Missing Supabase URL env-var for server client")
+    const key = (SERVICE_ROLE ?? PUBLIC_ANON) as string
+    if (!key) throw new Error("Missing Supabase key env-var for server client")
+    _serverClient = createClient(url, key, { auth: { persistSession: false } })
+  }
+  return _serverClient
 }
 
-// server singleton
-let _serverClient: SupabaseClient | undefined
-export const supabaseServer = (() => {
-  if (typeof window !== "undefined") return undefined
-  if (!_serverClient) _serverClient = createSupabase(true)
-  return _serverClient
-})()
-
-// browser singleton
-let _browserClient: SupabaseClient | undefined
-export const supabaseBrowser = (() => {
-  if (typeof window === "undefined") return undefined
-  if (!_browserClient) _browserClient = createSupabase(false)
+/**
+ * Returns a Supabase client instance for client-side operations (Client Components).
+ * It uses the public ANON key and is a singleton for the browser environment.
+ * This function should only be called in a browser context.
+ */
+export function getSupabaseBrowser(): SupabaseClient {
+  if (typeof window === "undefined") {
+    throw new Error("getSupabaseBrowser should only be called in a browser environment.")
+  }
+  if (!_browserClient) {
+    const url = PUBLIC_URL as string
+    if (!url) throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL env-var for browser client")
+    const key = PUBLIC_ANON as string
+    if (!key) throw new Error("Missing NEXT_PUBLIC_SUPABASE_ANON_KEY env-var for browser client")
+    _browserClient = createClient(url, key, { auth: { persistSession: false } })
+  }
   return _browserClient
-})()
+}
 
-/* ------------------------------------------------------------------ */
-/* Shared domain types – keep the rest of the file as it was          */
-/* ------------------------------------------------------------------ */
+// ---------- Domain Types (keeping them for completeness) ----------
+export interface Article {
+  id: number
+  title: string
+  slug: string
+  content: string
+  excerpt: string
+  image_url: string
+  author: string
+  publish_date: string
+  created_at: string
+  updated_at: string
+  featured: boolean
+  likes: number
+  views: number
+  categories?: Category[]
+}
 
-export type Article = {}
-export type Category = {}
-export type Magazine = {}
-export type CoverPhoto = {}
-export type YoutubeVideo = {}
-export type BrandImage = {}
+export interface Category {
+  id: number
+  name: string
+  slug: string
+  description: string
+  created_at: string
+}
+
+export interface Magazine {
+  id: number
+  title: string
+  description: string
+  cover_image_url: string
+  pdf_file_path: string
+  price: number
+  issue_date: string
+  created_at: string
+  updated_at: string
+  sales_count: number
+  status: string
+}
+
+export interface CoverPhoto {
+  id: number
+  title: string
+  image_url: string
+  description: string
+  category: string
+  is_active: boolean
+  display_order: number
+  created_at: string
+}
+
+export interface YoutubeVideo {
+  id: number
+  title: string
+  video_url: string
+  thumbnail_url: string
+  is_main_video: boolean
+  is_active: boolean
+  display_order: number
+  created_at: string
+}
+
+export interface BrandImage {
+  id: number
+  title: string
+  image_url: string
+  is_active: boolean
+  display_order: number
+  created_at: string
+}
