@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createServerComponentClient } from "@/lib/supabase"
+import { supabase } from "@/lib/supabase"
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,8 +9,6 @@ export async function GET(request: NextRequest) {
     const limit = Number.parseInt(searchParams.get("limit") || "12")
     const search = searchParams.get("search")
     const sort = searchParams.get("sort") || "created_at_desc"
-
-    const supabase = createServerComponentClient()
 
     let query = supabase.from("articles").select(`
         *,
@@ -66,8 +64,6 @@ export async function POST(request: NextRequest) {
     if (!title || !content || !author) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
-
-    const supabase = createServerComponentClient()
 
     // Generate slug from title
     const slug = title
