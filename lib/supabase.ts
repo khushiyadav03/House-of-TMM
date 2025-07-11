@@ -1,140 +1,68 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js"
+import { createClient } from "@supabase/supabase-js"
 
-const PUBLIC_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
-const PUBLIC_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY // server only
-const PRIVATE_URL = process.env.SUPABASE_URL // server only (optional, usually same as PUBLIC_URL)
+// Server-side Supabase client (for API routes and Server Components)
+let supabaseServerInstance: ReturnType<typeof createClient> | null = null
 
-let _serverClient: SupabaseClient | undefined
-let _browserClient: SupabaseClient | undefined
-
-/**
- * Returns a Supabase client instance for server-side operations (API Routes, Server Components, Server Actions).
- * It prioritizes the SERVICE_ROLE_KEY for RLS bypass, falling back to the public ANON key.
- * This client is a singleton for the server environment.
- */
-export function getSupabaseServer(): SupabaseClient {
-  if (!_serverClient) {
-    const url = (PRIVATE_URL || PUBLIC_URL) as string
-    if (!url) {
-      console.error(
-        "Missing Supabase URL env-var for server client. Please set NEXT_PUBLIC_SUPABASE_URL or SUPABASE_URL.",
-      )
-      throw new Error("Supabase URL not configured for server.")
-    }
-
-    let key: string | undefined
-    if (SERVICE_ROLE) {
-      key = SERVICE_ROLE
-    } else if (PUBLIC_ANON) {
-      key = PUBLIC_ANON
-      console.warn(
-        "SUPABASE_SERVICE_ROLE_KEY not found. Falling back to NEXT_PUBLIC_SUPABASE_ANON_KEY for server client. Ensure RLS policies allow operations.",
-      )
-    } else {
-      console.error(
-        "Missing Supabase key env-var for server client. Please set SUPABASE_SERVICE_ROLE_KEY or NEXT_PUBLIC_SUPABASE_ANON_KEY.",
-      )
-      throw new Error("Supabase key not configured for server.")
-    }
-
-    _serverClient = createClient(url, key, { auth: { persistSession: false } })
+export function getSupabaseServer() {
+  if (supabaseServerInstance) {
+    return supabaseServerInstance
   }
-  return _serverClient
-}
 
-/**
- * Returns a Supabase client instance for client-side operations (Client Components).
- * It uses the public ANON key and is a singleton for the browser environment.
- * This function should only be called in a browser context.
- */
-export function getSupabaseBrowser(): SupabaseClient {
-  if (typeof window === "undefined") {
-    throw new Error("getSupabaseBrowser should only be called in a browser environment.")
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!supabaseUrl) {
+    console.error("Error: NEXT_PUBLIC_SUPABASE_URL is not defined.")
+    throw new Error("Supabase URL is not defined.")
   }
-  if (!_browserClient) {
-    const url = PUBLIC_URL as string
-    if (!url) {
-      console.error("Missing NEXT_PUBLIC_SUPABASE_URL env-var for browser client.")
-      throw new Error("Supabase URL not configured for browser.")
-    }
-    const key = PUBLIC_ANON as string
-    if (!key) {
-      console.error("Missing NEXT_PUBLIC_SUPABASE_ANON_KEY env-var for browser client.")
-      throw new Error("Supabase key not configured for browser.")
-    }
-    _browserClient = createClient(url, key, { auth: { persistSession: false } })
+
+  if (serviceRoleKey) {
+    supabaseServerInstance = createClient(supabaseUrl, serviceRoleKey, {
+      auth: {
+        persistSession: false,
+      },
+    })
+    console.log("Supabase server client initialized with SERVICE_ROLE_KEY.")
+  } else if (anonKey) {
+    supabaseServerInstance = createClient(supabaseUrl, anonKey, {
+      auth: {
+        persistSession: false,
+      },
+    })
+    console.warn(
+      "Warning: SUPABASE_SERVICE_ROLE_KEY is not defined. Falling back to NEXT_PUBLIC_SUPABASE_ANON_KEY for server client. This is not recommended for sensitive operations.",
+    )
+  } else {
+    console.error("Error: Neither SUPABASE_SERVICE_ROLE_KEY nor NEXT_PUBLIC_SUPABASE_ANON_KEY is defined.")
+    throw new Error("Supabase API keys are not defined for server client.")
   }
-  return _browserClient
+
+  return supabaseServerInstance
 }
 
-// ---------- Domain Types (keeping them for completeness) ----------
-export interface Article {
-  id: number
-  title: string
-  slug: string
-  content: string
-  excerpt: string
-  image_url: string
-  author: string
-  publish_date: string
-  created_at: string
-  updated_at: string
-  featured: boolean
-  likes: number
-  views: number
-  categories?: Category[]
-}
+// Client-side Supabase client (for browser-side code)
+let supabaseBrowserInstance: ReturnType<typeof createClient> | null = null
 
-export interface Category {
-  id: number
-  name: string
-  slug: string
-  description: string
-  created_at: string
-}
+export function getSupabaseBrowser() {
+  if (supabaseBrowserInstance) {
+    return supabaseBrowserInstance
+  }
 
-export interface Magazine {
-  id: number
-  title: string
-  description: string
-  cover_image_url: string
-  pdf_file_path: string
-  price: number
-  issue_date: string
-  created_at: string
-  updated_at: string
-  sales_count: number
-  status: string
-}
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-export interface CoverPhoto {
-  id: number
-  title: string
-  image_url: string
-  description: string
-  category: string
-  is_active: boolean
-  display_order: number
-  created_at: string
-}
+  if (!supabaseUrl || !anonKey) {
+    console.error("Error: NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY is not defined for browser client.")
+    throw new Error("Supabase URL or Anon Key is not defined for browser client.")
+  }
 
-export interface YoutubeVideo {
-  id: number
-  title: string
-  video_url: string
-  thumbnail_url: string
-  is_main_video: boolean
-  is_active: boolean
-  display_order: number
-  created_at: string
-}
+  supabaseBrowserInstance = createClient(supabaseUrl, anonKey, {
+    auth: {
+      persistSession: true,
+    },
+  })
+  console.log("Supabase browser client initialized with ANON_KEY.")
 
-export interface BrandImage {
-  id: number
-  title: string
-  image_url: string
-  is_active: boolean
-  display_order: number
-  created_at: string
+  return supabaseBrowserInstance
 }
