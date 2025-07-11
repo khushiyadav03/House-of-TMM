@@ -5,8 +5,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import Header from "./Header"
-import Footer from "./Footer"
+// Removed Header and Footer imports as they are now in app/layout.tsx
 
 // Defining interfaces for props
 interface Article {
@@ -21,10 +20,11 @@ interface Article {
 
 interface ArticleLayoutProps {
   article: Article
-  showHeader?: boolean
+  showHeader?: boolean // This prop is now effectively ignored as Header is in root layout
 }
 
-const ArticleLayout: React.FC<ArticleLayoutProps> = ({ article, showHeader = true }) => {
+const ArticleLayout: React.FC<ArticleLayoutProps> = ({ article }) => {
+  // Removed showHeader from destructuring
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -61,7 +61,7 @@ const ArticleLayout: React.FC<ArticleLayoutProps> = ({ article, showHeader = tru
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      {showHeader && <Header />}
+      {/* Removed showHeader && <Header /> */}
       <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <article className="p-6">
           <div className="relative w-full h-[400px] overflow-hidden mb-6">
@@ -187,7 +187,7 @@ const ArticleLayout: React.FC<ArticleLayoutProps> = ({ article, showHeader = tru
           )}
         </article>
       </main>
-      <Footer />
+      {/* Removed Footer */}
     </div>
   )
 }

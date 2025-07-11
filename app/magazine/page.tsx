@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import Footer from "../../components/Footer"
-import Header from "../../components/Header"
+// Removed Footer and Header imports as they are now in app/layout.tsx
 import MagazinePaymentModal from "../../components/MagazinePaymentModal"
 import FlipbookViewer from "../../components/FlipbookViewer"
 import type { Magazine } from "@/lib/supabase"
@@ -48,7 +47,7 @@ export default function MagazinePage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <Header />
+      {/* Removed Header */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Magazine</h1>
@@ -73,6 +72,7 @@ export default function MagazinePage() {
                   height={405}
                   className="object-cover"
                 />
+                {/* Removed category label */}
                 <div className="absolute bottom-4 right-4">
                   <span className="bg-green-600 text-white px-3 py-1 text-sm font-semibold">₹{magazine.price}</span>
                 </div>
@@ -147,7 +147,7 @@ export default function MagazinePage() {
         />
       )}
 
-      <Footer />
+      {/* Removed Footer */}
     </div>
   )
 }

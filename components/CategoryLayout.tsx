@@ -5,8 +5,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import Header from "./Header"
-import Footer from "./Footer"
+// Removed Header and Footer imports as they are now in app/layout.tsx
 
 interface Article {
   id: number
@@ -61,21 +60,21 @@ export default function CategoryLayout({ categoryName, categorySlug, description
   if (loading) {
     return (
       <div className="min-h-screen bg-white">
-        <Header />
+        {/* Removed Header */}
         <div className="flex items-center justify-center py-20">
           <div className="text-center">
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-black"></div>
             <p className="mt-4 text-gray-600">Loading {categoryName} articles...</p>
           </div>
         </div>
-        <Footer />
+        {/* Removed Footer */}
       </div>
     )
   }
 
   return (
     <div className="min-h-screen bg-white">
-      <Header />
+      {/* Removed Header */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">{categoryName}</h1>
@@ -91,7 +90,7 @@ export default function CategoryLayout({ categoryName, categorySlug, description
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {articles.map((article) => (
                 <Link key={article.id} href={`/articles/${article.slug}`}>
-                  <article className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 cursor-pointer">
+                  <article className="bg-white shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 cursor-pointer">
                     <div className="relative w-full h-[405px]">
                       <Image
                         src={article.image_url || "/placeholder.svg?height=405&width=270"}
@@ -100,11 +99,7 @@ export default function CategoryLayout({ categoryName, categorySlug, description
                         className="object-cover"
                         sizes="270px"
                       />
-                      <div className="absolute top-4 left-4">
-                        <span className="bg-black text-white px-3 py-1 text-sm font-semibold rounded">
-                          {categoryName}
-                        </span>
-                      </div>
+                      {/* Removed category label */}
                     </div>
                     <div className="p-4">
                       <h2 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">{article.title}</h2>
@@ -154,7 +149,7 @@ export default function CategoryLayout({ categoryName, categorySlug, description
 
         {children}
       </div>
-      <Footer />
+      {/* Removed Footer */}
     </div>
   )
 }

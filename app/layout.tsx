@@ -2,6 +2,7 @@ import type React from "react"
 import { Montserrat } from "next/font/google"
 import { cn } from "@/lib/utils"
 import Header from "../components/Header"
+import Footer from "../components/Footer" // Import Footer
 import "./globals.css"
 
 const montserrat = Montserrat({
@@ -12,7 +13,7 @@ const montserrat = Montserrat({
 export const metadata = {
   title: "House of TMM",
   description: "A modern fashion and lifestyle blog",
-    generator: 'v0.dev'
+  generator: "v0.dev",
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={cn("min-h-screen bg-white text-gray-700", montserrat.variable)}>
         <Header />
         <main>{children}</main>
+        <Footer /> {/* Render Footer here */}
       </body>
     </html>
   )
