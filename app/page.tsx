@@ -116,8 +116,8 @@ export default function Home() {
 
       const allArticles = articlesData.articles || []
       const allMagazines = magazinesData || []
-      const allVideos = videosData || []
-      const allBrands = brandsData || []
+      const allVideos = videosData.videos || [] // Access .videos property
+      const allBrands = brandsData.brandImages || [] // Access .brandImages property
 
       // Set carousel articles (first 8 articles)
       setCarouselArticles(allArticles.slice(0, 8))
