@@ -1,9 +1,7 @@
 "use client"
-
-import Link from "next/link"
+import Footer from "../../../components/Footer"
 
 import CategoryLayout from "../../../components/CategoryLayout"
-import Footer from "../../../components/Footer"
 
 const techAutoArticles = [
   {
@@ -75,34 +73,6 @@ export default function TechAutoPage() {
       categorySlug="tech-auto"
       description="Stay updated with the latest in automotive technology, electric vehicles, and transportation innovations."
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {techAutoArticles.map((article) => (
-          <Link key={article.id} href={`/articles/${article.slug}`}>
-            <article className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 cursor-pointer">
-              <div className="relative h-[360px] w-full">
-                <img
-                  src={article.image || "/placeholder.svg"}
-                  alt={article.title}
-                  className="object-cover w-full h-full"
-                />
-                <div className="absolute top-4 left-4">
-                  <span className="bg-blue-600 text-white px-3 py-1 text-sm font-semibold rounded">
-                    {article.category}
-                  </span>
-                </div>
-              </div>
-              <div className="p-4">
-                <h2 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">{article.title}</h2>
-                <p className="text-gray-600 mb-3 line-clamp-2 text-sm">{article.excerpt}</p>
-                <div className="flex items-center justify-between text-xs text-gray-500">
-                  <span>{article.author}</span>
-                  <span>{article.date}</span>
-                </div>
-              </div>
-            </article>
-          </Link>
-        ))}
-      </div>
       {/* Pagination */}
       <div className="flex justify-center items-center space-x-2 mt-12">
         <button className="px-3 py-2 text-gray-500 hover:text-gray-700 disabled:opacity-50" disabled>

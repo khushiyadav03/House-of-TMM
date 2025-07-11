@@ -1,9 +1,9 @@
 "use client"
 
 import Link from "next/link"
+import Footer from "../../../components/Footer"
 
 import CategoryLayout from "../../../components/CategoryLayout"
-import Footer from "../../../components/Footer"
 
 const editorialShootArticles = [
   {
@@ -53,7 +53,7 @@ export default function EditorialShootPage() {
     <CategoryLayout
       categoryName="Editorial Shoot"
       categorySlug="editorial-shoot"
-      description="Dive into the creative process behind our most stunning editorial photography and fashion storytelling."
+      description="Behind the scenes of our most captivating editorial photography sessions."
     >
       <div className="min-h-screen bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

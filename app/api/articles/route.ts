@@ -1,79 +1,56 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { createServerComponentClient } from "@/lib/supabase"
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
+    const category = searchParams.get("category")
     const page = Number.parseInt(searchParams.get("page") || "1")
     const limit = Number.parseInt(searchParams.get("limit") || "12")
-    const category = searchParams.get("category")
-    const status = searchParams.get("status") // only add a filter when it’s provided
-    const featured = searchParams.get("featured")
+    const search = searchParams.get("search")
+    const sort = searchParams.get("sort") || "created_at_desc"
 
-    const offset = (page - 1) * limit
+    const supabase = createServerComponentClient()
 
-    let query = supabase
-      .from("articles")
-      .select(
-        `
+    let query = supabase.from("articles").select(`
         *,
-        article_categories(
-          categories(*)
-        )
-      `,
-        { count: "exact" },
-      )
-      .order("publish_date", { ascending: false })
+        categories!inner(*)
+      `)
 
-    // Apply status filter only when explicitly supplied
-    if (status && status !== "all") {
-      query = query.eq("status", status)
-    }
-
+    // Filter by category if provided
     if (category) {
-      query = supabase
-        .from("articles")
-        .select(
-          `
-          *,
-          article_categories!inner(
-            categories!inner(slug)
-          )
-        `,
-          { count: "exact" },
-        )
-        .eq("article_categories.categories.slug", category)
-        .order("publish_date", { ascending: false })
-
-      // If status is supplied, add that filter to the category query as well
-      if (status && status !== "all") {
-        query = query.eq("status", status)
-      }
+      query = query.eq("categories.slug", category)
     }
 
-    if (featured === "true") {
-      query = query.eq("featured", true)
+    // Search functionality
+    if (search) {
+      query = query.or(`title.ilike.%${search}%,content.ilike.%${search}%,author.ilike.%${search}%`)
     }
 
-    const { data, error, count } = await query.range(offset, offset + limit - 1)
+    // Sorting
+    if (sort === "created_at_desc") {
+      query = query.order("created_at", { ascending: false })
+    } else if (sort === "publish_date_desc") {
+      query = query.order("publish_date", { ascending: false })
+    }
+
+    // Pagination
+    const from = (page - 1) * limit
+    const to = from + limit - 1
+    query = query.range(from, to)
+
+    const { data: articles, error, count } = await query
 
     if (error) {
       console.error("Database error:", error)
       return NextResponse.json({ error: "Failed to fetch articles" }, { status: 500 })
     }
 
-    // Transform data to include category names
-    const transformedData =
-      data?.map((article) => ({
-        ...article,
-        category: article.article_categories?.[0]?.categories?.name || "Uncategorized",
-      })) || []
-
     return NextResponse.json({
-      articles: transformedData,
+      articles: articles || [],
       total: count || 0,
-      page,
       totalPages: Math.ceil((count || 0) / limit),
+      currentPage: page,
     })
   } catch (error) {
     console.error("API error:", error)
@@ -84,31 +61,19 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const {
-      title,
-      slug,
-      content,
-      excerpt,
-      image_url,
-      author,
-      publish_date,
-      status = "draft",
-      scheduled_date,
-      featured = false,
-      category_ids = [],
-    } = body
+    const { title, content, excerpt, image_url, author, categories, featured = false } = body
 
-    // Validate required fields
-    if (!title || !slug || !publish_date) {
-      return NextResponse.json({ error: "Missing required fields: title, slug, publish_date" }, { status: 400 })
+    if (!title || !content || !author) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    // Check if slug already exists
-    const { data: existingArticle } = await supabase.from("articles").select("id").eq("slug", slug).single()
+    const supabase = createServerComponentClient()
 
-    if (existingArticle) {
-      return NextResponse.json({ error: "Article with this slug already exists" }, { status: 400 })
-    }
+    // Generate slug from title
+    const slug = title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "")
 
     // Insert article
     const { data: article, error: articleError } = await supabase
@@ -120,10 +85,8 @@ export async function POST(request: NextRequest) {
         excerpt,
         image_url,
         author,
-        publish_date,
-        status,
-        scheduled_date,
         featured,
+        publish_date: new Date().toISOString().split("T")[0],
       })
       .select()
       .single()
@@ -133,18 +96,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to create article" }, { status: 500 })
     }
 
-    // Insert category relationships
-    if (category_ids.length > 0) {
-      const categoryRelations = category_ids.map((categoryId: number) => ({
+    // Link categories if provided
+    if (categories && categories.length > 0) {
+      const categoryLinks = categories.map((categoryId: number) => ({
         article_id: article.id,
         category_id: categoryId,
       }))
 
-      const { error: categoryError } = await supabase.from("article_categories").insert(categoryRelations)
+      const { error: categoryError } = await supabase.from("article_categories").insert(categoryLinks)
 
       if (categoryError) {
-        console.error("Category relation error:", categoryError)
-        // Don't fail the request, just log the error
+        console.error("Category link error:", categoryError)
       }
     }
 

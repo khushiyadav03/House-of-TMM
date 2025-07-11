@@ -9,8 +9,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { Loader2, CreditCard, Lock } from "lucide-react"
-import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js"
-import { getStripe } from "@/lib/stripe"
 
 interface Magazine {
   id: number
@@ -27,43 +25,21 @@ interface MagazinePaymentModalProps {
   onSuccess: () => void
 }
 
-const stripePromise = getStripe()
-
-const cardElementOptions = {
-  style: {
-    base: {
-      fontSize: "16px",
-      color: "#424770",
-      "::placeholder": {
-        color: "#aab7c4",
-      },
-    },
-    invalid: {
-      color: "#9e2146",
-    },
-  },
-}
-
-function PaymentForm({
-  magazine,
-  onClose,
-  onSuccess,
-}: { magazine: Magazine; onClose: () => void; onSuccess: () => void }) {
-  const stripe = useStripe()
-  const elements = useElements()
+export default function MagazinePaymentModal({ isOpen, onClose, magazine, onSuccess }: MagazinePaymentModalProps) {
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [email, setEmail] = useState("")
   const [name, setName] = useState("")
+  const [cardNumber, setCardNumber] = useState("")
+  const [expiryDate, setExpiryDate] = useState("")
+  const [cvv, setCvv] = useState("")
+
+  if (!magazine) return null
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
 
-    if (!stripe || !elements) {
-      return
-    }
-
-    if (!email || !name) {
+    if (!email || !name || !cardNumber || !expiryDate || !cvv) {
       setError("Please fill in all required fields")
       return
     }
@@ -72,139 +48,19 @@ function PaymentForm({
     setError(null)
 
     try {
-      // Create payment intent
-      const response = await fetch("/api/create-payment-intent", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          amount: magazine.price,
-          currency: "usd",
-          magazineId: magazine.id,
-          customerEmail: email,
-        }),
-      })
+      // Simulate payment processing
+      await new Promise((resolve) => setTimeout(resolve, 2000))
 
-      const { clientSecret, error: intentError } = await response.json()
-
-      if (intentError) {
-        throw new Error(intentError)
-      }
-
-      // Confirm payment
-      const cardElement = elements.getElement(CardElement)
-      if (!cardElement) {
-        throw new Error("Card element not found")
-      }
-
-      const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: {
-          card: cardElement,
-          billing_details: {
-            name,
-            email,
-          },
-        },
-      })
-
-      if (confirmError) {
-        throw new Error(confirmError.message)
-      }
-
-      if (paymentIntent?.status === "succeeded") {
-        // Confirm payment on server
-        const confirmResponse = await fetch("/api/confirm-payment", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            paymentIntentId: paymentIntent.id,
-          }),
-        })
-
-        const confirmResult = await confirmResponse.json()
-
-        if (confirmResult.success) {
-          alert(`Payment successful! You can now access ${magazine.title}`)
-          onSuccess()
-          onClose()
-        } else {
-          throw new Error(confirmResult.error || "Payment confirmation failed")
-        }
-      }
+      // For demo purposes, always succeed
+      alert(`Payment successful! You can now access ${magazine.title}`)
+      onSuccess()
+      onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Payment failed")
+      setError("Payment failed. Please try again.")
     } finally {
       setIsProcessing(false)
     }
   }
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-4">
-        <div>
-          <Label htmlFor="email">Email Address *</Label>
-          <Input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="your@email.com"
-            required
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="name">Full Name *</Label>
-          <Input
-            id="name"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="John Doe"
-            required
-          />
-        </div>
-
-        <div>
-          <Label>Card Details *</Label>
-          <div className="mt-2 p-3 border rounded-md">
-            <CardElement options={cardElementOptions} />
-          </div>
-        </div>
-      </div>
-
-      {error && <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md">{error}</div>}
-
-      <div className="flex items-center justify-between pt-4 border-t">
-        <div className="text-sm text-gray-500 flex items-center">
-          <Lock className="w-4 h-4 mr-1" />
-          Secured by Stripe
-        </div>
-        <div className="text-lg font-semibold">${magazine.price.toFixed(2)}</div>
-      </div>
-
-      <Button type="submit" disabled={!stripe || isProcessing} className="w-full" size="lg">
-        {isProcessing ? (
-          <>
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Processing...
-          </>
-        ) : (
-          <>
-            <CreditCard className="w-4 h-4 mr-2" />
-            Pay ${magazine.price.toFixed(2)}
-          </>
-        )}
-      </Button>
-    </form>
-  )
-}
-
-export default function MagazinePaymentModal({ isOpen, onClose, magazine, onSuccess }: MagazinePaymentModalProps) {
-  if (!magazine) return null
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -225,15 +81,100 @@ export default function MagazinePaymentModal({ isOpen, onClose, magazine, onSucc
                 <div className="flex-1">
                   <h3 className="font-semibold">{magazine.title}</h3>
                   {magazine.description && <p className="text-sm text-gray-600 mt-1">{magazine.description}</p>}
-                  <p className="text-lg font-bold text-green-600 mt-2">${magazine.price.toFixed(2)}</p>
+                  <p className="text-lg font-bold text-green-600 mt-2">₹{magazine.price}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Elements stripe={stripePromise}>
-            <PaymentForm magazine={magazine} onClose={onClose} onSuccess={onSuccess} />
-          </Elements>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="email">Email Address *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="name">Full Name *</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="John Doe"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="cardNumber">Card Number *</Label>
+                <Input
+                  id="cardNumber"
+                  type="text"
+                  value={cardNumber}
+                  onChange={(e) => setCardNumber(e.target.value)}
+                  placeholder="1234 5678 9012 3456"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="expiryDate">Expiry Date *</Label>
+                  <Input
+                    id="expiryDate"
+                    type="text"
+                    value={expiryDate}
+                    onChange={(e) => setExpiryDate(e.target.value)}
+                    placeholder="MM/YY"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="cvv">CVV *</Label>
+                  <Input
+                    id="cvv"
+                    type="text"
+                    value={cvv}
+                    onChange={(e) => setCvv(e.target.value)}
+                    placeholder="123"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            {error && <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md">{error}</div>}
+
+            <div className="flex items-center justify-between pt-4 border-t">
+              <div className="text-sm text-gray-500 flex items-center">
+                <Lock className="w-4 h-4 mr-1" />
+                Secured Payment
+              </div>
+              <div className="text-lg font-semibold">₹{magazine.price}</div>
+            </div>
+
+            <Button type="submit" disabled={isProcessing} className="w-full" size="lg">
+              {isProcessing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  Pay ₹{magazine.price}
+                </>
+              )}
+            </Button>
+          </form>
         </div>
       </DialogContent>
     </Dialog>

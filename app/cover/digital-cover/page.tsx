@@ -1,7 +1,6 @@
 "use client"
 
 import Link from "next/link"
-
 import CategoryLayout from "../../../components/CategoryLayout"
 import Footer from "../../../components/Footer"
 
@@ -53,7 +52,7 @@ export default function DigitalCoverPage() {
     <CategoryLayout
       categoryName="Digital Cover"
       categorySlug="digital-cover"
-      description="Explore the cutting-edge world of digital fashion and virtual experiences that are shaping the future of style."
+      description="Explore our stunning digital cover stories and exclusive photo shoots."
     >
       <div className="min-h-screen bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

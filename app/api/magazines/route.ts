@@ -1,60 +1,69 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { createServerComponentClient } from "@/lib/supabase"
 
-/**
- * GET /api/magazines
- * Returns every magazine ordered by issue_date (newest first).
- */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const { data, error } = await supabase.from("magazines").select("*").order("issue_date", { ascending: false })
+    const { searchParams } = new URL(request.url)
+    const sort = searchParams.get("sort") || "created_at_desc"
+
+    const supabase = createServerComponentClient()
+
+    let query = supabase.from("magazines").select("*")
+
+    // Sorting
+    if (sort === "created_at_desc") {
+      query = query.order("created_at", { ascending: false })
+    } else if (sort === "issue_date_desc") {
+      query = query.order("issue_date", { ascending: false })
+    }
+
+    const { data: magazines, error } = await query
 
     if (error) {
       console.error("Database error:", error)
       return NextResponse.json({ error: "Failed to fetch magazines" }, { status: 500 })
     }
 
-    return NextResponse.json(data ?? [])
-  } catch (err) {
-    console.error("API error:", err)
+    return NextResponse.json(magazines || [])
+  } catch (error) {
+    console.error("API error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
-/**
- * POST /api/magazines
- * Creates a new magazine.  Required fields: title, price, issue_date.
- */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { title, description, cover_image_url, pdf_file_path, price, issue_date } = body
 
-    if (!title || !price || !issue_date) {
-      return NextResponse.json({ error: "Missing required fields: title, price, issue_date" }, { status: 400 })
+    if (!title || !price) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    const { data, error } = await supabase
+    const supabase = createServerComponentClient()
+
+    const { data: magazine, error } = await supabase
       .from("magazines")
       .insert({
         title,
         description,
         cover_image_url,
         pdf_file_path,
-        price: Number(price),
-        issue_date,
+        price,
+        issue_date: issue_date || new Date().toISOString().split("T")[0],
+        status: "published",
       })
       .select()
       .single()
 
     if (error) {
-      console.error("Database error:", error)
+      console.error("Magazine insert error:", error)
       return NextResponse.json({ error: "Failed to create magazine" }, { status: 500 })
     }
 
-    return NextResponse.json(data, { status: 201 })
-  } catch (err) {
-    console.error("API error:", err)
+    return NextResponse.json(magazine, { status: 201 })
+  } catch (error) {
+    console.error("API error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
