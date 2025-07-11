@@ -1,7 +1,14 @@
 "use client"
 
 import { useState } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,9 +17,6 @@ import { useToast } from "@/hooks/use-toast"
 interface Magazine {
   id: number
   title: string
-  issue_date: string
-  cover_image_url: string
-  pdf_url: string
   price: number
 }
 
@@ -20,7 +24,7 @@ interface MagazinePaymentModalProps {
   isOpen: boolean
   onClose: () => void
   magazine: Magazine
-  onPaymentSuccess: (magazineId: number) => void
+  onPaymentSuccess: () => void
 }
 
 export default function MagazinePaymentModal({
@@ -29,63 +33,79 @@ export default function MagazinePaymentModal({
   magazine,
   onPaymentSuccess,
 }: MagazinePaymentModalProps) {
-  const [email, setEmail] = useState("")
-  const [paymentProcessing, setPaymentProcessing] = useState(false)
+  const [cardNumber, setCardNumber] = useState("")
+  const [expiryDate, setExpiryDate] = useState("")
+  const [cvc, setCvc] = useState("")
+  const [nameOnCard, setNameOnCard] = useState("")
+  const [loading, setLoading] = useState(false)
   const { toast } = useToast()
 
   const handlePayment = async () => {
-    setPaymentProcessing(true)
+    setLoading(true)
     try {
-      // Step 1: Create Payment Intent
-      const paymentIntentResponse = await fetch("/api/create-payment-intent", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ amount: magazine.price * 100, currency: "inr" }), // Amount in paisa, currency INR
-      })
-      const paymentIntentData = await paymentIntentResponse.json()
-
-      if (!paymentIntentResponse.ok) {
-        throw new Error(paymentIntentData.error || "Failed to create payment intent.")
-      }
-
-      const { clientSecret } = paymentIntentData
-
-      // Simulate payment confirmation (in a real app, this would involve Stripe.js or similar)
-      // For now, we'll directly call the confirm-payment API route
-      const confirmPaymentResponse = await fetch("/api/confirm-payment", {
+      // Simulate payment processing
+      const response = await fetch("/api/create-payment-intent", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          paymentIntentId: paymentIntentData.id,
-          email,
+          amount: magazine.price * 100, // Amount in smallest currency unit (e.g., paise for INR)
+          currency: "inr", // Changed currency to INR
           magazineId: magazine.id,
         }),
       })
 
-      const confirmPaymentData = await confirmPaymentResponse.json()
+      const { clientSecret, error: paymentIntentError } = await response.json()
 
-      if (!confirmPaymentResponse.ok) {
-        throw new Error(confirmPaymentData.error || "Payment confirmation failed.")
+      if (paymentIntentError) {
+        throw new Error(paymentIntentError)
       }
 
-      toast({
-        title: "Payment Successful!",
-        description: `You have successfully purchased ${magazine.title}.`,
-        variant: "default",
+      // Simulate confirming payment (in a real app, you'd use Stripe.js confirmCardPayment)
+      const confirmResponse = await fetch("/api/confirm-payment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          paymentIntentId: "pi_mock_success_123", // Mock payment intent ID
+          cardNumber,
+          expiryDate,
+          cvc,
+          nameOnCard,
+        }),
       })
-      onPaymentSuccess(magazine.id)
+
+      const { success, error: confirmError } = await confirmResponse.json()
+
+      if (confirmError) {
+        throw new Error(confirmError)
+      }
+
+      if (success) {
+        toast({
+          title: "Payment Successful!",
+          description: `You have successfully purchased ${magazine.title}.`,
+          variant: "default",
+        })
+        onPaymentSuccess()
+      } else {
+        toast({
+          title: "Payment Failed",
+          description: "There was an issue processing your payment. Please try again.",
+          variant: "destructive",
+        })
+      }
     } catch (error: any) {
+      console.error("Payment error:", error)
       toast({
-        title: "Payment Failed",
-        description: error.message || "There was an error processing your payment.",
+        title: "Payment Error",
+        description: error.message || "An unexpected error occurred during payment.",
         variant: "destructive",
       })
     } finally {
-      setPaymentProcessing(false)
+      setLoading(false)
     }
   }
 
@@ -94,32 +114,58 @@ export default function MagazinePaymentModal({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Purchase {magazine.title}</DialogTitle>
-          <DialogDescription>Complete your purchase for ₹{magazine.price.toFixed(2)}.</DialogDescription>
+          <DialogDescription>Complete your payment for **₹{magazine.price}**.</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="email" className="text-right">
-              Email
-            </Label>
+          <div className="grid gap-2">
+            <Label htmlFor="cardNumber">Card Number</Label>
             <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="col-span-3"
-              placeholder="your@example.com"
+              id="cardNumber"
+              placeholder="**** **** **** ****"
+              value={cardNumber}
+              onChange={(e) => setCardNumber(e.target.value)}
+              required
             />
           </div>
-          {/* In a real application, you would integrate a payment gateway UI here (e.g., Stripe Elements) */}
-          <div className="text-center text-sm text-gray-500">
-            {/* Placeholder for card details input */}
-            <p>Card details input would go here in a real integration.</p>
-            <p>For demonstration, clicking "Pay Now" will simulate a successful payment.</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="expiryDate">Expiry Date</Label>
+              <Input
+                id="expiryDate"
+                placeholder="MM/YY"
+                value={expiryDate}
+                onChange={(e) => setExpiryDate(e.target.value)}
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="cvc">CVC</Label>
+              <Input
+                id="cvc"
+                placeholder="***"
+                type="password"
+                value={cvc}
+                onChange={(e) => setCvc(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="nameOnCard">Name on Card</Label>
+            <Input
+              id="nameOnCard"
+              placeholder="John Doe"
+              value={nameOnCard}
+              onChange={(e) => setNameOnCard(e.target.value)}
+              required
+            />
           </div>
         </div>
-        <Button onClick={handlePayment} disabled={paymentProcessing || !email}>
-          {paymentProcessing ? "Processing..." : `Pay Now ₹${magazine.price.toFixed(2)}`}
-        </Button>
+        <DialogFooter>
+          <Button onClick={handlePayment} disabled={loading}>
+            {loading ? "Processing..." : `Pay ₹${magazine.price}`}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )

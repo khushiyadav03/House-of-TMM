@@ -1,79 +1,136 @@
-"use client"
+import CategoryLayout from "@/components/CategoryLayout"
 
-import CategoryLayout from "../../../components/CategoryLayout"
-
+// Mock data for Fitness & Selfcare articles
 const fitnessSelfcareArticles = [
   {
     id: 1,
-    title: "Home Workouts: Stay Fit Without the Gym",
-    slug: "home-workouts-no-gym",
-    image_url: "https://picsum.photos/270/405?random=81",
-    author: "Fitness Coach Rahul",
-    publish_date: "2024-12-24",
+    title: "Building a Home Workout Routine That Works",
+    slug: "home-workout-routine",
+    image_url: "/placeholder.svg?height=405&width=270&text=Fitness+Selfcare+1",
+    author: "AI Assistant",
+    publish_date: "2024-07-01T10:00:00Z",
+    excerpt: "Effective exercises and tips for staying fit without leaving your house.",
     category: "Fitness & Selfcare",
-    excerpt: "Effective exercises you can do from the comfort of your home.",
   },
   {
     id: 2,
-    title: "Mindful Skincare: A Holistic Approach to Beauty",
-    slug: "mindful-skincare-holistic-beauty",
-    image_url: "https://picsum.photos/270/405?random=82",
-    author: "Beauty Expert Anjali",
-    publish_date: "2024-12-22",
+    title: "The Importance of Rest Days in Your Fitness Journey",
+    slug: "importance-rest-days",
+    image_url: "/placeholder.svg?height=405&width=270&text=Fitness+Selfcare+2",
+    author: "AI Assistant",
+    publish_date: "2024-06-28T10:00:00Z",
+    excerpt: "Understand why recovery is as crucial as your workouts for muscle growth and overall health.",
     category: "Fitness & Selfcare",
-    excerpt: "Embrace a skincare routine that nourishes both your skin and soul.",
   },
   {
     id: 3,
-    title: "Building Strength: A Beginner's Guide to Weight Training",
-    slug: "building-strength-weight-training",
-    image_url: "https://picsum.photos/270/405?random=83",
-    author: "Trainer Vikram",
-    publish_date: "2024-12-20",
+    title: "Mind-Body Connection: Enhancing Your Fitness with Mindfulness",
+    slug: "mind-body-connection",
+    image_url: "/placeholder.svg?height=405&width=270&text=Fitness+Selfcare+3",
+    author: "AI Assistant",
+    publish_date: "2024-06-25T10:00:00Z",
+    excerpt: "How integrating mindfulness can improve your physical performance and mental well-being.",
     category: "Fitness & Selfcare",
-    excerpt: "Start your strength journey with essential tips and exercises.",
   },
   {
     id: 4,
-    title: "Self-Care Rituals for a Busy Life",
-    slug: "self-care-rituals-busy-life",
-    image_url: "https://picsum.photos/270/405?random=84",
-    author: "Wellness Blogger",
-    publish_date: "2024-12-18",
+    title: "Nutrition for Athletes: Fueling Your Performance",
+    slug: "nutrition-for-athletes",
+    image_url: "/placeholder.svg?height=405&width=270&text=Fitness+Selfcare+4",
+    author: "AI Assistant",
+    publish_date: "2024-06-20T10:00:00Z",
+    excerpt: "Dietary guidelines and meal plans to optimize energy and recovery for active individuals.",
     category: "Fitness & Selfcare",
-    excerpt: "Simple practices to prioritize your well-being amidst daily demands.",
   },
   {
     id: 5,
-    title: "Nutrition for Athletes: Fueling Your Performance",
-    slug: "nutrition-for-athletes-performance",
-    image_url: "https://picsum.photos/270/405?random=85",
-    author: "Sports Dietitian",
-    publish_date: "2024-12-16",
+    title: "Self-Care Rituals for a Busy Schedule",
+    slug: "selfcare-rituals-busy-schedule",
+    image_url: "/placeholder.svg?height=405&width=270&text=Fitness+Selfcare+5",
+    author: "AI Assistant",
+    publish_date: "2024-06-15T10:00:00Z",
+    excerpt: "Simple yet effective self-care practices you can incorporate into your hectic daily life.",
     category: "Fitness & Selfcare",
-    excerpt: "Optimize your diet to enhance athletic performance and recovery.",
   },
   {
     id: 6,
     title: "The Benefits of Outdoor Workouts",
     slug: "benefits-outdoor-workouts",
-    image_url: "https://picsum.photos/270/405?random=86",
-    author: "Nature Enthusiast",
-    publish_date: "2024-12-14",
+    image_url: "/placeholder.svg?height=405&width=270&text=Fitness+Selfcare+6",
+    author: "AI Assistant",
+    publish_date: "2024-06-10T10:00:00Z",
+    excerpt: "Discover how exercising in nature can boost your mood and physical health.",
     category: "Fitness & Selfcare",
-    excerpt: "Discover how exercising outdoors can boost your mood and fitness.",
   },
-]
-
-fitnessSelfcareArticles.sort((a, b) => new Date(b.publish_date).getTime() - new Date(a.publish_date).getTime())
+  {
+    id: 7,
+    title: "Hydration Hacks for Optimal Performance",
+    slug: "hydration-hacks",
+    image_url: "/placeholder.svg?height=405&width=270&text=Fitness+Selfcare+7",
+    author: "AI Assistant",
+    publish_date: "2024-06-05T10:00:00Z",
+    excerpt: "Tips and tricks to ensure you're adequately hydrated for peak physical and mental function.",
+    category: "Fitness & Selfcare",
+  },
+  {
+    id: 8,
+    title: "Strength Training for Women: Dispelling Myths",
+    slug: "strength-training-women",
+    image_url: "/placeholder.svg?height=405&width=270&text=Fitness+Selfcare+8",
+    author: "AI Assistant",
+    publish_date: "2024-06-01T10:00:00Z",
+    excerpt: "Breaking down misconceptions and highlighting the benefits of strength training for women.",
+    category: "Fitness & Selfcare",
+  },
+  {
+    id: 9,
+    title: "The Role of Sleep in Muscle Recovery",
+    slug: "sleep-muscle-recovery",
+    image_url: "/placeholder.svg?height=405&width=270&text=Fitness+Selfcare+9",
+    author: "AI Assistant",
+    publish_date: "2024-05-28T10:00:00Z",
+    excerpt: "Understanding how quality sleep contributes to physical repair and growth after exercise.",
+    category: "Fitness & Selfcare",
+  },
+  {
+    id: 10,
+    title: "Beginner's Guide to Meditation for Stress Relief",
+    slug: "meditation-stress-relief",
+    image_url: "/placeholder.svg?height=405&width=270&text=Fitness+Selfcare+10",
+    author: "AI Assistant",
+    publish_date: "2024-05-25T10:00:00Z",
+    excerpt: "Simple meditation techniques to calm your mind and reduce daily stress.",
+    category: "Fitness & Selfcare",
+  },
+  {
+    id: 11,
+    title: "Yoga Poses for Flexibility and Balance",
+    slug: "yoga-flexibility-balance",
+    image_url: "/placeholder.svg?height=405&width=270&text=Fitness+Selfcare+11",
+    author: "AI Assistant",
+    publish_date: "2024-05-20T10:00:00Z",
+    excerpt: "A series of yoga postures designed to improve your range of motion and stability.",
+    category: "Fitness & Selfcare",
+  },
+  {
+    id: 12,
+    title: "Creating a Personalized Fitness Plan",
+    slug: "personalized-fitness-plan",
+    image_url: "/placeholder.svg?height=405&width=270&text=Fitness+Selfcare+12",
+    author: "AI Assistant",
+    publish_date: "2024-05-15T10:00:00Z",
+    excerpt: "Steps to design a workout and nutrition plan tailored to your individual goals and needs.",
+    category: "Fitness & Selfcare",
+  },
+].sort((a, b) => new Date(b.publish_date).getTime() - new Date(a.publish_date).getTime()) // Sort by date
 
 export default function FitnessSelfcarePage() {
   return (
     <CategoryLayout
       categoryName="Fitness & Selfcare"
       categorySlug="fitness-selfcare"
-      description="Your guide to fitness routines, self-care practices, and maintaining a healthy lifestyle."
-      initialArticles={fitnessSelfcareArticles} // Pass static articles to CategoryLayout
+      description="Empower yourself with articles on fitness routines, self-care practices, and healthy living."
+      initialArticles={fitnessSelfcareArticles}
     />
   )
 }

@@ -1,60 +1,136 @@
-"use client"
+import CategoryLayout from "@/components/CategoryLayout"
 
-import CategoryLayout from "../../../components/CategoryLayout"
-
+// Mock data for Editorial Shoot articles
 const editorialShootArticles = [
   {
     id: 1,
-    title: "Behind the Scenes: Luxury Fashion Editorial",
-    slug: "luxury-fashion-editorial-bts",
-    image_url: "https://picsum.photos/270/405?random=21",
-    author: "Isabella Rodriguez",
-    publish_date: "2024-12-20",
+    title: "Editorial: Summer Vibes Collection",
+    slug: "editorial-summer-vibes",
+    image_url: "/placeholder.svg?height=405&width=270&text=Editorial+Shoot+1",
+    author: "AI Assistant",
+    publish_date: "2024-07-01T10:00:00Z",
+    excerpt: "A vibrant collection capturing the essence of summer fashion and lifestyle.",
     category: "Editorial Shoot",
-    excerpt: "An exclusive look at the making of our latest luxury fashion editorial...",
   },
   {
     id: 2,
-    title: "Street Style Photography: Urban Elegance",
-    slug: "street-style-urban-elegance",
-    image_url: "https://picsum.photos/270/405?random=22",
-    author: "Thomas Anderson",
-    publish_date: "2024-12-18",
+    title: "Behind the Scenes: Autumn Elegance",
+    slug: "behind-scenes-autumn-elegance",
+    image_url: "/placeholder.svg?height=405&width=270&text=Editorial+Shoot+2",
+    author: "AI Assistant",
+    publish_date: "2024-06-25T10:00:00Z",
+    excerpt: "Exclusive look at the making of our latest autumn fashion editorial.",
     category: "Editorial Shoot",
-    excerpt: "Capturing the essence of urban fashion in metropolitan settings...",
   },
   {
     id: 3,
-    title: "Minimalist Fashion: Less is More",
-    slug: "minimalist-fashion-editorial",
-    image_url: "https://picsum.photos/270/405?random=23",
-    author: "Grace Kim",
-    publish_date: "2024-12-16",
+    title: "Urban Chic: Street Style Photography",
+    slug: "urban-chic-street-style",
+    image_url: "/placeholder.svg?height=405&width=270&text=Editorial+Shoot+3",
+    author: "AI Assistant",
+    publish_date: "2024-06-20T10:00:00Z",
+    excerpt: "Capturing the raw and dynamic energy of city fashion.",
     category: "Editorial Shoot",
-    excerpt: "Exploring the beauty of simplicity in contemporary fashion...",
   },
   {
     id: 4,
-    title: "Avant-Garde Fashion: Breaking Boundaries",
-    slug: "avant-garde-fashion-boundaries",
-    image_url: "https://picsum.photos/270/405?random=24",
-    author: "Oliver Thompson",
-    publish_date: "2024-12-14",
+    title: "High Fashion in the Desert",
+    slug: "high-fashion-desert",
+    image_url: "/placeholder.svg?height=405&width=270&text=Editorial+Shoot+4",
+    author: "AI Assistant",
+    publish_date: "2024-06-15T10:00:00Z",
+    excerpt: "Stunning visuals from our latest editorial shot in the breathtaking desert landscape.",
     category: "Editorial Shoot",
-    excerpt: "Pushing the limits of conventional fashion through artistic expression...",
   },
-]
-
-// Sort articles by publish_date in descending order (newest first)
-editorialShootArticles.sort((a, b) => new Date(b.publish_date).getTime() - new Date(a.publish_date).getTime())
+  {
+    id: 5,
+    title: "Vintage Glamour: A Timeless Collection",
+    slug: "vintage-glamour-timeless",
+    image_url: "/placeholder.svg?height=405&width=270&text=Editorial+Shoot+5",
+    author: "AI Assistant",
+    publish_date: "2024-06-10T10:00:00Z",
+    excerpt: "Revisiting classic styles with a modern twist in our new editorial.",
+    category: "Editorial Shoot",
+  },
+  {
+    id: 6,
+    title: "The Art of Posing: A Model's Guide",
+    slug: "art-of-posing-model-guide",
+    image_url: "/placeholder.svg?height=405&width=270&text=Editorial+Shoot+6",
+    author: "AI Assistant",
+    publish_date: "2024-06-05T10:00:00Z",
+    excerpt: "Tips and tricks from top models on how to master the perfect pose for any shoot.",
+    category: "Editorial Shoot",
+  },
+  {
+    id: 7,
+    title: "Fashion Photography: Lighting Techniques",
+    slug: "fashion-photography-lighting",
+    image_url: "/placeholder.svg?height=405&width=270&text=Editorial+Shoot+7",
+    author: "AI Assistant",
+    publish_date: "2024-05-30T10:00:00Z",
+    excerpt: "Expert advice on using light to create stunning fashion photographs.",
+    category: "Editorial Shoot",
+  },
+  {
+    id: 8,
+    title: "Location Scouting for Editorial Shoots",
+    slug: "location-scouting-editorial",
+    image_url: "/placeholder.svg?height=405&width=270&text=Editorial+Shoot+8",
+    author: "AI Assistant",
+    publish_date: "2024-05-25T10:00:00Z",
+    excerpt: "How to find the perfect backdrop for your next fashion story.",
+    category: "Editorial Shoot",
+  },
+  {
+    id: 9,
+    title: "The Evolution of Editorial Fashion",
+    slug: "evolution-editorial-fashion",
+    image_url: "/placeholder.svg?height=405&width=270&text=Editorial+Shoot+9",
+    author: "AI Assistant",
+    publish_date: "2024-05-20T10:00:00Z",
+    excerpt: "A historical look at how fashion editorials have shaped trends and culture.",
+    category: "Editorial Shoot",
+  },
+  {
+    id: 10,
+    title: "Styling for the Camera: A Professional's Guide",
+    slug: "styling-for-camera",
+    image_url: "/placeholder.svg?height=405&width=270&text=Editorial+Shoot+10",
+    author: "AI Assistant",
+    publish_date: "2024-05-15T10:00:00Z",
+    excerpt: "Learn the secrets to creating visually stunning outfits for editorial spreads.",
+    category: "Editorial Shoot",
+  },
+  {
+    id: 11,
+    title: "The Power of Storytelling in Fashion Editorials",
+    slug: "storytelling-fashion-editorials",
+    image_url: "/placeholder.svg?height=405&width=270&text=Editorial+Shoot+11",
+    author: "AI Assistant",
+    publish_date: "2024-05-10T10:00:00Z",
+    excerpt: "How narratives and themes elevate fashion photography beyond mere clothing display.",
+    category: "Editorial Shoot",
+  },
+  {
+    id: 12,
+    title: "Collaborating with Creatives: A Successful Editorial",
+    slug: "collaborating-creatives-editorial",
+    image_url: "/placeholder.svg?height=405&width=270&text=Editorial+Shoot+12",
+    author: "AI Assistant",
+    publish_date: "2024-05-05T10:00:00Z",
+    excerpt: "Insights into effective teamwork between photographers, stylists, and models.",
+    category: "Editorial Shoot",
+  },
+].sort((a, b) => new Date(b.publish_date).getTime() - new Date(a.publish_date).getTime()) // Sort by date
 
 export default function EditorialShootPage() {
   return (
     <CategoryLayout
       categoryName="Editorial Shoot"
       categorySlug="editorial-shoot"
-      description="Dive into the creative process behind our most stunning editorial photography and fashion storytelling."
-      initialArticles={editorialShootArticles} // Pass static articles to CategoryLayout
+      description="Behind the scenes and stunning visuals from our exclusive fashion editorials."
+      initialArticles={editorialShootArticles}
     />
   )
 }

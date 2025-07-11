@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import { ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut, RotateCw } from "lucide-react"
 import Image from "next/image"
-import Button from "./Button" // Assuming Button component is imported from another file
+import { Button } from "@/components/ui/button" // Corrected import for Button
 
 interface FlipbookViewerProps {
   pdfUrl: string

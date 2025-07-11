@@ -9,7 +9,7 @@ import { Autoplay, Pagination } from "swiper/modules"
 import "swiper/css"
 import "swiper/css/pagination"
 import "swiper/css/scrollbar"
-import Footer from "../components/Footer"
+// Removed Footer import as it's now in app/layout.tsx
 
 interface Article {
   id: number
@@ -177,27 +177,27 @@ export default function Home() {
         <div className="carousel-wrapper">
           <Swiper
             modules={[Autoplay, Pagination]}
-            slidesPerView={2.5}
-            spaceBetween={0}
+            slidesPerView={2.5}\
+            spaceBetween={16} {/* Adjusted spaceBetween */}
             loop={true}
             loopAdditionalSlides={1}
             autoplay={{ delay: 3000, disableOnInteraction: false }}
             pagination={{ el: ".swiper-pagination", clickable: true }}
             breakpoints={{
-              1280: { slidesPerView: 2.5, spaceBetween: 0 },
-              1024: { slidesPerView: 2, spaceBetween: 0 },
-              768: { slidesPerView: 1.5, spaceBetween: 0 },
-              640: { slidesPerView: 1, spaceBetween: 0 },
-              0: { slidesPerView: 1, spaceBetween: 0 },
+              1280: { slidesPerView: 2.5, spaceBetween: 16 },
+              1024: { slidesPerView: 2, spaceBetween: 16 },
+              768: { slidesPerView: 1.5, spaceBetween: 16 },
+              640: { slidesPerView: 1, spaceBetween: 16 },
+              0: { slidesPerView: 1, spaceBetween: 16 },
             }}
             onSwiper={(swiper) => {
               swiperRef.current = swiper
             }}
           >
             {carouselArticles.map((article, index) => (
-              <SwiperSlide key={article.id} style={{ width: "324px", height: "500px" }}>
+              <SwiperSlide key={article.id}>
                 <Link href={`/articles/${article.slug}`} className="block">
-                  <div className="landscape-cover bg-none">
+                  <div className="landscape-cover bg-none" style={{ width: "324px", height: "500px" }}>
                     <Image
                       src={article.image_url || "/placeholder.svg?height=500&width=324"}
                       alt={article.title}
@@ -698,7 +698,7 @@ export default function Home() {
           </div>
         </section>
       </section>
-      <Footer />
+      {/* Removed Footer component as it's now in app/layout.tsx */}
     </div>
   )
 }
