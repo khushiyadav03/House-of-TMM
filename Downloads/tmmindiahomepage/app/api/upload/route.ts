@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
       .upload(filePath, file, {
         cacheControl: "3600",
         upsert: false
-      })
+    })
 
     if (error) {
       console.error("Supabase upload error:", {

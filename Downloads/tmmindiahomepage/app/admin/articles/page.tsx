@@ -253,25 +253,25 @@ export default function AdminArticles() {
   if (loading) {
     return (
       <AdminRoute>
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-black"></div>
-            <p className="mt-4 text-gray-600">Loading articles...</p>
-          </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-black"></div>
+          <p className="mt-4 text-gray-600">Loading articles...</p>
         </div>
+      </div>
       </AdminRoute>
     )
   }
 
   return (
     <AdminRoute>
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="mb-8 flex justify-between items-center">
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-4">Articles Management</h1>
-              <p className="text-xl text-gray-600">Manage all your articles and content</p>
-            </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="mb-8 flex justify-between items-center">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">Articles Management</h1>
+            <p className="text-xl text-gray-600">Manage all your articles and content</p>
+          </div>
             <div className="flex items-center gap-4">
               <button
                 onClick={handleRefresh}
@@ -281,13 +281,13 @@ export default function AdminArticles() {
               >
                 <RefreshCw className={`h-5 w-5 ${refreshing ? "animate-spin" : ""}`} />
               </button>
-              <Link
-                href="/admin/articles/new"
-                className="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors flex items-center gap-2"
-              >
-                <Plus className="h-5 w-5" />
-                New Article
-              </Link>
+          <Link
+            href="/admin/articles/new"
+            className="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors flex items-center gap-2"
+          >
+            <Plus className="h-5 w-5" />
+            New Article
+          </Link>
             </div>
           </div>
 
@@ -342,60 +342,60 @@ export default function AdminArticles() {
                 </div>
               </div>
             </div>
-          </div>
+        </div>
 
-          {/* Filters */}
-          <div className="bg-white p-6 rounded-lg shadow mb-6">
+        {/* Filters */}
+        <div className="bg-white p-6 rounded-lg shadow mb-6">
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                <input
-                  type="text"
-                  placeholder="Search articles..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-                />
-              </div>
-
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-              >
-                <option value="">All Categories</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.slug}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-              >
-                <option value="">All Status</option>
-                <option value="published">Published</option>
-                <option value="draft">Draft</option>
-                <option value="scheduled">Scheduled</option>
-              </select>
-
-              <button
-                onClick={() => {
-                  setSearchTerm("")
-                  setSelectedCategory("")
-                  setSelectedStatus("")
-                  setCurrentPage(1)
-                }}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
-              >
-                <Filter className="h-4 w-4" />
-                Clear Filters
-              </button>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+              <input
+                type="text"
+                placeholder="Search articles..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+              />
             </div>
+
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+            >
+              <option value="">All Categories</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.slug}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+            >
+              <option value="">All Status</option>
+              <option value="published">Published</option>
+              <option value="draft">Draft</option>
+              <option value="scheduled">Scheduled</option>
+            </select>
+
+            <button
+              onClick={() => {
+                setSearchTerm("")
+                setSelectedCategory("")
+                setSelectedStatus("")
+                setCurrentPage(1)
+              }}
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+            >
+              <Filter className="h-4 w-4" />
+              Clear Filters
+            </button>
           </div>
+        </div>
 
           {/* Bulk Actions */}
           {selectedArticles.length > 0 && (
@@ -442,8 +442,8 @@ export default function AdminArticles() {
             </div>
           )}
 
-          {/* Articles List */}
-          <div className="bg-white shadow rounded-lg overflow-hidden">
+        {/* Articles List */}
+        <div className="bg-white shadow rounded-lg overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900">
                 Articles ({articles.length} of {totalPages * articlesPerPage})
@@ -456,12 +456,12 @@ export default function AdminArticles() {
                   Select All
                 </button>
               </div>
-            </div>
+          </div>
 
-            <div className="divide-y divide-gray-200">
-              {articles.map((article) => (
+          <div className="divide-y divide-gray-200">
+            {articles.map((article) => (
                 <div key={article.id} className="p-6 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-start space-x-4">
+                <div className="flex items-start space-x-4">
                     <div className="flex items-center space-x-3">
                       <input
                         type="checkbox"
@@ -470,17 +470,17 @@ export default function AdminArticles() {
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                       />
                       <div className="flex-shrink-0">
-                        <Image
-                          src={article.image_url || "/placeholder.svg"}
-                          alt={article.title}
+                    <Image
+                      src={article.image_url || "/placeholder.svg"}
+                      alt={article.title}
                           width={80}
                           height={80}
                           className="rounded-lg object-cover"
-                        />
+                    />
                       </div>
-                    </div>
+                  </div>
 
-                    <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
                           <h3 className="text-lg font-semibold text-gray-900 truncate">
@@ -556,43 +556,43 @@ export default function AdminArticles() {
                           <span
                             key={category.id}
                             className="inline-block text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-800"
-                          >
+                        >
                             {category.name}
                           </span>
                         ))}
-                      </div>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
+        </div>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
+        {/* Pagination */}
+        {totalPages > 1 && (
               <div className="px-6 py-4 border-t border-gray-200">
                 <div className="flex items-center justify-between">
                   <div className="text-sm text-gray-700">
                     Page {currentPage} of {totalPages}
                   </div>
                   <div className="flex space-x-2">
-                    <button
+            <button
                       onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                      disabled={currentPage === 1}
+              disabled={currentPage === 1}
                       className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                    >
-                      Previous
-                    </button>
-                    <button
+            >
+              Previous
+            </button>
+              <button
                       onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                      disabled={currentPage === totalPages}
+              disabled={currentPage === totalPages}
                       className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                    >
-                      Next
-                    </button>
+            >
+              Next
+            </button>
                   </div>
                 </div>
-              </div>
-            )}
+          </div>
+        )}
           </div>
         </div>
 

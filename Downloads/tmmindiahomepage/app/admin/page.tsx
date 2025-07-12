@@ -142,20 +142,20 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <AdminRoute>
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-black"></div>
-            <p className="mt-4 text-gray-600">Loading dashboard...</p>
-          </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-black"></div>
+          <p className="mt-4 text-gray-600">Loading dashboard...</p>
         </div>
+      </div>
       </AdminRoute>
     )
   }
 
   return (
     <AdminRoute>
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           {/* Header */}
           <div className="mb-8 flex justify-between items-center">
             <div>
@@ -180,9 +180,9 @@ export default function AdminDashboard() {
                 Logout
               </button>
             </div>
-          </div>
+        </div>
 
-          {/* Stats Grid */}
+        {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div className="bg-white p-6 rounded-lg shadow">
               <div className="flex items-center">
@@ -206,19 +206,19 @@ export default function AdminDashboard() {
                   <p className="text-2xl font-bold text-gray-900">{stats.totalMagazines}</p>
                 </div>
               </div>
-            </div>
+        </div>
 
             <div className="bg-white p-6 rounded-lg shadow">
               <div className="flex items-center">
                 <div className="p-2 bg-purple-100 rounded-lg">
                   <Eye className="h-6 w-6 text-purple-600" />
-                </div>
+                    </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Total Views</p>
                   <p className="text-2xl font-bold text-gray-900">{stats.totalViews.toLocaleString()}</p>
                 </div>
-              </div>
-            </div>
+          </div>
+        </div>
 
             <div className="bg-white p-6 rounded-lg shadow">
               <div className="flex items-center">
@@ -228,7 +228,7 @@ export default function AdminDashboard() {
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Total Likes</p>
                   <p className="text-2xl font-bold text-gray-900">{stats.totalLikes.toLocaleString()}</p>
-                </div>
+          </div>
               </div>
             </div>
           </div>

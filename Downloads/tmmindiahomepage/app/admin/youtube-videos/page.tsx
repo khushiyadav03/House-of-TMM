@@ -386,81 +386,81 @@ export default function AdminYoutubeVideos() {
                     {recommendedVideos.length}/7
                   </span>
                 </div>
-                <div className="divide-y divide-gray-200">
+              <div className="divide-y divide-gray-200">
                   {recommendedVideos.map((video) => (
                     <div key={video.id} className="py-4 hover:bg-gray-50">
-                      <div className="flex items-start space-x-4">
-                        <div className="relative w-32 h-20 flex-shrink-0">
-                          <Image
-                            src={video.thumbnail_url || "/placeholder.svg?height=80&width=120"}
-                            alt={video.title}
-                            fill
-                            className="object-cover rounded"
-                          />
+                    <div className="flex items-start space-x-4">
+                      <div className="relative w-32 h-20 flex-shrink-0">
+                        <Image
+                          src={video.thumbnail_url || "/placeholder.svg?height=80&width=120"}
+                          alt={video.title}
+                          fill
+                          className="object-cover rounded"
+                        />
                           <div className="absolute inset-0 bg-blue-500 bg-opacity-10 rounded"></div>
                           <div className="absolute top-1 left-1 bg-blue-500 text-white text-xs px-2 py-1 rounded font-bold shadow-sm">
                             REC
                           </div>
-                        </div>
+                      </div>
 
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
                                 <h4 className="text-lg font-semibold text-gray-900">{video.title}</h4>
-                                <span
-                                  className={`text-xs px-2 py-1 rounded-full ${
-                                    video.is_active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
-                                  }`}
-                                >
-                                  {video.is_active ? "Active" : "Inactive"}
-                                </span>
-                              </div>
-                              <p className="text-sm text-gray-500 mb-2">Order: {video.display_order}</p>
-                              <p className="text-xs text-gray-400 break-all">{video.video_url}</p>
-                              <p className="text-xs text-gray-500 mt-1">
-                                Created: {new Date(video.created_at).toLocaleDateString()}
-                              </p>
+                              <span
+                                className={`text-xs px-2 py-1 rounded-full ${
+                                  video.is_active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                                }`}
+                              >
+                                {video.is_active ? "Active" : "Inactive"}
+                              </span>
                             </div>
+                            <p className="text-sm text-gray-500 mb-2">Order: {video.display_order}</p>
+                            <p className="text-xs text-gray-400 break-all">{video.video_url}</p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Created: {new Date(video.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
 
-                            <div className="flex flex-col space-y-2 ml-4">
-                              <div className="flex space-x-2">
-                                <button
-                                  onClick={() => handleEdit(video)}
-                                  className="bg-blue-500 text-white px-3 py-1 text-sm rounded hover:bg-blue-600 transition-colors flex items-center gap-1"
-                                >
-                                  <Edit className="h-3 w-3" />
-                                  Edit
-                                </button>
-                                <button
-                                  onClick={() => handleDelete(video.id)}
-                                  className="bg-red-500 text-white px-3 py-1 text-sm rounded hover:bg-red-600 transition-colors flex items-center gap-1"
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                  Delete
-                                </button>
-                              </div>
-                              <div className="flex space-x-2">
-                                <button
-                                  onClick={() => toggleActive(video.id, video.is_active)}
-                                  className={`px-3 py-1 text-sm rounded transition-colors flex items-center gap-1 ${
-                                    video.is_active
-                                      ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                                      : "bg-green-500 text-white hover:bg-green-600"
-                                  }`}
-                                >
-                                  {video.is_active ? (
-                                    <>
-                                      <EyeOff className="h-3 w-3" />
-                                      Hide
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Eye className="h-3 w-3" />
-                                      Show
-                                    </>
-                                  )}
-                                </button>
+                          <div className="flex flex-col space-y-2 ml-4">
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => handleEdit(video)}
+                                className="bg-blue-500 text-white px-3 py-1 text-sm rounded hover:bg-blue-600 transition-colors flex items-center gap-1"
+                              >
+                                <Edit className="h-3 w-3" />
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => handleDelete(video.id)}
+                                className="bg-red-500 text-white px-3 py-1 text-sm rounded hover:bg-red-600 transition-colors flex items-center gap-1"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                                Delete
+                              </button>
+                            </div>
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => toggleActive(video.id, video.is_active)}
+                                className={`px-3 py-1 text-sm rounded transition-colors flex items-center gap-1 ${
+                                  video.is_active
+                                    ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                                    : "bg-green-500 text-white hover:bg-green-600"
+                                }`}
+                              >
+                                {video.is_active ? (
+                                  <>
+                                    <EyeOff className="h-3 w-3" />
+                                    Hide
+                                  </>
+                                ) : (
+                                  <>
+                                    <Eye className="h-3 w-3" />
+                                    Show
+                                  </>
+                                )}
+                              </button>
                                 <button
                                   onClick={() => setAsMainVideo(video.id)}
                                   className="bg-purple-500 text-white px-3 py-1 text-sm rounded hover:bg-purple-600 transition-colors flex items-center gap-1"
@@ -468,13 +468,13 @@ export default function AdminYoutubeVideos() {
                                   <Star className="h-3 w-3" />
                                   Set Main
                                 </button>
-                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  ))}
+                  </div>
+                ))}
 
                   {recommendedVideos.length === 0 && (
                     <div className="py-8 text-center text-gray-500">
@@ -486,13 +486,13 @@ export default function AdminYoutubeVideos() {
                 </div>
               </div>
 
-              {videos.length === 0 && (
-                <div className="p-12 text-center text-gray-500">
-                  <Play className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                  <p className="text-lg">No videos found</p>
-                  <p className="text-sm">Add your first video to get started</p>
-                </div>
-              )}
+                {videos.length === 0 && (
+                  <div className="p-12 text-center text-gray-500">
+                    <Play className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                    <p className="text-lg">No videos found</p>
+                    <p className="text-sm">Add your first video to get started</p>
+                  </div>
+                )}
             </div>
           </div>
         </div>

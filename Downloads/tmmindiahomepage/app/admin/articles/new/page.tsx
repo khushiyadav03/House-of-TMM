@@ -148,7 +148,7 @@ export default function NewArticle() {
       if (response.ok) {
         showSuccess("Article created successfully!")
         setTimeout(() => {
-          router.push("/admin/articles")
+        router.push("/admin/articles")
         }, 1500)
       } else {
         const errorData = await response.json()
@@ -164,144 +164,144 @@ export default function NewArticle() {
 
   return (
     <AdminRoute>
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">Create New Article</h1>
-            <p className="text-xl text-gray-600">Write and publish a new article</p>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Create New Article</h1>
+          <p className="text-xl text-gray-600">Write and publish a new article</p>
             {lastSaved && (
               <p className="text-sm text-gray-500 mt-2">
                 Last saved: {lastSaved.toLocaleTimeString()}
               </p>
             )}
+        </div>
+
+        <form onSubmit={handleSubmit} className="bg-white shadow rounded-lg p-6 space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Title *</label>
+              <input
+                type="text"
+                value={formData.title}
+                onChange={handleTitleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                required
+                  placeholder="Enter article title..."
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Slug *</label>
+              <input
+                type="text"
+                value={formData.slug}
+                onChange={(e) => setFormData((prev) => ({ ...prev, slug: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                required
+                  placeholder="article-slug"
+              />
+            </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="bg-white shadow rounded-lg p-6 space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Title *</label>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={handleTitleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-                  required
-                  placeholder="Enter article title..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Slug *</label>
-                <input
-                  type="text"
-                  value={formData.slug}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, slug: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-                  required
-                  placeholder="article-slug"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Author *</label>
-                <input
-                  type="text"
-                  value={formData.author}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, author: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-                  required
-                  placeholder="Author name..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Publish Date *</label>
-                <input
-                  type="date"
-                  value={formData.publish_date}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, publish_date: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-                  required
-                />
-              </div>
-            </div>
-
-            <ImageUpload
-              label="Featured Image"
-              value={formData.image_url}
-              onChange={(url) => setFormData((prev) => ({ ...prev, image_url: url }))}
-            />
-
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Categories *</label>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-40 overflow-y-auto border border-gray-300 rounded-lg p-3">
-                {categories.map((category) => (
-                  <label key={category.id} className="flex items-center text-sm">
-                    <input
-                      type="checkbox"
-                      checked={formData.categories.includes(category.id)}
-                      onChange={() => handleCategoryChange(category.id)}
-                      className="mr-2"
-                    />
-                    {category.name}
-                  </label>
-                ))}
-              </div>
-              {formData.categories.length === 0 && (
-                <p className="text-red-500 text-sm mt-1">Please select at least one category</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Excerpt *</label>
-              <textarea
-                value={formData.excerpt}
-                onChange={(e) => setFormData((prev) => ({ ...prev, excerpt: e.target.value }))}
-                rows={3}
+              <label className="block text-sm font-medium text-gray-700 mb-2">Author *</label>
+              <input
+                type="text"
+                value={formData.author}
+                onChange={(e) => setFormData((prev) => ({ ...prev, author: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-                placeholder="Brief description of the article..."
+                required
+                  placeholder="Author name..."
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Publish Date *</label>
+              <input
+                type="date"
+                value={formData.publish_date}
+                onChange={(e) => setFormData((prev) => ({ ...prev, publish_date: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
                 required
               />
             </div>
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Content *</label>
-              <RichTextEditor
-                value={formData.content}
-                onChange={(value) => setFormData((prev) => ({ ...prev, content: value }))}
-                placeholder="Write your article content here..."
-              />
-            </div>
+          <ImageUpload
+            label="Featured Image"
+            value={formData.image_url}
+            onChange={(url) => setFormData((prev) => ({ ...prev, image_url: url }))}
+          />
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="flex items-center">
-                <label className="flex items-center text-sm">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Categories *</label>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-40 overflow-y-auto border border-gray-300 rounded-lg p-3">
+              {categories.map((category) => (
+                <label key={category.id} className="flex items-center text-sm">
                   <input
                     type="checkbox"
-                    checked={formData.featured}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, featured: e.target.checked }))}
+                    checked={formData.categories.includes(category.id)}
+                    onChange={() => handleCategoryChange(category.id)}
                     className="mr-2"
                   />
-                  Featured Article
+                  {category.name}
                 </label>
-              </div>
+              ))}
             </div>
+            {formData.categories.length === 0 && (
+              <p className="text-red-500 text-sm mt-1">Please select at least one category</p>
+            )}
+          </div>
 
-            <div className="flex justify-end space-x-4">
-              <button
-                type="button"
-                onClick={() => router.back()}
-                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Excerpt *</label>
+            <textarea
+              value={formData.excerpt}
+              onChange={(e) => setFormData((prev) => ({ ...prev, excerpt: e.target.value }))}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+              placeholder="Brief description of the article..."
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Content *</label>
+            <RichTextEditor
+              value={formData.content}
+              onChange={(value) => setFormData((prev) => ({ ...prev, content: value }))}
+              placeholder="Write your article content here..."
+            />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="flex items-center">
+              <label className="flex items-center text-sm">
+                <input
+                  type="checkbox"
+                  checked={formData.featured}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, featured: e.target.checked }))}
+                  className="mr-2"
+                />
+                Featured Article
+              </label>
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-4">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
                 disabled={saving || autoSaving}
                 className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
+            >
                 {saving ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -310,14 +310,14 @@ export default function NewArticle() {
                 ) : (
                   "Create Article"
                 )}
-              </button>
-            </div>
-          </form>
-        </div>
+            </button>
+          </div>
+        </form>
+      </div>
 
         {/* Toast Notifications */}
         <ToastContainer toasts={toasts} onRemove={removeToast} />
-      </div>
+    </div>
     </AdminRoute>
   )
 }

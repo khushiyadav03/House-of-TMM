@@ -5,6 +5,7 @@ import type React from "react"
 import { useState } from "react"
 import Image from "next/image"
 import { Upload, X, Loader2 } from "lucide-react"
+import { createClient } from "@supabase/supabase-js"
 
 interface ImageUploadProps {
   label: string
@@ -16,6 +17,11 @@ interface ImageUploadProps {
 export default function ImageUpload({ label, value, onChange, type = "image" }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false)
   const [dragOver, setDragOver] = useState(false)
+
+  // Initialize Supabase client (client-side, use anon key)
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
   const handleFileUpload = async (file: File) => {
     if (!file) return
@@ -41,22 +47,30 @@ export default function ImageUpload({ label, value, onChange, type = "image" }: 
     setUploading(true)
 
     try {
-      const formData = new FormData()
-      formData.append("file", file)
-      formData.append("type", type)
+      // Prepare upload path and bucket
+      const bucket = type === "pdf" ? "magazines" : "images"
+      const timestamp = Date.now()
+      const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_")
+      const filePath = `${type}/${timestamp}_${safeName}`
 
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      })
+      // Upload directly to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: false,
+        })
 
-      const data = await response.json()
-
-      if (data.url) {
-        onChange(data.url)
-      } else {
-        throw new Error(data.error || "Upload failed")
+      if (error) {
+        throw new Error(error.message || "Upload failed")
       }
+
+      // Get public URL
+      const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(filePath)
+      if (!urlData?.publicUrl) {
+        throw new Error("Failed to get public URL")
+      }
+      onChange(urlData.publicUrl)
     } catch (error) {
       console.error("Upload error:", error)
       alert(error instanceof Error ? error.message : "Upload failed")

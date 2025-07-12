@@ -1,12 +1,13 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
 
-export async function GET(request: NextRequest, { params }: { params: { slug: string } }) {
+export async function GET(request: NextRequest, context: { params: { slug: string } }) {
+  const { slug } = await context.params
   try {
     // Check if the parameter is numeric (ID) or string (slug)
-    const isNumeric = /^\d+$/.test(params.slug)
+    const isNumeric = /^\d+$/.test(slug)
     const column = isNumeric ? "id" : "slug"
-    const value = isNumeric ? Number.parseInt(params.slug, 10) : params.slug
+    const value = isNumeric ? Number.parseInt(slug, 10) : slug
 
     const { data, error } = await supabase
       .from("articles")
@@ -46,12 +47,13 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { slug: string } }) {
+export async function PUT(request: NextRequest, context: { params: { slug: string } }) {
+  const { slug } = await context.params
   try {
     // Check if the parameter is numeric (ID) or string (slug)
-    const isNumeric = /^\d+$/.test(params.slug)
+    const isNumeric = /^\d+$/.test(slug)
     const column = isNumeric ? "id" : "slug"
-    const value = isNumeric ? Number.parseInt(params.slug, 10) : params.slug
+    const value = isNumeric ? Number.parseInt(slug, 10) : slug
 
     const body = await request.json()
     const { title, content, excerpt, image_url, author, publish_date, scheduled_date, featured, categories } = body
@@ -108,12 +110,13 @@ export async function PUT(request: NextRequest, { params }: { params: { slug: st
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { slug: string } }) {
+export async function DELETE(request: NextRequest, context: { params: { slug: string } }) {
+  const { slug } = await context.params
   try {
     // Check if the parameter is numeric (ID) or string (slug)
-    const isNumeric = /^\d+$/.test(params.slug)
+    const isNumeric = /^\d+$/.test(slug)
     const column = isNumeric ? "id" : "slug"
-    const value = isNumeric ? Number.parseInt(params.slug, 10) : params.slug
+    const value = isNumeric ? Number.parseInt(slug, 10) : slug
 
     const { error } = await supabase.from("articles").delete().eq(column, value)
 

@@ -123,7 +123,7 @@ export default function Home() {
         )
         setCarouselArticles(selectedArticles)
       } else {
-        setCarouselArticles(allArticles.slice(0, 8))
+      setCarouselArticles(allArticles.slice(0, 8))
       }
 
       // Set latest news (use saved content or fallback)
@@ -133,7 +133,7 @@ export default function Home() {
         )
         setLatestNews(selectedArticles)
       } else {
-        setLatestNews(allArticles.slice(8, 14))
+      setLatestNews(allArticles.slice(8, 14))
       }
 
       // Set fashion articles (use saved content or fallback)
@@ -143,10 +143,10 @@ export default function Home() {
         )
         setFashionArticles(selectedArticles)
       } else {
-        const fashionArticles = allArticles.filter((article: Article) =>
-          article.category?.toLowerCase().includes("fashion"),
-        )
-        setFashionArticles(fashionArticles.slice(0, 3))
+      const fashionArticles = allArticles.filter((article: Article) =>
+        article.category?.toLowerCase().includes("fashion"),
+      )
+      setFashionArticles(fashionArticles.slice(0, 3))
       }
 
       // Set tech & auto articles (use saved content or fallback)
@@ -156,11 +156,11 @@ export default function Home() {
         )
         setTechAutoArticles(selectedArticles)
       } else {
-        const techArticles = allArticles.filter(
-          (article: Article) =>
-            article.category?.toLowerCase().includes("tech") || article.category?.toLowerCase().includes("auto"),
-        )
-        setTechAutoArticles(techArticles.slice(0, 8))
+      const techArticles = allArticles.filter(
+        (article: Article) =>
+          article.category?.toLowerCase().includes("tech") || article.category?.toLowerCase().includes("auto"),
+      )
+      setTechAutoArticles(techArticles.slice(0, 8))
       }
 
       // Set sports articles (use saved content or fallback)
@@ -170,8 +170,8 @@ export default function Home() {
         )
         setSportsArticles(selectedArticles)
       } else {
-        const sportsArticles = allArticles.filter((article: Article) => article.category?.toLowerCase().includes("sport"))
-        setSportsArticles(sportsArticles.slice(0, 8))
+      const sportsArticles = allArticles.filter((article: Article) => article.category?.toLowerCase().includes("sport"))
+      setSportsArticles(sportsArticles.slice(0, 8))
       }
 
       // Set finance articles (use saved content or fallback)
@@ -181,10 +181,10 @@ export default function Home() {
         )
         setFinanceArticles(selectedArticles)
       } else {
-        const financeArticles = allArticles.filter((article: Article) =>
-          article.category?.toLowerCase().includes("finance"),
-        )
-        setFinanceArticles(financeArticles.slice(0, 4))
+      const financeArticles = allArticles.filter((article: Article) =>
+        article.category?.toLowerCase().includes("finance"),
+      )
+      setFinanceArticles(financeArticles.slice(0, 4))
       }
 
       // Set travel articles (use saved content or fallback)
@@ -194,10 +194,10 @@ export default function Home() {
         )
         setTravelArticles(selectedArticles)
       } else {
-        const travelArticles = allArticles.filter((article: Article) =>
-          article.category?.toLowerCase().includes("travel"),
-        )
-        setTravelArticles(travelArticles.slice(0, 4))
+      const travelArticles = allArticles.filter((article: Article) =>
+        article.category?.toLowerCase().includes("travel"),
+      )
+      setTravelArticles(travelArticles.slice(0, 4))
       }
 
       // Set health & wellness articles (fallback only, no admin section for this)
@@ -212,7 +212,7 @@ export default function Home() {
         const selectedMagazine = allMagazines.find((magazine: Magazine) => magazine.id === featuredMagazineId)
         setFeaturedMagazine(selectedMagazine || allMagazines[0] || null)
       } else {
-        setFeaturedMagazine(allMagazines[0] || null)
+      setFeaturedMagazine(allMagazines[0] || null)
       }
 
       // Set videos

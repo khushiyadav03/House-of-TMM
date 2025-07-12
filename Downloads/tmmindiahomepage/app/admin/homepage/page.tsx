@@ -94,9 +94,9 @@ export default function AdminHomepage() {
       // Convert homepage data to object
       const contentObj: any = {}
       if (Array.isArray(homepageData)) {
-        homepageData.forEach((item: any) => {
-          contentObj[item.section_name] = item.content
-        })
+      homepageData.forEach((item: any) => {
+        contentObj[item.section_name] = item.content
+      })
       }
       setHomepageContent(contentObj)
     } catch (error) {
@@ -133,17 +133,17 @@ export default function AdminHomepage() {
       // Save sections one by one to handle errors better
       const results = []
       for (const [sectionName, content] of sectionsToSave) {
-        try {
-          const response = await fetch("/api/homepage-content", {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
+    try {
+      const response = await fetch("/api/homepage-content", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
               section_name: sectionName,
               content: content,
-            }),
-          })
+        }),
+      })
 
           if (!response.ok) {
             const errorData = await response.json()
@@ -303,8 +303,8 @@ export default function AdminHomepage() {
 
     return (
       <div className="space-y-6">
-        <div className="bg-blue-50 p-4 rounded-lg">
-          <h3 className="font-semibold text-blue-900 mb-2">Selected Magazine</h3>
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <h3 className="font-semibold text-blue-900 mb-2">Selected Magazine</h3>
           {selectedMagazine ? (
             (() => {
               const magazine = magazines.find((m) => m.id === selectedMagazine)
@@ -337,22 +337,22 @@ export default function AdminHomepage() {
           ) : (
             <p className="text-gray-500">No magazine selected</p>
           )}
-        </div>
+          </div>
 
         <div>
           <h3 className="font-semibold mb-4">Available Magazines</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
             {magazines.map((magazine) => (
-              <div key={magazine.id} className="bg-white p-3 rounded border flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Image
-                    src={magazine.cover_image_url || "/placeholder.svg"}
-                    alt={magazine.title}
-                    width={40}
+                <div key={magazine.id} className="bg-white p-3 rounded border flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Image
+                      src={magazine.cover_image_url || "/placeholder.svg"}
+                      alt={magazine.title}
+                      width={40}
                     height={40}
-                    className="object-cover rounded"
-                  />
-                  <div>
+                      className="object-cover rounded"
+                    />
+                    <div>
                     <p className="font-medium text-sm line-clamp-1">{magazine.title}</p>
                     <p className="text-xs text-gray-500">₹{magazine.price}</p>
                   </div>
@@ -361,10 +361,10 @@ export default function AdminHomepage() {
                   onClick={() => selectMagazine(magazine.id)}
                   className="text-green-500 hover:text-green-700"
                 >
-                  <Plus className="h-4 w-4" />
-                </button>
-              </div>
-            ))}
+                    <Plus className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
           </div>
         </div>
       </div>
@@ -537,29 +537,29 @@ export default function AdminHomepage() {
 
   return (
     <AdminRoute>
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">Homepage Content Management</h1>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Homepage Content Management</h1>
             <p className="text-xl text-gray-600">Customize what appears on your homepage</p>
-          </div>
+        </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {/* Sidebar */}
-            <div className="lg:col-span-1">
+          <div className="lg:col-span-1">
               <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Sections</h2>
                 <div className="space-y-2">
-                  {sections.map((section) => (
-                    <button
-                      key={section.section_name}
-                      onClick={() => setActiveSection(section.section_name)}
+                {sections.map((section) => (
+                  <button
+                    key={section.section_name}
+                    onClick={() => setActiveSection(section.section_name)}
                       className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                        activeSection === section.section_name
+                      activeSection === section.section_name
                           ? "bg-black text-white"
                           : "text-gray-700 hover:bg-gray-100"
-                      }`}
-                    >
+                    }`}
+                  >
                       {getSectionTitle(section.section_name)}
                     </button>
                   ))}
@@ -587,21 +587,21 @@ export default function AdminHomepage() {
                     Brand Images
                   </button>
                 </div>
-              </div>
             </div>
+          </div>
 
             {/* Main Content */}
-            <div className="lg:col-span-3">
+          <div className="lg:col-span-3">
               <div className="bg-white rounded-lg shadow p-6">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold text-gray-900">
                     {getSectionTitle(activeSection)}
                   </h2>
-                  <button
-                    onClick={handleSave}
-                    disabled={saving}
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
                     className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center gap-2"
-                  >
+                >
                     {saving ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -609,12 +609,12 @@ export default function AdminHomepage() {
                       </>
                     ) : (
                       <>
-                        <Save className="h-4 w-4" />
+                  <Save className="h-4 w-4" />
                         Save Changes
                       </>
                     )}
-                  </button>
-                </div>
+                </button>
+              </div>
 
                 {renderSectionContent()}
               </div>
