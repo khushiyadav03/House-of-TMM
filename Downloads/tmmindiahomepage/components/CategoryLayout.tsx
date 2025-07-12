@@ -108,6 +108,42 @@ export default function CategoryLayout({
                 <Link key={article.id} href={`/articles/${article.slug}`}>
                   <article className="bg-white shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 cursor-pointer">
                     <div className="relative w-full h-[405px]">
+                      {/* Category badge */}
+                      <span
+                        className={`absolute top-4 left-4 px-3 py-1 text-sm font-semibold text-white
+                          ${
+                            article.category.toLowerCase() === "fashion"
+                              ? "bg-pink-600"
+                              : article.category.toLowerCase() === "tech & auto"
+                              ? "bg-blue-600"
+                              : article.category.toLowerCase() === "food & drinks"
+                              ? "bg-yellow-600"
+                              : article.category.toLowerCase() === "health & wellness"
+                              ? "bg-green-600"
+                              : article.category.toLowerCase() === "fitness & selfcare"
+                              ? "bg-purple-600"
+                              : article.category.toLowerCase() === "travel"
+                              ? "bg-cyan-600"
+                              : article.category.toLowerCase() === "finance"
+                              ? "bg-orange-600"
+                              : article.category.toLowerCase() === "cricket"
+                              ? "bg-red-600"
+                              : article.category.toLowerCase() === "golf"
+                              ? "bg-emerald-700"
+                              : article.category.toLowerCase() === "other sports"
+                              ? "bg-gray-700"
+                              : article.category.toLowerCase() === "interviews"
+                              ? "bg-indigo-700"
+                              : article.category.toLowerCase() === "trending"
+                              ? "bg-fuchsia-700"
+                              : article.category.toLowerCase() === "cover"
+                              ? "bg-black"
+                              : "bg-gray-800"
+                          } !rounded-none`}
+                        style={{ borderRadius: 0 }}
+                      >
+                        {article.category}
+                      </span>
                       <Image
                         src={article.image_url || "/placeholder.svg?height=405&width=270"}
                         alt={article.title}
@@ -115,7 +151,6 @@ export default function CategoryLayout({
                         className="object-cover"
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                       />
-                      {/* Removed category label */}
                     </div>
                     <div className="p-4">
                       <h2 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">{article.title}</h2>

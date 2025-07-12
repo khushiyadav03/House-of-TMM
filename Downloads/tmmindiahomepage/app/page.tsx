@@ -81,67 +81,139 @@ export default function Home() {
       setLoading(true)
 
       // Fetch all data in parallel
-      const [articlesResponse, magazinesResponse, videosResponse, brandsResponse] = await Promise.all([
+      const [articlesResponse, magazinesResponse, videosResponse, brandsResponse, homepageContentResponse] = await Promise.all([
         fetch("/api/articles?limit=100"),
         fetch("/api/magazines"),
         fetch("/api/youtube-videos"),
         fetch("/api/brand-images"),
+        fetch("/api/homepage-content"),
       ])
 
       const articlesData = await articlesResponse.json()
       const magazinesData = await magazinesResponse.json()
       const videosData = await videosResponse.json()
       const brandsData = await brandsResponse.json()
+      const homepageContentData = await homepageContentResponse.json()
 
       const allArticles = articlesData.articles || []
       const allMagazines = magazinesData || []
       const allVideos = videosData || []
       const allBrands = brandsData || []
 
-      // Set carousel articles (first 8 articles)
-      setCarouselArticles(allArticles.slice(0, 8))
+      // Convert homepage content to object
+      const homepageContent: any = {}
+      homepageContentData.forEach((item: any) => {
+        homepageContent[item.section_name] = item.content
+      })
 
-      // Set latest news (next 6 articles)
-      setLatestNews(allArticles.slice(8, 14))
+      // Use saved content from admin panel, fallback to hardcoded logic
+      const carouselContent = homepageContent.carousel_articles?.selected_articles || []
+      const latestContent = homepageContent.latest_news?.selected_articles || []
+      const fashionContent = homepageContent.fashion_section?.selected_articles || []
+      const techAutoContent = homepageContent.tech_auto_section?.selected_articles || []
+      const sportsContent = homepageContent.sports_section?.selected_articles || []
+      const financeContent = homepageContent.finance_section?.selected_articles || []
+      const travelContent = homepageContent.travel_section?.selected_articles || []
+      const featuredMagazineId = homepageContent.featured_magazine?.selected_magazine
 
-      // Set fashion articles (filter by fashion category)
-      const fashionArticles = allArticles.filter((article: Article) =>
-        article.category?.toLowerCase().includes("fashion"),
-      )
-      setFashionArticles(fashionArticles.slice(0, 3))
+      // Set carousel articles (use saved content or fallback)
+      if (carouselContent.length > 0) {
+        const selectedArticles = allArticles.filter((article: Article) => 
+          carouselContent.includes(article.id)
+        )
+        setCarouselArticles(selectedArticles)
+      } else {
+        setCarouselArticles(allArticles.slice(0, 8))
+      }
 
-      // Set tech & auto articles
-      const techArticles = allArticles.filter(
-        (article: Article) =>
-          article.category?.toLowerCase().includes("tech") || article.category?.toLowerCase().includes("auto"),
-      )
-      setTechAutoArticles(techArticles.slice(0, 8))
+      // Set latest news (use saved content or fallback)
+      if (latestContent.length > 0) {
+        const selectedArticles = allArticles.filter((article: Article) => 
+          latestContent.includes(article.id)
+        )
+        setLatestNews(selectedArticles)
+      } else {
+        setLatestNews(allArticles.slice(8, 14))
+      }
 
-      // Set sports articles
-      const sportsArticles = allArticles.filter((article: Article) => article.category?.toLowerCase().includes("sport"))
-      setSportsArticles(sportsArticles.slice(0, 8))
+      // Set fashion articles (use saved content or fallback)
+      if (fashionContent.length > 0) {
+        const selectedArticles = allArticles.filter((article: Article) => 
+          fashionContent.includes(article.id)
+        )
+        setFashionArticles(selectedArticles)
+      } else {
+        const fashionArticles = allArticles.filter((article: Article) =>
+          article.category?.toLowerCase().includes("fashion"),
+        )
+        setFashionArticles(fashionArticles.slice(0, 3))
+      }
 
-      // Set finance articles
-      const financeArticles = allArticles.filter((article: Article) =>
-        article.category?.toLowerCase().includes("finance"),
-      )
-      setFinanceArticles(financeArticles.slice(0, 4))
+      // Set tech & auto articles (use saved content or fallback)
+      if (techAutoContent.length > 0) {
+        const selectedArticles = allArticles.filter((article: Article) => 
+          techAutoContent.includes(article.id)
+        )
+        setTechAutoArticles(selectedArticles)
+      } else {
+        const techArticles = allArticles.filter(
+          (article: Article) =>
+            article.category?.toLowerCase().includes("tech") || article.category?.toLowerCase().includes("auto"),
+        )
+        setTechAutoArticles(techArticles.slice(0, 8))
+      }
 
-      // Set travel articles
-      const travelArticles = allArticles.filter((article: Article) =>
-        article.category?.toLowerCase().includes("travel"),
-      )
-      setTravelArticles(travelArticles.slice(0, 4))
+      // Set sports articles (use saved content or fallback)
+      if (sportsContent.length > 0) {
+        const selectedArticles = allArticles.filter((article: Article) => 
+          sportsContent.includes(article.id)
+        )
+        setSportsArticles(selectedArticles)
+      } else {
+        const sportsArticles = allArticles.filter((article: Article) => article.category?.toLowerCase().includes("sport"))
+        setSportsArticles(sportsArticles.slice(0, 8))
+      }
 
-      // Set health & wellness articles
+      // Set finance articles (use saved content or fallback)
+      if (financeContent.length > 0) {
+        const selectedArticles = allArticles.filter((article: Article) => 
+          financeContent.includes(article.id)
+        )
+        setFinanceArticles(selectedArticles)
+      } else {
+        const financeArticles = allArticles.filter((article: Article) =>
+          article.category?.toLowerCase().includes("finance"),
+        )
+        setFinanceArticles(financeArticles.slice(0, 4))
+      }
+
+      // Set travel articles (use saved content or fallback)
+      if (travelContent.length > 0) {
+        const selectedArticles = allArticles.filter((article: Article) => 
+          travelContent.includes(article.id)
+        )
+        setTravelArticles(selectedArticles)
+      } else {
+        const travelArticles = allArticles.filter((article: Article) =>
+          article.category?.toLowerCase().includes("travel"),
+        )
+        setTravelArticles(travelArticles.slice(0, 4))
+      }
+
+      // Set health & wellness articles (fallback only, no admin section for this)
       const healthArticles = allArticles.filter(
         (article: Article) =>
           article.category?.toLowerCase().includes("health") || article.category?.toLowerCase().includes("wellness"),
       )
       setHealthWellnessArticles(healthArticles.slice(0, 3))
 
-      // Set featured magazine (first magazine)
-      setFeaturedMagazine(allMagazines[0] || null)
+      // Set featured magazine (use saved content or fallback)
+      if (featuredMagazineId) {
+        const selectedMagazine = allMagazines.find((magazine: Magazine) => magazine.id === featuredMagazineId)
+        setFeaturedMagazine(selectedMagazine || allMagazines[0] || null)
+      } else {
+        setFeaturedMagazine(allMagazines[0] || null)
+      }
 
       // Set videos
       const mainVideo = allVideos.find((video: YoutubeVideo) => video.is_main_video)
@@ -173,20 +245,20 @@ export default function Home() {
   return (
     <div>
       {/* Carousel Section */}
-      <section className="w-full pt-0 pb-4">
+      <section className="w-full pt-4 pb-4">
         <div className="carousel-wrapper">
           <Swiper
             modules={[Autoplay, Pagination]}
-            slidesPerView={2.5}
+            slidesPerView={1}
             spaceBetween={0}
             loop={true}
             loopAdditionalSlides={1}
             autoplay={{ delay: 3000, disableOnInteraction: false }}
             pagination={{ el: ".swiper-pagination", clickable: true }}
             breakpoints={{
-              1280: { slidesPerView: 2.5, spaceBetween: 0 },
-              1024: { slidesPerView: 2, spaceBetween: 0 },
-              768: { slidesPerView: 1.5, spaceBetween: 0 },
+              1280: { slidesPerView: 4, spaceBetween: 1 },
+              1024: { slidesPerView: 3.5, spaceBetween: 1 },
+              768: { slidesPerView: 3, spaceBetween: 0 },
               640: { slidesPerView: 1, spaceBetween: 0 },
               0: { slidesPerView: 1, spaceBetween: 0 },
             }}
@@ -195,7 +267,7 @@ export default function Home() {
             }}
           >
             {carouselArticles.map((article, index) => (
-              <SwiperSlide key={article.id} style={{ width: "324px", height: "500px" }}>
+              <SwiperSlide key={article.id}>
                 <Link href={`/articles/${article.slug}`} className="block">
                   <div className="landscape-cover bg-none">
                     <Image

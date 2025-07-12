@@ -1,5 +1,15 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@supabase/supabase-js"
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+
+// Regular client for read operations
+const supabase = createClient(supabaseUrl, supabaseKey)
+
+// Admin client with service role for write operations (bypasses RLS)
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
 
 /**
  * GET /api/magazines
@@ -34,7 +44,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required fields: title, price, issue_date" }, { status: 400 })
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("magazines")
       .insert({
         title,

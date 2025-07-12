@@ -1,5 +1,16 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@supabase/supabase-js"
+
+// Create a Supabase client with service role for admin operations
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+
+// Use service role key for admin uploads (bypasses RLS)
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
+
+// File size limits (in bytes)
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024 // 10MB for images
+const MAX_PDF_SIZE = 50 * 1024 * 1024 // 50MB for PDFs
 
 export async function POST(request: NextRequest) {
   try {
@@ -7,64 +18,93 @@ export async function POST(request: NextRequest) {
     const file = formData.get("file") as File
     const type = (formData.get("type") as string) || "image"
 
+    console.log("Upload request:", { 
+      type, 
+      fileName: file?.name, 
+      fileSize: file?.size, 
+      fileType: file?.type 
+    })
+
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 })
     }
 
-    // Validate file type
-    if (type === "image" && !file.type.startsWith("image/")) {
-      return NextResponse.json({ error: "Invalid file type. Please upload an image." }, { status: 400 })
-    }
-
-    if (type === "pdf" && file.type !== "application/pdf") {
-      return NextResponse.json({ error: "Invalid file type. Please upload a PDF." }, { status: 400 })
-    }
-
-    // Validate file size (10MB for images, 50MB for PDFs)
-    const maxSize = type === "pdf" ? 50 * 1024 * 1024 : 10 * 1024 * 1024
+    // Check file size
+    const maxSize = type === "pdf" ? MAX_PDF_SIZE : MAX_IMAGE_SIZE
     if (file.size > maxSize) {
-      return NextResponse.json(
-        { error: `File too large. Maximum size is ${type === "pdf" ? "50MB" : "10MB"}` },
-        { status: 400 },
-      )
+      const maxSizeMB = Math.round(maxSize / (1024 * 1024))
+      return NextResponse.json({ 
+        error: `File too large. Maximum size for ${type} files is ${maxSizeMB}MB.` 
+      }, { status: 400 })
     }
 
-    // Generate unique filename
-    const timestamp = Date.now()
-    const randomString = Math.random().toString(36).substring(2, 15)
-    const fileExtension = file.name.split(".").pop()
-    const fileName = `${timestamp}-${randomString}.${fileExtension}`
+    // Validate file type
+    if (type === "pdf" && file.type !== "application/pdf") {
+      return NextResponse.json({ 
+        error: "Invalid file type. Only PDF files are allowed for magazines." 
+      }, { status: 400 })
+    }
 
-    // Determine bucket based on file type
+    if (type === "image" && !file.type.startsWith("image/")) {
+      return NextResponse.json({ 
+        error: "Invalid file type. Only image files are allowed." 
+      }, { status: 400 })
+    }
+
+    // Determine bucket and file path
     const bucketName = type === "pdf" ? "magazines" : "images"
+    const timestamp = Date.now()
+    const fileName = `${timestamp}_${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`
+    const filePath = `${type}/${fileName}`
 
-    // Convert file to buffer
-    const arrayBuffer = await file.arrayBuffer()
-    const buffer = new Uint8Array(arrayBuffer)
+    console.log("Uploading to bucket:", bucketName, "path:", filePath)
 
     // Upload to Supabase Storage
-    const { data, error } = await supabase.storage.from(bucketName).upload(fileName, buffer, {
-      contentType: file.type,
-      upsert: false,
-    })
+    const { data, error } = await supabaseAdmin.storage
+      .from(bucketName)
+      .upload(filePath, file, {
+        cacheControl: "3600",
+        upsert: false
+      })
 
     if (error) {
-      console.error("Supabase upload error:", error)
-      return NextResponse.json({ error: "Failed to upload file" }, { status: 500 })
+      console.error("Supabase upload error:", {
+        error: error.message,
+        bucket: bucketName,
+        fileName: fileName,
+        fileType: type,
+        fileSize: file.size
+      })
+      return NextResponse.json({ 
+        error: "Failed to upload file", 
+        details: error.message,
+        bucket: bucketName,
+        fileType: type
+      }, { status: 500 })
     }
 
     // Get public URL
-    const { data: urlData } = supabase.storage.from(bucketName).getPublicUrl(fileName)
+    const { data: urlData } = supabaseAdmin.storage
+      .from(bucketName)
+      .getPublicUrl(filePath)
+
+    console.log("Upload successful:", {
+      bucket: bucketName,
+      path: filePath,
+      url: urlData.publicUrl
+    })
 
     return NextResponse.json({
-      success: true,
       url: urlData.publicUrl,
-      fileName: fileName,
-      fileSize: file.size,
-      fileType: file.type,
+      path: filePath,
+      bucket: bucketName
     })
+
   } catch (error) {
-    console.error("Upload error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error("Upload API error:", error)
+    return NextResponse.json({ 
+      error: "Internal server error",
+      details: error instanceof Error ? error.message : "Unknown error"
+    }, { status: 500 })
   }
 }

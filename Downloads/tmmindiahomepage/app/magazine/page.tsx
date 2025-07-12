@@ -38,13 +38,16 @@ export default function MagazinePage() {
       setLoading(true)
       const response = await fetch("/api/magazines")
       const data = await response.json()
+      // If the API returns an array directly, use it; otherwise, fallback to []
+      const magazinesArray = Array.isArray(data) ? data : []
       // Sort magazines by issue_date in descending order (newest first)
-      const sortedMagazines = data.magazines.sort(
-        (a: Magazine, b: Magazine) => new Date(b.issue_date).getTime() - new Date(a.issue_date).getTime(),
+      const sortedMagazines = magazinesArray.sort(
+        (a, b) => new Date(b.issue_date).getTime() - new Date(a.issue_date).getTime(),
       )
       setMagazines(sortedMagazines)
     } catch (error) {
       console.error("Failed to fetch magazines:", error)
+      setMagazines([])
     } finally {
       setLoading(false)
     }
@@ -116,7 +119,12 @@ export default function MagazinePage() {
                           <Button className="w-full bg-green-600 hover:bg-green-700 text-white">Read Magazine</Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-4xl h-[90vh] p-0">
-                          <FlipbookViewer pdfUrl={magazine.pdf_url} />
+                          <FlipbookViewer
+                            pdfUrl={magazine.pdf_url}
+                            isOpen={true}
+                            onClose={() => {}}
+                            title={magazine.title}
+                          />
                         </DialogContent>
                       </Dialog>
                     ) : (

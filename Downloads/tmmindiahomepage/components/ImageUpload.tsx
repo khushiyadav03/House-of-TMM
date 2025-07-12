@@ -52,7 +52,7 @@ export default function ImageUpload({ label, value, onChange, type = "image" }: 
 
       const data = await response.json()
 
-      if (data.success) {
+      if (data.url) {
         onChange(data.url)
       } else {
         throw new Error(data.error || "Upload failed")

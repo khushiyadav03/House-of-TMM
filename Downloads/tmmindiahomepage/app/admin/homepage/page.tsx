@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { Save, Plus, X } from "lucide-react"
-import Footer from "../../../components/Footer"
+import { Save, Plus, X, Upload, Play, Star } from "lucide-react"
+import { useToast, ToastContainer } from "../../../components/Toast"
+import AdminRoute from "../../../components/AdminRoute"
+import Link from "next/link"
 
 interface Article {
   id: number
@@ -51,6 +53,8 @@ export default function AdminHomepage() {
   const [homepageContent, setHomepageContent] = useState<any>({})
   const [saving, setSaving] = useState(false)
 
+  const { toasts, showSuccess, showError, showInfo, removeToast } = useToast()
+
   const sections: HomepageSection[] = [
     { section_name: "carousel_articles", content: {}, max_items: 8 },
     { section_name: "latest_news", content: {}, max_items: 6 },
@@ -60,8 +64,6 @@ export default function AdminHomepage() {
     { section_name: "sports_section", content: {}, max_items: 8 },
     { section_name: "finance_section", content: {}, max_items: 4 },
     { section_name: "travel_section", content: {}, max_items: 4 },
-    { section_name: "youtube_videos", content: {}, max_items: 8 },
-    { section_name: "brand_images", content: {}, max_items: 10 },
   ]
 
   useEffect(() => {
@@ -91,34 +93,84 @@ export default function AdminHomepage() {
 
       // Convert homepage data to object
       const contentObj: any = {}
-      homepageData.forEach((item: any) => {
-        contentObj[item.section_name] = item.content
-      })
+      if (Array.isArray(homepageData)) {
+        homepageData.forEach((item: any) => {
+          contentObj[item.section_name] = item.content
+        })
+      }
       setHomepageContent(contentObj)
     } catch (error) {
       console.error("Failed to fetch data:", error)
+      showError("Failed to fetch data")
     }
   }
 
   const handleSave = async () => {
     setSaving(true)
     try {
-      const response = await fetch("/api/homepage-content", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          section_name: activeSection,
-          content: homepageContent[activeSection] || {},
-        }),
+      // Only save sections that have content
+      const sectionsToSave = Object.entries(homepageContent).filter(([sectionName, content]) => {
+        // Check if the section has meaningful content
+        if (typeof content === 'object' && content !== null) {
+          // For article sections, check if selected_articles exists and has items
+          if ('selected_articles' in content && Array.isArray((content as any).selected_articles) && (content as any).selected_articles.length > 0) {
+            return true
+          }
+          // For magazine section, check if selected_magazine exists
+          if ('selected_magazine' in content && (content as any).selected_magazine) {
+            return true
+          }
+        }
+        return false
       })
 
-      if (response.ok) {
-        alert("Content saved successfully!")
+      if (sectionsToSave.length === 0) {
+        showError("No content to save. Please select articles or magazines for at least one section.")
+        setSaving(false)
+        return
+      }
+
+      // Save sections one by one to handle errors better
+      const results = []
+      for (const [sectionName, content] of sectionsToSave) {
+        try {
+          const response = await fetch("/api/homepage-content", {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              section_name: sectionName,
+              content: content,
+            }),
+          })
+
+          if (!response.ok) {
+            const errorData = await response.json()
+            console.error(`Failed to save ${sectionName}:`, errorData)
+            results.push({ sectionName, success: false, error: errorData.error || 'Unknown error' })
+          } else {
+            results.push({ sectionName, success: true })
+          }
+        } catch (error) {
+          console.error(`Error saving ${sectionName}:`, error)
+          results.push({ sectionName, success: false, error: 'Network error' })
+        }
+      }
+
+      const successfulSaves = results.filter(r => r.success)
+      const failedSaves = results.filter(r => !r.success)
+
+      if (successfulSaves.length > 0 && failedSaves.length === 0) {
+        showSuccess(`${successfulSaves.length} section(s) saved successfully! Changes will be reflected on the homepage immediately.`)
+      } else if (successfulSaves.length > 0 && failedSaves.length > 0) {
+        showError(`Partially saved: ${successfulSaves.length} section(s) saved, ${failedSaves.length} failed. Failed sections: ${failedSaves.map(r => r.sectionName).join(', ')}`)
+      } else {
+        showError(`Failed to save any sections. Please try again.`)
       }
     } catch (error) {
       console.error("Failed to save content:", error)
+      showError("Failed to save content. Please try again.")
     } finally {
       setSaving(false)
     }
@@ -137,7 +189,7 @@ export default function AdminHomepage() {
     const maxItems = sections.find((s) => s.section_name === activeSection)?.max_items || 10
 
     if (selectedArticles.length >= maxItems) {
-      alert(`Maximum ${maxItems} articles allowed for this section`)
+      showError(`Maximum ${maxItems} articles allowed for this section`)
       return
     }
 
@@ -146,6 +198,7 @@ export default function AdminHomepage() {
         ...currentSection,
         selected_articles: [...selectedArticles, articleId],
       })
+      showInfo("Article added to section")
     }
   }
 
@@ -157,12 +210,14 @@ export default function AdminHomepage() {
       ...currentSection,
       selected_articles: selectedArticles.filter((id: number) => id !== articleId),
     })
+    showInfo("Article removed from section")
   }
 
   const selectMagazine = (magazineId: number) => {
     updateSectionContent(activeSection, {
       selected_magazine: magazineId,
     })
+    showInfo("Magazine selected for featured section")
   }
 
   const renderArticleSelection = () => {
@@ -248,61 +303,204 @@ export default function AdminHomepage() {
 
     return (
       <div className="space-y-6">
-        {selectedMagazine && (
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <h3 className="font-semibold text-blue-900 mb-2">Selected Magazine</h3>
-            {(() => {
+        <div className="bg-blue-50 p-4 rounded-lg">
+          <h3 className="font-semibold text-blue-900 mb-2">Selected Magazine</h3>
+          {selectedMagazine ? (
+            (() => {
               const magazine = magazines.find((m) => m.id === selectedMagazine)
-              if (!magazine) return null
-              return (
+              return magazine ? (
                 <div className="bg-white p-3 rounded border flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <Image
                       src={magazine.cover_image_url || "/placeholder.svg"}
                       alt={magazine.title}
                       width={40}
-                      height={60}
+                      height={40}
                       className="object-cover rounded"
                     />
                     <div>
-                      <p className="font-medium">{magazine.title}</p>
-                      <p className="text-sm text-gray-500">₹{magazine.price}</p>
+                      <p className="font-medium text-sm">{magazine.title}</p>
+                      <p className="text-xs text-gray-500">₹{magazine.price}</p>
                     </div>
                   </div>
-                  <button onClick={() => selectMagazine(0)} className="text-red-500 hover:text-red-700">
+                  <button
+                    onClick={() => updateSectionContent(activeSection, { selected_magazine: null })}
+                    className="text-red-500 hover:text-red-700"
+                  >
                     <X className="h-4 w-4" />
                   </button>
                 </div>
+              ) : (
+                <p className="text-gray-500">Selected magazine not found</p>
               )
-            })()}
-          </div>
-        )}
+            })()
+          ) : (
+            <p className="text-gray-500">No magazine selected</p>
+          )}
+        </div>
 
         <div>
           <h3 className="font-semibold mb-4">Available Magazines</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {magazines
-              .filter((magazine) => magazine.id !== selectedMagazine)
-              .map((magazine) => (
-                <div key={magazine.id} className="bg-white p-3 rounded border flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <Image
-                      src={magazine.cover_image_url || "/placeholder.svg"}
-                      alt={magazine.title}
-                      width={40}
-                      height={60}
-                      className="object-cover rounded"
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
+            {magazines.map((magazine) => (
+              <div key={magazine.id} className="bg-white p-3 rounded border flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Image
+                    src={magazine.cover_image_url || "/placeholder.svg"}
+                    alt={magazine.title}
+                    width={40}
+                    height={40}
+                    className="object-cover rounded"
+                  />
+                  <div>
+                    <p className="font-medium text-sm line-clamp-1">{magazine.title}</p>
+                    <p className="text-xs text-gray-500">₹{magazine.price}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => selectMagazine(magazine.id)}
+                  className="text-green-500 hover:text-green-700"
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const renderYoutubeVideosSection = () => {
+    const mainVideo = youtubeVideos.find((video) => video.is_main_video)
+    const recommendedVideos = youtubeVideos.filter((video) => !video.is_main_video).slice(0, 7)
+
+    return (
+      <div className="space-y-6">
+        <div className="bg-blue-50 p-4 rounded-lg">
+          <h3 className="font-semibold text-blue-900 mb-4">YouTube Videos Management</h3>
+          <p className="text-sm text-blue-700 mb-4">
+            Manage your YouTube videos here. The main featured video and 7 recommended videos will be displayed on the homepage.
+          </p>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Main Featured Video */}
+            <div className="bg-gradient-to-br from-yellow-50 to-orange-50 p-4 rounded border border-yellow-200">
+              <h4 className="font-semibold mb-3 flex items-center">
+                <Star className="h-4 w-4 mr-2 text-yellow-500" />
+                Main Featured Video
+                <span className="ml-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full font-bold">
+                  FEATURED
+                </span>
+              </h4>
+              {mainVideo ? (
+                <div className="space-y-2">
+                  <div className="aspect-video bg-gray-100 rounded overflow-hidden relative">
+                    <img
+                      src={mainVideo.thumbnail_url || "/placeholder.svg"}
+                      alt={mainVideo.title}
+                      className="w-full h-full object-cover"
                     />
-                    <div>
-                      <p className="font-medium">{magazine.title}</p>
-                      <p className="text-sm text-gray-500">₹{magazine.price}</p>
+                    <div className="absolute top-2 left-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded font-bold shadow-sm">
+                      MAIN
                     </div>
                   </div>
-                  <button onClick={() => selectMagazine(magazine.id)} className="text-green-500 hover:text-green-700">
-                    <Plus className="h-4 w-4" />
-                  </button>
+                  <p className="font-medium text-sm">{mainVideo.title}</p>
+                  <p className="text-xs text-gray-500">{mainVideo.video_url}</p>
                 </div>
-              ))}
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Star className="h-12 w-12 mx-auto mb-2 text-yellow-300" />
+                  <p>No main video set</p>
+                  <p className="text-xs mt-1">Set a video as main featured</p>
+                </div>
+              )}
+            </div>
+
+            {/* Recommended Videos */}
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded border border-blue-200">
+              <h4 className="font-semibold mb-3 flex items-center">
+                <Play className="h-4 w-4 mr-2 text-blue-500" />
+                Recommended Videos
+                <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-bold">
+                  {recommendedVideos.length}/7
+                </span>
+              </h4>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {recommendedVideos.map((video) => (
+                  <div key={video.id} className="flex items-center space-x-2 p-2 bg-white rounded border">
+                    <div className="w-16 h-12 bg-gray-200 rounded overflow-hidden flex-shrink-0 relative">
+                      <img
+                        src={video.thumbnail_url || "/placeholder.svg"}
+                        alt={video.title}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute top-0 left-0 bg-blue-500 text-white text-xs px-1 py-0.5 rounded font-bold">
+                        REC
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-xs line-clamp-2">{video.title}</p>
+                    </div>
+                  </div>
+                ))}
+                {recommendedVideos.length === 0 && (
+                  <div className="text-center py-4 text-gray-500">
+                    <Play className="h-8 w-8 mx-auto mb-2 text-blue-300" />
+                    <p className="text-sm">No recommended videos</p>
+                    <p className="text-xs">Add videos to create recommendations</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <Link
+              href="/admin/youtube-videos"
+              className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Manage YouTube Videos
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const renderBrandImagesSection = () => {
+    return (
+      <div className="space-y-6">
+        <div className="bg-blue-50 p-4 rounded-lg">
+          <h3 className="font-semibold text-blue-900 mb-4">Brand Images Management</h3>
+          <p className="text-sm text-blue-700 mb-4">
+            Upload and manage brand images that will be displayed on the homepage.
+          </p>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {brandImages.slice(0, 12).map((brand) => (
+              <div key={brand.id} className="bg-white p-2 rounded border">
+                <div className="aspect-square bg-gray-100 rounded overflow-hidden mb-2">
+                  <img
+                    src={brand.image_url || "/placeholder.svg"}
+                    alt={brand.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <p className="text-xs font-medium text-center line-clamp-2">{brand.title}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-4">
+            <Link
+              href="/admin/brand-images"
+              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Manage Brand Images
+            </Link>
           </div>
         </div>
       </div>
@@ -311,8 +509,8 @@ export default function AdminHomepage() {
 
   const getSectionTitle = (sectionName: string) => {
     const titles: { [key: string]: string } = {
-      carousel_articles: "Image Carousel Articles",
-      latest_news: "Latest News Section",
+      carousel_articles: "Carousel Articles",
+      latest_news: "Latest News",
       featured_magazine: "Featured Magazine",
       fashion_section: "Fashion Section",
       tech_auto_section: "Tech & Auto Section",
@@ -325,64 +523,108 @@ export default function AdminHomepage() {
     return titles[sectionName] || sectionName
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Homepage Content Management</h1>
-          <p className="text-xl text-gray-600">Customize homepage sections and content</p>
-        </div>
+  const renderSectionContent = () => {
+    if (activeSection === "featured_magazine") {
+      return renderMagazineSelection()
+    } else if (activeSection === "youtube_videos") {
+      return renderYoutubeVideosSection()
+    } else if (activeSection === "brand_images") {
+      return renderBrandImagesSection()
+    } else {
+      return renderArticleSelection()
+    }
+  }
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Section Navigation */}
-          <div className="lg:col-span-1">
-            <div className="bg-white shadow rounded-lg">
-              <div className="px-4 py-3 border-b border-gray-200">
-                <h2 className="text-lg font-semibold">Sections</h2>
-              </div>
-              <nav className="space-y-1">
-                {sections.map((section) => (
+  return (
+    <AdminRoute>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="mb-8">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">Homepage Content Management</h1>
+            <p className="text-xl text-gray-600">Customize what appears on your homepage</p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            {/* Sidebar */}
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-lg shadow p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Sections</h2>
+                <div className="space-y-2">
+                  {sections.map((section) => (
+                    <button
+                      key={section.section_name}
+                      onClick={() => setActiveSection(section.section_name)}
+                      className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                        activeSection === section.section_name
+                          ? "bg-black text-white"
+                          : "text-gray-700 hover:bg-gray-100"
+                      }`}
+                    >
+                      {getSectionTitle(section.section_name)}
+                    </button>
+                  ))}
+                  
+                  {/* Special sections */}
                   <button
-                    key={section.section_name}
-                    onClick={() => setActiveSection(section.section_name)}
-                    className={`w-full text-left px-4 py-3 text-sm hover:bg-gray-50 ${
-                      activeSection === section.section_name
-                        ? "bg-blue-50 text-blue-700 border-r-2 border-blue-700"
-                        : ""
+                    onClick={() => setActiveSection("youtube_videos")}
+                    className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                      activeSection === "youtube_videos"
+                        ? "bg-red-600 text-white"
+                        : "text-gray-700 hover:bg-gray-100"
                     }`}
                   >
-                    <div>
-                      <div className="font-medium">{getSectionTitle(section.section_name)}</div>
-                      <div className="text-xs text-gray-500">Max: {section.max_items} items</div>
-                    </div>
+                    YouTube Videos
                   </button>
-                ))}
-              </nav>
-            </div>
-          </div>
-
-          {/* Content Editor */}
-          <div className="lg:col-span-3">
-            <div className="bg-white shadow rounded-lg p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold">{getSectionTitle(activeSection)}</h2>
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800 disabled:opacity-50 flex items-center gap-2"
-                >
-                  <Save className="h-4 w-4" />
-                  {saving ? "Saving..." : "Save Changes"}
-                </button>
+                  
+                  <button
+                    onClick={() => setActiveSection("brand_images")}
+                    className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                      activeSection === "brand_images"
+                        ? "bg-blue-600 text-white"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    Brand Images
+                  </button>
+                </div>
               </div>
+            </div>
 
-              {/* Render appropriate content based on section */}
-              {activeSection === "featured_magazine" ? renderMagazineSelection() : renderArticleSelection()}
+            {/* Main Content */}
+            <div className="lg:col-span-3">
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    {getSectionTitle(activeSection)}
+                  </h2>
+                  <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {saving ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4" />
+                        Save Changes
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {renderSectionContent()}
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Toast Notifications */}
+        <ToastContainer toasts={toasts} onRemove={removeToast} />
       </div>
-      <Footer />
-    </div>
+    </AdminRoute>
   )
 }

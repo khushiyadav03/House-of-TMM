@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { Plus, Edit, Trash2, Eye, EyeOff, Play } from "lucide-react"
+import { Plus, Edit, Trash2, Eye, EyeOff, Play, Star, List } from "lucide-react"
 import Footer from "../../../components/Footer"
 
 interface YoutubeVideo {
@@ -167,6 +167,9 @@ export default function AdminYoutubeVideos() {
     )
   }
 
+  const mainVideo = videos.find((video) => video.is_main_video)
+  const recommendedVideos = videos.filter((video) => !video.is_main_video)
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -239,6 +242,7 @@ export default function AdminYoutubeVideos() {
                       onChange={(e) => setFormData((prev) => ({ ...prev, is_main_video: e.target.checked }))}
                       className="mr-2"
                     />
+                    <Star className="h-4 w-4 mr-1 text-yellow-500" />
                     Main Video
                   </label>
 
@@ -283,107 +287,212 @@ export default function AdminYoutubeVideos() {
                 <h2 className="text-2xl font-bold">Videos ({videos.length})</h2>
               </div>
 
-              <div className="divide-y divide-gray-200">
-                {videos.map((video) => (
-                  <div key={video.id} className="p-6 hover:bg-gray-50">
-                    <div className="flex items-start space-x-4">
-                      <div className="relative w-32 h-20 flex-shrink-0">
-                        <Image
-                          src={video.thumbnail_url || "/placeholder.svg?height=80&width=120"}
-                          alt={video.title}
-                          fill
-                          className="object-cover rounded"
-                        />
-                        {video.is_main_video && (
-                          <div className="absolute top-1 left-1 bg-red-500 text-white text-xs px-1 py-0.5 rounded">
-                            MAIN
-                          </div>
-                        )}
+              {/* Main Video Section */}
+              {mainVideo && (
+                <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-yellow-50 to-orange-50">
+                  <div className="flex items-center mb-3">
+                    <Star className="h-5 w-5 mr-2 text-yellow-500" />
+                    <h3 className="text-lg font-semibold text-yellow-800">Main Featured Video</h3>
+                    <span className="ml-3 bg-yellow-500 text-white text-xs px-3 py-1 rounded-full font-bold">
+                      FEATURED
+                    </span>
+                  </div>
+                  <div className="flex items-start space-x-4">
+                    <div className="relative w-32 h-20 flex-shrink-0">
+                      <Image
+                        src={mainVideo.thumbnail_url || "/placeholder.svg?height=80&width=120"}
+                        alt={mainVideo.title}
+                        fill
+                        className="object-cover rounded"
+                      />
+                      <div className="absolute inset-0 bg-yellow-500 bg-opacity-20 rounded"></div>
+                      <div className="absolute top-1 left-1 bg-yellow-500 text-white text-xs px-2 py-1 rounded font-bold shadow-sm">
+                        MAIN
                       </div>
+                    </div>
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="text-lg font-semibold text-gray-900">{video.title}</h3>
-                              <span
-                                className={`text-xs px-2 py-1 rounded-full ${
-                                  video.is_active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
-                                }`}
-                              >
-                                {video.is_active ? "Active" : "Inactive"}
-                              </span>
-                            </div>
-                            <p className="text-sm text-gray-500 mb-2">Order: {video.display_order}</p>
-                            <p className="text-xs text-gray-400 break-all">{video.video_url}</p>
-                            <p className="text-xs text-gray-500 mt-1">
-                              Created: {new Date(video.created_at).toLocaleDateString()}
-                            </p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="text-lg font-semibold text-gray-900">{mainVideo.title}</h4>
+                            <span
+                              className={`text-xs px-2 py-1 rounded-full ${
+                                mainVideo.is_active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                              }`}
+                            >
+                              {mainVideo.is_active ? "Active" : "Inactive"}
+                            </span>
                           </div>
+                          <p className="text-sm text-gray-500 mb-2">Order: {mainVideo.display_order}</p>
+                          <p className="text-xs text-gray-400 break-all">{mainVideo.video_url}</p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Created: {new Date(mainVideo.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
 
-                          <div className="flex flex-col space-y-2 ml-4">
-                            <div className="flex space-x-2">
-                              <button
-                                onClick={() => handleEdit(video)}
-                                className="bg-blue-500 text-white px-3 py-1 text-sm rounded hover:bg-blue-600 transition-colors flex items-center gap-1"
-                              >
-                                <Edit className="h-3 w-3" />
-                                Edit
-                              </button>
-                              <button
-                                onClick={() => handleDelete(video.id)}
-                                className="bg-red-500 text-white px-3 py-1 text-sm rounded hover:bg-red-600 transition-colors flex items-center gap-1"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                                Delete
-                              </button>
-                            </div>
-                            <div className="flex space-x-2">
-                              <button
-                                onClick={() => toggleActive(video.id, video.is_active)}
-                                className={`px-3 py-1 text-sm rounded transition-colors flex items-center gap-1 ${
-                                  video.is_active
-                                    ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                                    : "bg-green-500 text-white hover:bg-green-600"
-                                }`}
-                              >
-                                {video.is_active ? (
-                                  <>
-                                    <EyeOff className="h-3 w-3" />
-                                    Hide
-                                  </>
-                                ) : (
-                                  <>
-                                    <Eye className="h-3 w-3" />
-                                    Show
-                                  </>
-                                )}
-                              </button>
-                              {!video.is_main_video && (
-                                <button
-                                  onClick={() => setAsMainVideo(video.id)}
-                                  className="bg-purple-500 text-white px-3 py-1 text-sm rounded hover:bg-purple-600 transition-colors flex items-center gap-1"
-                                >
-                                  <Play className="h-3 w-3" />
-                                  Set Main
-                                </button>
+                        <div className="flex flex-col space-y-2 ml-4">
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => handleEdit(mainVideo)}
+                              className="bg-blue-500 text-white px-3 py-1 text-sm rounded hover:bg-blue-600 transition-colors flex items-center gap-1"
+                            >
+                              <Edit className="h-3 w-3" />
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDelete(mainVideo.id)}
+                              className="bg-red-500 text-white px-3 py-1 text-sm rounded hover:bg-red-600 transition-colors flex items-center gap-1"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              Delete
+                            </button>
+                          </div>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => toggleActive(mainVideo.id, mainVideo.is_active)}
+                              className={`px-3 py-1 text-sm rounded transition-colors flex items-center gap-1 ${
+                                mainVideo.is_active
+                                  ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                                  : "bg-green-500 text-white hover:bg-green-600"
+                              }`}
+                            >
+                              {mainVideo.is_active ? (
+                                <>
+                                  <EyeOff className="h-3 w-3" />
+                                  Hide
+                                </>
+                              ) : (
+                                <>
+                                  <Eye className="h-3 w-3" />
+                                  Show
+                                </>
                               )}
-                            </div>
+                            </button>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                ))}
+                </div>
+              )}
 
-                {videos.length === 0 && (
-                  <div className="p-12 text-center text-gray-500">
-                    <Play className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                    <p className="text-lg">No videos found</p>
-                    <p className="text-sm">Add your first video to get started</p>
-                  </div>
-                )}
+              {/* Recommended Videos Section */}
+              <div className="px-6 py-4">
+                <div className="flex items-center mb-3">
+                  <List className="h-5 w-5 mr-2 text-blue-500" />
+                  <h3 className="text-lg font-semibold text-blue-800">Recommended Videos</h3>
+                  <span className="ml-3 bg-blue-500 text-white text-xs px-3 py-1 rounded-full font-bold">
+                    {recommendedVideos.length}/7
+                  </span>
+                </div>
+                <div className="divide-y divide-gray-200">
+                  {recommendedVideos.map((video) => (
+                    <div key={video.id} className="py-4 hover:bg-gray-50">
+                      <div className="flex items-start space-x-4">
+                        <div className="relative w-32 h-20 flex-shrink-0">
+                          <Image
+                            src={video.thumbnail_url || "/placeholder.svg?height=80&width=120"}
+                            alt={video.title}
+                            fill
+                            className="object-cover rounded"
+                          />
+                          <div className="absolute inset-0 bg-blue-500 bg-opacity-10 rounded"></div>
+                          <div className="absolute top-1 left-1 bg-blue-500 text-white text-xs px-2 py-1 rounded font-bold shadow-sm">
+                            REC
+                          </div>
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h4 className="text-lg font-semibold text-gray-900">{video.title}</h4>
+                                <span
+                                  className={`text-xs px-2 py-1 rounded-full ${
+                                    video.is_active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                                  }`}
+                                >
+                                  {video.is_active ? "Active" : "Inactive"}
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-500 mb-2">Order: {video.display_order}</p>
+                              <p className="text-xs text-gray-400 break-all">{video.video_url}</p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                Created: {new Date(video.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+
+                            <div className="flex flex-col space-y-2 ml-4">
+                              <div className="flex space-x-2">
+                                <button
+                                  onClick={() => handleEdit(video)}
+                                  className="bg-blue-500 text-white px-3 py-1 text-sm rounded hover:bg-blue-600 transition-colors flex items-center gap-1"
+                                >
+                                  <Edit className="h-3 w-3" />
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(video.id)}
+                                  className="bg-red-500 text-white px-3 py-1 text-sm rounded hover:bg-red-600 transition-colors flex items-center gap-1"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                  Delete
+                                </button>
+                              </div>
+                              <div className="flex space-x-2">
+                                <button
+                                  onClick={() => toggleActive(video.id, video.is_active)}
+                                  className={`px-3 py-1 text-sm rounded transition-colors flex items-center gap-1 ${
+                                    video.is_active
+                                      ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                                      : "bg-green-500 text-white hover:bg-green-600"
+                                  }`}
+                                >
+                                  {video.is_active ? (
+                                    <>
+                                      <EyeOff className="h-3 w-3" />
+                                      Hide
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Eye className="h-3 w-3" />
+                                      Show
+                                    </>
+                                  )}
+                                </button>
+                                <button
+                                  onClick={() => setAsMainVideo(video.id)}
+                                  className="bg-purple-500 text-white px-3 py-1 text-sm rounded hover:bg-purple-600 transition-colors flex items-center gap-1"
+                                >
+                                  <Star className="h-3 w-3" />
+                                  Set Main
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {recommendedVideos.length === 0 && (
+                    <div className="py-8 text-center text-gray-500">
+                      <List className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                      <p className="text-lg">No recommended videos</p>
+                      <p className="text-sm">Add videos to create recommendations</p>
+                    </div>
+                  )}
+                </div>
               </div>
+
+              {videos.length === 0 && (
+                <div className="p-12 text-center text-gray-500">
+                  <Play className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                  <p className="text-lg">No videos found</p>
+                  <p className="text-sm">Add your first video to get started</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

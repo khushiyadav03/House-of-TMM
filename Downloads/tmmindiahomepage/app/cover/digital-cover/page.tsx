@@ -1,60 +1,74 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import CategoryLayout from "../../../components/CategoryLayout"
 
-const digitalCoverArticles = [
-  {
-    id: 1,
-    title: "Digital Fashion Week: Virtual Runway Revolution",
-    slug: "digital-fashion-week-virtual-runway",
-    image_url: "https://picsum.photos/270/405?random=11", // Changed to image_url for consistency
-    author: "Alexandra Smith",
-    publish_date: "2024-12-18", // Changed to consistent date format
-    category: "Digital Cover",
-    excerpt: "How virtual fashion shows are changing the industry landscape...",
-  },
-  {
-    id: 2,
-    title: "NFT Fashion: The Future of Digital Couture",
-    slug: "nft-fashion-digital-couture",
-    image_url: "https://picsum.photos/270/405?random=12",
-    author: "Marcus Johnson",
-    publish_date: "2024-12-16",
-    category: "Digital Cover",
-    excerpt: "Exploring the intersection of blockchain technology and fashion...",
-  },
-  {
-    id: 3,
-    title: "Virtual Influencers: The New Face of Fashion",
-    slug: "virtual-influencers-fashion",
-    image_url: "https://picsum.photos/270/405?random=13",
-    author: "Sophie Chen",
-    publish_date: "2024-12-14",
-    category: "Digital Cover",
-    excerpt: "How AI-generated personalities are reshaping fashion marketing...",
-  },
-  {
-    id: 4,
-    title: "Augmented Reality Shopping Experience",
-    slug: "ar-shopping-experience",
-    image_url: "https://picsum.photos/270/405?random=14",
-    author: "Ryan Martinez",
-    publish_date: "2024-12-12",
-    category: "Digital Cover",
-    excerpt: "The future of retail through augmented reality technology...",
-  },
-]
-
-// Sort articles by publish_date in descending order (newest first)
-digitalCoverArticles.sort((a, b) => new Date(b.publish_date).getTime() - new Date(a.publish_date).getTime())
+interface CoverPhoto {
+  id: number
+  title: string
+  image_url: string
+  description: string
+  category: string
+  is_active: boolean
+  display_order: number
+  created_at: string
+}
 
 export default function DigitalCoverPage() {
+  const [coverPhotos, setCoverPhotos] = useState<CoverPhoto[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchCoverPhotos()
+  }, [])
+
+  const fetchCoverPhotos = async () => {
+    try {
+      const response = await fetch("/api/cover-photos")
+      const data: CoverPhoto[] = await response.json()
+      
+      // Filter for digital cover photos that are active
+      const digitalCoverPhotos = data.filter(
+        photo => photo.category === "digital-cover" && photo.is_active
+      )
+      
+      // Sort by display order
+      digitalCoverPhotos.sort((a, b) => a.display_order - b.display_order)
+      
+      setCoverPhotos(digitalCoverPhotos)
+    } catch (error) {
+      console.error("Failed to fetch cover photos:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Convert cover photos to article format for CategoryLayout
+  const digitalCoverArticles = coverPhotos.map(photo => ({
+    id: photo.id,
+    title: photo.title,
+    slug: `cover-photo-${photo.id}`,
+    image_url: photo.image_url,
+    author: "TMM India",
+    publish_date: photo.created_at,
+    category: "Digital Cover",
+    excerpt: photo.description || "Explore our digital cover photography collection.",
+  }))
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-black"></div>
+      </div>
+    )
+  }
+
   return (
     <CategoryLayout
       categoryName="Digital Cover"
       categorySlug="digital-cover"
       description="Explore the cutting-edge world of digital fashion and virtual experiences that are shaping the future of style."
-      initialArticles={digitalCoverArticles} // Pass static articles to CategoryLayout
+      initialArticles={digitalCoverArticles}
     />
   )
 }

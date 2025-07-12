@@ -1,5 +1,15 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@supabase/supabase-js"
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+
+// Regular client for read operations
+const supabase = createClient(supabaseUrl, supabaseKey)
+
+// Admin client with service role for write operations (bypasses RLS)
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
 
 export async function GET(request: NextRequest) {
   try {
@@ -92,10 +102,8 @@ export async function POST(request: NextRequest) {
       image_url,
       author,
       publish_date,
-      status = "draft",
-      scheduled_date,
       featured = false,
-      category_ids = [],
+      categories = [],
     } = body
 
     // Validate required fields
@@ -111,7 +119,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert article
-    const { data: article, error: articleError } = await supabase
+    const { data: article, error: articleError } = await supabaseAdmin
       .from("articles")
       .insert({
         title,
@@ -121,8 +129,6 @@ export async function POST(request: NextRequest) {
         image_url,
         author,
         publish_date,
-        status,
-        scheduled_date,
         featured,
       })
       .select()
@@ -134,13 +140,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert category relationships
-    if (category_ids.length > 0) {
-      const categoryRelations = category_ids.map((categoryId: number) => ({
+    if (categories.length > 0) {
+      const categoryRelations = categories.map((categoryId: number) => ({
         article_id: article.id,
         category_id: categoryId,
       }))
 
-      const { error: categoryError } = await supabase.from("article_categories").insert(categoryRelations)
+      const { error: categoryError } = await supabaseAdmin.from("article_categories").insert(categoryRelations)
 
       if (categoryError) {
         console.error("Category relation error:", categoryError)
