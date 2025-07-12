@@ -11,10 +11,11 @@ interface ImageUploadProps {
   label: string
   value: string
   onChange: (url: string) => void
-  type?: "image" | "pdf"
+  type?: "image" | "pdf" | "cover-photo"
+  bucket?: string // <-- add this
 }
 
-export default function ImageUpload({ label, value, onChange, type = "image" }: ImageUploadProps) {
+export default function ImageUpload({ label, value, onChange, type = "image", bucket }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false)
   const [dragOver, setDragOver] = useState(false)
 
@@ -31,13 +32,16 @@ export default function ImageUpload({ label, value, onChange, type = "image" }: 
       alert("Please select an image file")
       return
     }
-
     if (type === "pdf" && file.type !== "application/pdf") {
       alert("Please select a PDF file")
       return
     }
+    if (type === "cover-photo" && !file.type.startsWith("image/")) {
+      alert("Please select an image file for cover photo")
+      return
+    }
 
-    // Validate file size (10MB for images, 50MB for PDFs)
+    // Validate file size (10MB for images/cover-photo, 50MB for PDFs)
     const maxSize = type === "pdf" ? 50 * 1024 * 1024 : 10 * 1024 * 1024
     if (file.size > maxSize) {
       alert(`File too large. Maximum size is ${type === "pdf" ? "50MB" : "10MB"}`)
@@ -47,15 +51,22 @@ export default function ImageUpload({ label, value, onChange, type = "image" }: 
     setUploading(true)
 
     try {
-      // Prepare upload path and bucket
-      const bucket = type === "pdf" ? "magazines" : "images"
+      // Choose bucket
+      const chosenBucket =
+        bucket ||
+        (type === "pdf"
+          ? "magazines"
+          : type === "cover-photo"
+          ? "cover-photos"
+          : "images")
+
       const timestamp = Date.now()
       const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_")
       const filePath = `${type}/${timestamp}_${safeName}`
 
       // Upload directly to Supabase Storage
       const { data, error } = await supabase.storage
-        .from(bucket)
+        .from(chosenBucket)
         .upload(filePath, file, {
           cacheControl: "3600",
           upsert: false,
@@ -66,7 +77,7 @@ export default function ImageUpload({ label, value, onChange, type = "image" }: 
       }
 
       // Get public URL
-      const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(filePath)
+      const { data: urlData } = supabase.storage.from(chosenBucket).getPublicUrl(filePath)
       if (!urlData?.publicUrl) {
         throw new Error("Failed to get public URL")
       }
