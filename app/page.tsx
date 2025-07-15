@@ -269,13 +269,12 @@ export default function Home() {
             {carouselArticles.map((article, index) => (
               <SwiperSlide key={article.id} className="w-full !m-0 !p-0 block">
                 <Link href={`/articles/${article.slug}`} className="block w-full">
-                  <div className="landscape-cover bg-none w-full">
+                  <div className="landscape-cover bg-none w-full relative w-[1200px] h-[500px]">
                     <Image
-                      src={article.image_url || "/placeholder.svg?height=500&width=324"}
+                      src={article.image_url || "/placeholder.svg?height=500&width=1200"}
                       alt={article.title}
-                      width={1200}
-                      height={500}
-                      className="w-full h-auto object-cover !rounded-none block"
+                      fill
+                      className="object-cover !rounded-none block"
                       priority={index === 0}
                       loading={index === 0 ? "eager" : "lazy"}
                       sizes="100vw"
@@ -320,13 +319,12 @@ export default function Home() {
                 {latestNews.map((article) => (
                   <article key={article.id} className="news-card !rounded-none">
                     <Link href={`/articles/${article.slug}`} className="block">
-                      <div className="news-image-container">
+                      <div className="relative w-[283px] h-[400px] news-image-container">
                         <Image
                           src={article.image_url || "/placeholder.svg?height=400&width=283"}
                           alt={article.title}
-                          width={283}
-                          height={400}
-                          className="w-full h-auto object-cover !rounded-none"
+                          fill
+                          className="object-cover !rounded-none"
                           loading="lazy"
                           sizes="283px"
                         />
@@ -365,13 +363,12 @@ export default function Home() {
                   {/* Main Fashion Article */}
                   <article className="news-card-large md:w-3/5 !rounded-none">
                     <Link href={`/articles/${fashionArticles[0].slug}`}>
-                      <div className="news-image-container-large">
+                      <div className="relative w-[483px] h-[520px] news-image-container-large">
                         <Image
                           src={fashionArticles[0].image_url || "/placeholder.svg?height=520&width=483"}
                           alt={fashionArticles[0].title}
-                          width={483}
-                          height={520}
-                          className="w-full h-auto object-cover !rounded-none"
+                          fill
+                          className="object-cover !rounded-none"
                           loading="lazy"
                           sizes="483px"
                         />
@@ -393,13 +390,12 @@ export default function Home() {
                     {fashionArticles.slice(1).map((article) => (
                       <article key={article.id} className="news-card-small !rounded-none">
                         <Link href={`/articles/${article.slug}`}>
-                          <div className="news-image-container-small">
+                          <div className="relative w-[300px] h-[208px] news-image-container-small">
                             <Image
                               src={article.image_url || "/placeholder.svg?height=208&width=300"}
                               alt={article.title}
-                              width={300}
-                              height={208}
-                              className="w-full h-[208px] object-cover"
+                              fill
+                              className="object-cover w-full h-[208px]"
                               loading="lazy"
                               sizes="300px"
                             />
@@ -516,13 +512,12 @@ export default function Home() {
               {techAutoArticles.map((article) => (
                 <article key={article.id} className="news-card !rounded-none">
                   <Link href={`/articles/${article.slug}`} className="block">
-                    <div className="news-image-container">
+                    <div className="relative w-[283px] h-[400px] news-image-container">
                       <Image
                         src={article.image_url || "/placeholder.svg?height=400&width=283"}
                         alt={article.title}
-                        width={283}
-                        height={400}
-                        className="w-full h-auto object-cover !rounded-none"
+                        fill
+                        className="object-cover !rounded-none"
                         loading="lazy"
                         sizes="283px"
                       />
@@ -605,13 +600,12 @@ export default function Home() {
               {sportsArticles.map((article) => (
                 <article key={article.id} className="news-card !rounded-none">
                   <Link href={`/articles/${article.slug}`} className="block">
-                    <div className="news-image-container">
+                    <div className="relative w-[283px] h-[400px] news-image-container">
                       <Image
                         src={article.image_url || "/placeholder.svg?height=400&width=283"}
                         alt={article.title}
-                        width={283}
-                        height={400}
-                        className="w-full h-auto object-cover !rounded-none"
+                        fill
+                        className="object-cover !rounded-none"
                         loading="lazy"
                         sizes="283px"
                       />
@@ -646,15 +640,16 @@ export default function Home() {
             {financeArticles.map((article) => (
               <article key={article.id} className="finance-article flex flex-row lg:items-start gap-4 mb-6">
                 <Link href={`/articles/${article.slug}`}>
-                  <Image
-                    src={article.image_url || "/placeholder.svg?height=300&width=226"}
-                    alt={article.title}
-                    width={226}
-                    height={300}
-                    className="object-cover !rounded-none flex-shrink-0 w-[226px] h-[300px]"
-                    loading="lazy"
-                    sizes="226px"
-                  />
+                  <div className="relative w-[226px] h-[300px]">
+                    <Image
+                      src={article.image_url || "/placeholder.svg?height=300&width=226"}
+                      alt={article.title}
+                      fill
+                      className="object-cover !rounded-none flex-shrink-0"
+                      loading="lazy"
+                      sizes="226px"
+                    />
+                  </div>
                 </Link>
                 <div className="flex flex-col justify-start">
                   <Link href={`/articles/${article.slug}`}>
@@ -683,12 +678,11 @@ export default function Home() {
             {travelArticles.map((article) => (
               <article key={article.id} className="travel-article relative mb-16 mx-auto max-w-[360px] pb-4">
                 <Link href={`/articles/${article.slug}`}>
-                  <div className="relative">
+                  <div className="relative w-[360px] h-[250px]">
                     <Image
                       src={article.image_url || "/placeholder.svg?height=250&width=360"}
                       alt={article.title}
-                      width={360}
-                      height={250}
+                      fill
                       className="object-cover !rounded-none !w-full !h-[250px] aspect-[360/250]"
                       loading="lazy"
                       sizes="360px"

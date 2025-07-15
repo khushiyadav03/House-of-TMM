@@ -41,16 +41,8 @@ export default function CategoryLayout({
   const [totalPages, setTotalPages] = useState(1)
 
   useEffect(() => {
-    if (initialArticles && initialArticles.length > 0) {
-      // If initial articles are provided, use them and calculate total pages
-      setArticles(initialArticles)
-      setTotalPages(Math.ceil(initialArticles.length / articlesPerPage))
-      setLoading(false)
-    } else {
-      // Otherwise, fetch from API
-      fetchArticles()
-    }
-  }, [currentPage, categorySlug, initialArticles]) // Added initialArticles to dependency array
+    fetchArticles()
+  }, [currentPage, categorySlug])
 
   const fetchArticles = async () => {
     try {
@@ -75,7 +67,12 @@ export default function CategoryLayout({
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
-  const currentArticlesToDisplay = articles.slice((currentPage - 1) * articlesPerPage, currentPage * articlesPerPage)
+  // Strictly filter articles by categorySlug
+  const filteredArticles = articles.filter(article =>
+    article.categories?.some(cat => cat?.slug === categorySlug)
+  )
+
+  const currentArticlesToDisplay = filteredArticles.slice((currentPage - 1) * articlesPerPage, currentPage * articlesPerPage)
 
   if (loading) {
     return (
@@ -117,11 +114,11 @@ export default function CategoryLayout({
                               ? "bg-pink-600"
                               : article.categories?.[0]?.slug === "tech & auto"
                               ? "bg-blue-600"
-                              : article.categories?.[0]?.slug === "food & drinks"
+                              : article.categories?.[0]?.slug === "digital-cover"
                               ? "bg-yellow-600"
-                              : article.categories?.[0]?.slug === "health & wellness"
+                              : article.categories?.[0]?.slug === "health-wellness"
                               ? "bg-green-600"
-                              : article.categories?.[0]?.slug === "fitness & selfcare"
+                              : article.categories?.[0]?.slug === "fitness-selfcare"
                               ? "bg-purple-600"
                               : article.categories?.[0]?.slug === "travel"
                               ? "bg-cyan-600"
@@ -131,7 +128,7 @@ export default function CategoryLayout({
                               ? "bg-red-600"
                               : article.categories?.[0]?.slug === "golf"
                               ? "bg-emerald-700"
-                              : article.categories?.[0]?.slug === "other sports"
+                              : article.categories?.[0]?.slug === "other-sports"
                               ? "bg-gray-700"
                               : article.categories?.[0]?.slug === "interviews"
                               ? "bg-indigo-700"

@@ -45,10 +45,19 @@ export default function AdminArticles() {
 
   const { toasts, showSuccess, showError, showInfo, removeToast } = useToast()
 
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [selectedCategory, selectedStatus, searchTerm])
+
+  // Sorting
+  const [sortBy, setSortBy] = useState("created_at")
+  const [sortOrder, setSortOrder] = useState("desc")
+
   useEffect(() => {
     fetchArticles()
     fetchCategories()
-  }, [currentPage, searchTerm, selectedCategory, selectedStatus])
+  }, [currentPage, searchTerm, selectedCategory, selectedStatus, sortBy, sortOrder])
 
   const fetchArticles = async () => {
     try {
@@ -58,6 +67,8 @@ export default function AdminArticles() {
         ...(searchTerm && { search: searchTerm }),
         ...(selectedCategory && { category: selectedCategory }),
         ...(selectedStatus && { status: selectedStatus }),
+        ...(sortBy && { sort: sortBy }),
+        ...(sortOrder && { order: sortOrder }),
       })
 
       const response = await fetch(`/api/articles?${params}`)
@@ -250,6 +261,14 @@ export default function AdminArticles() {
   const totalViews = articles.reduce((sum, article) => sum + (article.views || 0), 0)
   const totalLikes = articles.reduce((sum, article) => sum + (article.likes || 0), 0)
 
+  // Strictly filter articles by selectedCategory
+  const filteredArticles = selectedCategory
+    ? articles.filter(article =>
+        Array.isArray(article.categories) &&
+        article.categories.some(cat => typeof cat === 'object' && 'slug' in cat && cat.slug === selectedCategory)
+      )
+    : articles;
+
   if (loading) {
     return (
       <AdminRoute>
@@ -382,12 +401,30 @@ export default function AdminArticles() {
               <option value="scheduled">Scheduled</option>
             </select>
 
+            <select
+              value={sortBy}
+              onChange={e => setSortBy(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+            >
+              <option value="created_at">Newest</option>
+              <option value="title">Title</option>
+              <option value="views">Views</option>
+            </select>
+            <select
+              value={sortOrder}
+              onChange={e => setSortOrder(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+            >
+              <option value="desc">Desc</option>
+              <option value="asc">Asc</option>
+            </select>
             <button
               onClick={() => {
-                setSearchTerm("")
                 setSelectedCategory("")
                 setSelectedStatus("")
-                setCurrentPage(1)
+                setSearchTerm("")
+                setSortBy("created_at")
+                setSortOrder("desc")
               }}
               className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
             >
@@ -446,7 +483,7 @@ export default function AdminArticles() {
         <div className="bg-white shadow rounded-lg overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900">
-                Articles ({articles.length} of {totalPages * articlesPerPage})
+                Articles ({filteredArticles.length} of {totalPages * articlesPerPage})
               </h2>
               <div className="flex items-center gap-2">
                 <button
@@ -459,7 +496,7 @@ export default function AdminArticles() {
           </div>
 
           <div className="divide-y divide-gray-200">
-            {articles.map((article) => (
+            {filteredArticles.map((article) => (
                 <div key={article.id} className="p-6 hover:bg-gray-50 transition-colors">
                 <div className="flex items-start space-x-4">
                     <div className="flex items-center space-x-3">
