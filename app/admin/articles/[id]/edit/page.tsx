@@ -70,19 +70,19 @@ export default function EditArticle({ params }: { params: Promise<{ id: string }
       const response = await fetch(`/api/articles/${resolvedParams.id}`)
       if (response.ok) {
         const data = await response.json()
-        setArticle(data)
+        setArticle(data.article)
         setFormData({
-          title: data.title,
-          slug: data.slug,
-          content: data.content || "",
-          excerpt: data.excerpt || "",
-          image_url: data.image_url || "",
-          author: data.author || "",
-          publish_date: data.publish_date,
-          categories: data.categories?.map((cat: Category) => cat.id) || [],
-          status: data.status,
-          scheduled_date: data.scheduled_date || "",
-          featured: data.featured || false,
+          title: data.article.title,
+          slug: data.article.slug,
+          content: data.article.content || "",
+          excerpt: data.article.excerpt || "",
+          image_url: data.article.image_url || "",
+          author: data.article.author || "",
+          publish_date: data.article.publish_date,
+          categories: data.article.categories?.map((cat: Category) => cat.id) || [],
+          status: data.article.status,
+          scheduled_date: data.article.scheduled_date || "",
+          featured: data.article.featured || false,
         })
       } else {
         alert("Article not found")
