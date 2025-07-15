@@ -11,7 +11,7 @@ const montserrat = Montserrat({
 })
 
 export const metadata = {
-  title: "House of TMM",
+  title: "TMM India",
   description: "A modern fashion and lifestyle blog",
   generator: "v0.dev",
 }

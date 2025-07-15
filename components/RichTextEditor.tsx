@@ -14,8 +14,9 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
+  Trash2,
 } from "lucide-react"
-import { createClient } from "@supabase/supabase-js"
+import { supabase } from "@/lib/supabase"
 
 interface RichTextEditorProps {
   value: string
@@ -30,17 +31,169 @@ export default function RichTextEditor({ value, onChange, placeholder }: RichTex
   const [linkText, setLinkText] = useState("")
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  // Supabase client for uploads
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  const supabase = createClient(supabaseUrl, supabaseAnonKey)
+  const [selectedImg, setSelectedImg] = useState<HTMLImageElement | null>(null)
+  const [imgRect, setImgRect] = useState<{top: number, left: number, width: number, height: number} | null>(null)
 
   useEffect(() => {
     if (editorRef.current && editorRef.current.innerHTML !== value) {
       editorRef.current.innerHTML = value
     }
+
+    const editor = editorRef.current
+    if (!editor) return
+
+    // Remove any previous listeners
+    editor.querySelectorAll('img').forEach(img => {
+      img.removeAttribute('contenteditable')
+      img.removeEventListener('mousedown', handleImageMouseDown as any)
+      img.removeEventListener('click', handleImageClick as any)
+    })
+
+    // Add resizable logic and click handler to all images
+    editor.querySelectorAll('img').forEach(img => {
+      img.setAttribute('contenteditable', 'false')
+      img.style.cursor = 'pointer'
+      img.addEventListener('mousedown', handleImageMouseDown as any)
+      img.addEventListener('click', handleImageClick as any)
+    })
+
+    // Clean up
+    return () => {
+      editor.querySelectorAll('img').forEach(img => {
+        img.removeEventListener('mousedown', handleImageMouseDown as any)
+        img.removeEventListener('click', handleImageClick as any)
+      })
+    }
   }, [value])
+
+  // --- Image Resize & Select Logic ---
+  let resizingImg: HTMLImageElement | null = null
+  let startX = 0
+  let startY = 0
+  let startWidth = 0
+  let startHeight = 0
+  let resizeDir: string | null = null
+
+  function handleImageMouseDown(e: MouseEvent) {
+    if (e.button !== 0) return // Only left click
+    resizingImg = e.target as HTMLImageElement
+    startX = e.clientX
+    startY = e.clientY
+    startWidth = resizingImg.width
+    startHeight = resizingImg.height
+    document.body.style.cursor = 'ew-resize'
+    document.addEventListener('mousemove', handleImageMouseMove)
+    document.addEventListener('mouseup', handleImageMouseUp)
+    e.preventDefault()
+  }
+
+  function handleImageMouseMove(e: MouseEvent) {
+    if (!resizingImg) return
+    const deltaX = e.clientX - startX
+    let newWidth = Math.max(50, startWidth + deltaX)
+    resizingImg.style.width = newWidth + 'px'
+    resizingImg.style.height = 'auto'
+  }
+
+  function handleImageMouseUp() {
+    if (resizingImg) {
+      // Update editor content after resize
+      if (editorRef.current) {
+        onChange(editorRef.current.innerHTML)
+      }
+    }
+    resizingImg = null
+    document.body.style.cursor = ''
+    document.removeEventListener('mousemove', handleImageMouseMove)
+    document.removeEventListener('mouseup', handleImageMouseUp)
+  }
+
+  function handleImageClick(e: MouseEvent) {
+    e.stopPropagation()
+    const img = e.target as HTMLImageElement
+    setSelectedImg(img)
+    const rect = img.getBoundingClientRect()
+    setImgRect({
+      top: rect.top + window.scrollY,
+      left: rect.left + window.scrollX,
+      width: rect.width,
+      height: rect.height,
+    })
+  }
+
+  useEffect(() => {
+    // Deselect image on outside click
+    function handleDocClick(e: MouseEvent) {
+      if (selectedImg && !(e.target instanceof HTMLImageElement)) {
+        setSelectedImg(null)
+        setImgRect(null)
+      }
+    }
+    document.addEventListener('mousedown', handleDocClick)
+    return () => document.removeEventListener('mousedown', handleDocClick)
+  }, [selectedImg])
+
+  function handleResizeHandleMouseDown(e: React.MouseEvent, dir: string) {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!selectedImg) return
+    resizingImg = selectedImg
+    resizeDir = dir
+    startX = e.clientX
+    startY = e.clientY
+    startWidth = selectedImg.width
+    startHeight = selectedImg.height
+    document.body.style.cursor = dir.includes('e') ? 'ew-resize' : dir.includes('s') ? 'ns-resize' : 'nwse-resize'
+    document.addEventListener('mousemove', handleResizeHandleMouseMove)
+    document.addEventListener('mouseup', handleResizeHandleMouseUp)
+  }
+
+  function handleResizeHandleMouseMove(e: MouseEvent) {
+    if (!resizingImg || !resizeDir) return
+    let newWidth = startWidth
+    let newHeight = startHeight
+    if (resizeDir === 'se') {
+      newWidth = Math.max(50, startWidth + (e.clientX - startX))
+      newHeight = Math.max(30, startHeight + (e.clientY - startY))
+    } else if (resizeDir === 'e') {
+      newWidth = Math.max(50, startWidth + (e.clientX - startX))
+    } else if (resizeDir === 's') {
+      newHeight = Math.max(30, startHeight + (e.clientY - startY))
+    }
+    resizingImg.style.width = newWidth + 'px'
+    resizingImg.style.height = newHeight + 'px'
+    // Update overlay position
+    const rect = resizingImg.getBoundingClientRect()
+    setImgRect({
+      top: rect.top + window.scrollY,
+      left: rect.left + window.scrollX,
+      width: rect.width,
+      height: rect.height,
+    })
+  }
+
+  function handleResizeHandleMouseUp() {
+    if (resizingImg) {
+      if (editorRef.current) {
+        onChange(editorRef.current.innerHTML)
+      }
+    }
+    resizingImg = null
+    resizeDir = null
+    document.body.style.cursor = ''
+    document.removeEventListener('mousemove', handleResizeHandleMouseMove)
+    document.removeEventListener('mouseup', handleResizeHandleMouseUp)
+  }
+
+  function handleRemoveImage() {
+    if (!selectedImg) return
+    selectedImg.remove()
+    setSelectedImg(null)
+    setImgRect(null)
+    if (editorRef.current) {
+      onChange(editorRef.current.innerHTML)
+    }
+  }
 
   const handleCommand = (command: string, value?: string) => {
     document.execCommand(command, false, value)
@@ -210,7 +363,97 @@ export default function RichTextEditor({ value, onChange, placeholder }: RichTex
         style={{ minHeight: "300px" }}
         data-placeholder={placeholder}
       />
-
+      {/* Resize Handles & Remove Button Overlay */}
+      {selectedImg && imgRect && (
+        <div
+          style={{
+            position: 'absolute',
+            top: imgRect.top,
+            left: imgRect.left,
+            width: imgRect.width,
+            height: imgRect.height,
+            pointerEvents: 'none',
+            zIndex: 50,
+          }}
+        >
+          {/* SE handle */}
+          <div
+            style={{
+              position: 'absolute',
+              right: -8,
+              bottom: -8,
+              width: 16,
+              height: 16,
+              background: '#fff',
+              border: '2px solid #333',
+              borderRadius: 4,
+              cursor: 'nwse-resize',
+              pointerEvents: 'auto',
+              zIndex: 51,
+            }}
+            onMouseDown={(e) => handleResizeHandleMouseDown(e, 'se')}
+          />
+          {/* E handle */}
+          <div
+            style={{
+              position: 'absolute',
+              right: -8,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              width: 16,
+              height: 16,
+              background: '#fff',
+              border: '2px solid #333',
+              borderRadius: 4,
+              cursor: 'ew-resize',
+              pointerEvents: 'auto',
+              zIndex: 51,
+            }}
+            onMouseDown={(e) => handleResizeHandleMouseDown(e, 'e')}
+          />
+          {/* S handle */}
+          <div
+            style={{
+              position: 'absolute',
+              left: '50%',
+              bottom: -8,
+              transform: 'translateX(-50%)',
+              width: 16,
+              height: 16,
+              background: '#fff',
+              border: '2px solid #333',
+              borderRadius: 4,
+              cursor: 'ns-resize',
+              pointerEvents: 'auto',
+              zIndex: 51,
+            }}
+            onMouseDown={(e) => handleResizeHandleMouseDown(e, 's')}
+          />
+          {/* Remove button */}
+          <button
+            style={{
+              position: 'absolute',
+              top: -32,
+              right: 0,
+              background: '#fff',
+              border: '2px solid #e53e3e',
+              borderRadius: 4,
+              padding: 2,
+              cursor: 'pointer',
+              pointerEvents: 'auto',
+              zIndex: 52,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            onClick={handleRemoveImage}
+            type="button"
+            title="Remove image"
+          >
+            <Trash2 className="w-4 h-4 text-red-600" />
+          </button>
+        </div>
+      )}
       {/* Link Modal */}
       {isLinkModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

@@ -92,7 +92,7 @@ export async function PUT(request: NextRequest, context: { params: { slug: strin
     const value = isNumeric ? Number.parseInt(slug, 10) : slug
 
     const body = await request.json()
-    const { title, content, excerpt, image_url, author, publish_date, scheduled_date, featured, categories } = body
+    const { title, content, excerpt, image_url, author, publish_date, scheduled_date, featured, categories, status } = body
 
     // Generate slug from title if not provided
     const newSlug =
@@ -101,6 +101,21 @@ export async function PUT(request: NextRequest, context: { params: { slug: strin
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)/g, "")
+
+    // Fetch current article to get current status if not provided
+    let currentStatus = status
+    if (!status) {
+      const { data: currentArticle } = await supabase
+        .from("articles")
+        .select("status")
+        .eq(column, value)
+        .single()
+      currentStatus = currentArticle?.status || "draft"
+    }
+
+    // Defensive: If publish_date or scheduled_date is an empty string, set to null
+    let safePublishDate = publish_date === "" ? null : publish_date
+    let safeScheduledDate = scheduled_date === "" ? null : scheduled_date
 
     const { data, error } = await supabase
       .from("articles")
@@ -111,9 +126,10 @@ export async function PUT(request: NextRequest, context: { params: { slug: strin
         excerpt,
         image_url,
         author,
-        publish_date,
-        scheduled_date,
+        publish_date: safePublishDate,
+        scheduled_date: safeScheduledDate,
         featured,
+        status: currentStatus,
         updated_at: new Date().toISOString(),
       })
       .eq(column, value)

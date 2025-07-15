@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { createClient } from "@supabase/supabase-js"
+import { supabase } from "@/lib/supabase"
 
 export default function EnvironmentTest() {
   const [envInfo, setEnvInfo] = useState<any>({})
@@ -21,15 +21,6 @@ export default function EnvironmentTest() {
       // Test Supabase connection and buckets
       if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
         try {
-          const supabase = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-          )
-
-          // Test bucket access
-          const buckets = ['article-images', 'brand-images', 'cover-photos', 'magazine-covers', 'youtube-thumbnails', 'magazine-pdfs']
-          const bucketResults: any = {}
-
           for (const bucket of buckets) {
             try {
               const { data, error } = await supabase.storage.from(bucket).list('', { limit: 1 })

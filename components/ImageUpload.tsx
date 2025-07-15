@@ -5,7 +5,7 @@ import type React from "react"
 import { useState } from "react"
 import Image from "next/image"
 import { Upload, X, Loader2 } from "lucide-react"
-import { createClient } from "@supabase/supabase-js"
+import { supabase } from "@/lib/supabase"
 
 interface ImageUploadProps {
   label: string
@@ -18,11 +18,6 @@ interface ImageUploadProps {
 export default function ImageUpload({ label, value, onChange, type = "image", bucket }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false)
   const [dragOver, setDragOver] = useState(false)
-
-  // Initialize Supabase client (client-side, use anon key)
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
   // Map upload type to correct bucket name
   const typeToBucket: Record<string, string> = {

@@ -90,6 +90,8 @@ export async function POST(request: NextRequest) {
       publish_date,
       featured = false,
       categories = [],
+      status = "draft", // default to draft
+      scheduled_date = null,
     } = body
 
     // Validate required fields
@@ -116,6 +118,8 @@ export async function POST(request: NextRequest) {
         author,
         publish_date,
         featured,
+        status, // store status
+        scheduled_date,
       })
       .select()
       .single()

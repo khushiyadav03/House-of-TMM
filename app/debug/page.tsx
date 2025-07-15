@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { createClient } from "@supabase/supabase-js"
+import { supabase } from "@/lib/supabase"
 
 export default function DebugPage() {
   const [envInfo, setEnvInfo] = useState<any>({})
@@ -20,14 +20,8 @@ export default function DebugPage() {
 
       if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
         try {
-          const supabase = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-          )
-
           const buckets = ['article-images', 'brand-images', 'cover-photos', 'magazine-covers', 'youtube-thumbnails', 'magazine-pdfs']
           const bucketResults: any = {}
-
           for (const bucket of buckets) {
             try {
               const { data, error } = await supabase.storage.from(bucket).list('', { limit: 1 })
@@ -44,7 +38,6 @@ export default function DebugPage() {
               }
             }
           }
-
           setBucketTest(bucketResults)
         } catch (error) {
           setBucketTest({ error: error instanceof Error ? error.message : "Unknown error" })
