@@ -29,17 +29,19 @@ export async function GET(request: NextRequest) {
       .order("created_at", { ascending: false })
 
     // If filtering by subcategory (slug), join and filter
-    if (subcategory) {
+    if (subcategory || category) {
+      // Use categorySlug for lookup
+      const categorySlug = subcategory || category
       // Get category id for the slug
       const { data: catData, error: catError } = await supabase
         .from("categories")
         .select("id")
-        .eq("slug", subcategory)
+        .eq("slug", categorySlug)
         .single()
       if (catError || !catData) {
         return NextResponse.json({ articles: [], total: 0, page, totalPages: 0 })
       }
-      query = query.contains('article_categories', [{ category_id: catData.id }])
+      query = query.eq('article_categories.category_id', catData.id)
     }
 
     // Optionally filter by status or featured
