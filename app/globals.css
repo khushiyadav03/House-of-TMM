@@ -16,13 +16,6 @@
   overflow: hidden;
 }
 
-.landscape-cover {
-  position: relative;
-  width: 324px;
-  height: 500px;
-  overflow: hidden;
-}
-
 .article-overlay {
   background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
   color: white;
@@ -384,4 +377,93 @@
     height: auto;
     padding: 1rem;
   }
+}
+
+/* Custom Carousel Styles */
+.custom-carousel-slide {
+  width: 325px;
+  height: 500px;
+  border-radius: 0;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  margin: 0 !important;
+}
+.swiper-slide {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.custom-carousel-overlay {
+  width: 100%;
+  background: linear-gradient(to top, rgba(0,0,0,0.7) 70%, rgba(0,0,0,0.0) 100%);
+  padding-bottom: 2rem;
+  padding-top: 3rem;
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+}
+.custom-carousel-category-label {
+  background: rgba(255,255,255,0.18);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 4px 14px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+}
+.custom-carousel-title {
+  color: #fff;
+  text-shadow: 2px 2px 8px rgba(0,0,0,0.45);
+  font-size: 1.35rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
+}
+.custom-carousel-meta {
+  color: #fff;
+  font-size: 0.95rem;
+  opacity: 0.85;
+  margin-bottom: 0.5rem;
+}
+/* Remove old landscape-cover for carousel */
+.landscape-cover {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+}
+
+/* Force Swiper to have no space between slides */
+.swiper,
+.swiper-wrapper {
+  margin: 0 !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  width: auto !important;
+  max-width: none !important;
+}
+.swiper-slide {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 325px !important;
+  height: 500px !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* Add a small gap between carousel slides */
+.swiper-slide {
+  margin-right: 8px !important;
+}
+.swiper-slide:last-child {
+  margin-right: 0 !important;
 }

@@ -20,6 +20,7 @@ interface Article {
   publish_date: string
   excerpt: string
   category: string
+  categories?: { id: number; name: string; slug: string }[] // Add this for subcategory support
 }
 
 interface Magazine {
@@ -262,26 +263,34 @@ export default function Home() {
               640: { slidesPerView: 1, spaceBetween: 0 },
               0: { slidesPerView: 1, spaceBetween: 0 },
             }}
+            style={{ margin: 0, padding: 0, display: 'flex', gap: 0 }}
             onSwiper={(swiper) => {
               swiperRef.current = swiper
             }}
           >
             {carouselArticles.map((article, index) => (
-              <SwiperSlide key={article.id} className="w-full !m-0 !p-0 block">
+              <SwiperSlide key={article.id} className="!w-[325px] !h-[500px] !m-0 !p-0 block">
                 <Link href={`/articles/${article.slug}`} className="block w-full">
-                  <div className="landscape-cover bg-none w-full relative w-[1200px] h-[500px]">
-                    <Image
-                      src={article.image_url || "/placeholder.svg?height=500&width=1200"}
-                      alt={article.title}
-                      fill
-                      className="object-cover !rounded-none block"
-                      priority={index === 0}
-                      loading={index === 0 ? "eager" : "lazy"}
-                      sizes="100vw"
-                    />
-                    <div className="article-overlay absolute bottom-0 left-0 w-full p-4 sm:p-5 md:p-6 text-center">
-                      <span className="article-overlay-span text-xs sm:text-sm">{article.category}</span>
-                      <h3 className="article-heading mt-1 text-lg sm:text-xl md:text-2xl lg:text-3xl font-extrabold">
+                  <div
+                    className="custom-carousel-slide relative flex items-end justify-center"
+                    style={{
+                      width: '325px',
+                      height: '500px',
+                      backgroundImage: `url(${article.image_url || "/placeholder.svg?height=500&width=325"})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      backgroundRepeat: 'no-repeat',
+                    }}
+                  >
+                    <div className="custom-carousel-overlay absolute bottom-0 left-0 w-full flex flex-col items-center justify-end p-6">
+                      <div className="custom-carousel-category mb-2">
+                        {article.categories && article.categories.length > 0 ? (
+                          <span className="custom-carousel-category-label">
+                            {article.categories[0].name}
+                          </span>
+                        ) : null}
+                      </div>
+                      <h3 className="custom-carousel-title text-white text-xl font-extrabold text-center mb-2">
                         {article.title}
                       </h3>
                     </div>
@@ -641,14 +650,14 @@ export default function Home() {
               <article key={article.id} className="finance-article flex flex-row lg:items-start gap-4 mb-6">
                 <Link href={`/articles/${article.slug}`}>
                   <div className="relative w-[226px] h-[300px]">
-                    <Image
+                  <Image
                       src={article.image_url || "/placeholder.svg?height=300&width=226"}
-                      alt={article.title}
+                    alt={article.title}
                       fill
                       className="object-cover !rounded-none flex-shrink-0"
-                      loading="lazy"
-                      sizes="226px"
-                    />
+                    loading="lazy"
+                    sizes="226px"
+                  />
                   </div>
                 </Link>
                 <div className="flex flex-col justify-start">

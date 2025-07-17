@@ -54,8 +54,8 @@ export async function GET(request: NextRequest, context: { params: { slug: strin
 
     // Increment view count if article and article.id exist
     if (article && article.id) {
-      await supabase
-        .from("articles")
+    await supabase
+      .from("articles")
         .update({ views: (article.views || 0) + 1 })
         .eq("id", article.id)
     }
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest, context: { params: { slug: strin
         .eq("category_id", firstCategoryId)
         .neq("article_id", article.id)
         .order("articles.publish_date", { ascending: false })
-        .limit(3)
+      .limit(3)
       relatedArticles = (relData || []).map((rel: any) => rel.articles)
     }
 

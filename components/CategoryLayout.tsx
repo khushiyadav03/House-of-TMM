@@ -41,7 +41,7 @@ export default function CategoryLayout({
   const [totalPages, setTotalPages] = useState(1)
 
   useEffect(() => {
-    fetchArticles()
+      fetchArticles()
   }, [currentPage, categorySlug])
 
   const fetchArticles = async () => {
