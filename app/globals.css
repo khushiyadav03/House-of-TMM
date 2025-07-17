@@ -441,29 +441,36 @@
   display: none !important;
 }
 
-/* Force Swiper to have no space between slides */
-.swiper,
-.swiper-wrapper {
-  margin: 0 !important;
-  padding: 0 !important;
-  gap: 0 !important;
-  width: auto !important;
-  max-width: none !important;
-}
+/* Only homepage-main-carousel should have custom .swiper-slide styles. Remove global .swiper-slide overrides. */
 .swiper-slide {
-  margin: 0 !important;
-  padding: 0 !important;
+  margin-right: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* Restrict custom carousel styles to homepage main carousel only */
+.homepage-main-carousel .swiper-slide {
+  margin-right: 8px !important;
   width: 325px !important;
   height: 500px !important;
   max-width: none !important;
   min-width: 0 !important;
   box-sizing: border-box !important;
 }
-
-/* Add a small gap between carousel slides */
-.swiper-slide {
-  margin-right: 8px !important;
-}
-.swiper-slide:last-child {
+.homepage-main-carousel .swiper-slide:last-child {
   margin-right: 0 !important;
+}
+.homepage-main-carousel .custom-carousel-slide {
+  width: 325px;
+  height: 500px;
+  border-radius: 0;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  margin: 0 !important;
 }

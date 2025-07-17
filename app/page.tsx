@@ -249,6 +249,7 @@ export default function Home() {
       <section className="w-full pt-4 pb-4">
         <div className="carousel-wrapper p-0 m-0">
           <Swiper
+            className="homepage-main-carousel"
             modules={[Autoplay, Pagination]}
             slidesPerView={1}
             spaceBetween={0}
@@ -256,12 +257,13 @@ export default function Home() {
             loopAdditionalSlides={1}
             autoplay={{ delay: 3000, disableOnInteraction: false }}
             pagination={{ el: ".swiper-pagination", clickable: true }}
+            centeredSlides={true}
             breakpoints={{
-              1280: { slidesPerView: 4, spaceBetween: 0 },
-              1024: { slidesPerView: 3.5, spaceBetween: 0 },
-              768: { slidesPerView: 3, spaceBetween: 0 },
-              640: { slidesPerView: 1, spaceBetween: 0 },
-              0: { slidesPerView: 1, spaceBetween: 0 },
+              1280: { slidesPerView: 4, spaceBetween: 0, centeredSlides: false },
+              1024: { slidesPerView: 3.5, spaceBetween: 0, centeredSlides: false },
+              768: { slidesPerView: 3, spaceBetween: 0, centeredSlides: false },
+              640: { slidesPerView: 1.2, spaceBetween: 8, centeredSlides: true },
+              0: { slidesPerView: 1.2, spaceBetween: 8, centeredSlides: true },
             }}
             style={{ margin: 0, padding: 0, display: 'flex', gap: 0 }}
             onSwiper={(swiper) => {
