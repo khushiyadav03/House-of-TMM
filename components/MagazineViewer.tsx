@@ -141,13 +141,6 @@ export default function MagazineViewer({ pdfUrl, title }: MagazineViewerProps) {
       height: effectivePageHeight * zoom,
     };
   };
-  const swipeHandlers = useSwipeable({
-    onSwipedLeft: () => isMobile && currentScale === 1 && goToNextPage(),
-    onSwipedRight: () => isMobile && currentScale === 1 && goToPrevPage(),
-    trackMouse: false,
-    trackTouch: true,
-    delta: 10,
-  });
   // Pre-render current, next, and previous pages
   const renderPages = () => {
     if (showGrid) {
@@ -171,7 +164,7 @@ export default function MagazineViewer({ pdfUrl, title }: MagazineViewerProps) {
     // Always single page on mobile
     if (isMobile || currentPage === 1 || currentPage === numPages || currentPage > numPages) {
       return (
-        <div className="flex-1 flex justify-center items-center" style={{ minWidth: '100%', padding:0, margin:0 }} {...swipeHandlers}>
+        <div className="flex-1 flex justify-center items-center" style={{ minWidth: '100%', padding:0, margin:0 }}>
           {isMobile ? (
             <TransformWrapper
               doubleClick={{ disabled: true }}
