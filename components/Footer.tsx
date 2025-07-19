@@ -65,7 +65,7 @@ export default function Footer() {
         </ul>
 
         {/* Copyright */}
-        <p className="text-sm">© 2025 House of TMM</p>
+        <p className="text-sm">© 2025 TMM India</p>
       </div>
     </footer>
   )

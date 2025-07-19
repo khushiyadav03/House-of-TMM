@@ -251,8 +251,8 @@ export default function Home() {
           <Swiper
             className="homepage-main-carousel"
             modules={[Autoplay, Pagination]}
-            slidesPerView={1}
-            spaceBetween={0}
+            slidesPerView={1.2}
+            spaceBetween={8}
             loop={true}
             loopAdditionalSlides={1}
             autoplay={{ delay: 3000, disableOnInteraction: false }}
@@ -262,7 +262,6 @@ export default function Home() {
               1280: { slidesPerView: 4, spaceBetween: 0, centeredSlides: false },
               1024: { slidesPerView: 3.5, spaceBetween: 0, centeredSlides: false },
               768: { slidesPerView: 3, spaceBetween: 0, centeredSlides: false },
-              640: { slidesPerView: 1.2, spaceBetween: 8, centeredSlides: true },
               0: { slidesPerView: 1.2, spaceBetween: 8, centeredSlides: true },
             }}
             style={{ margin: 0, padding: 0, display: 'flex', gap: 0 }}
