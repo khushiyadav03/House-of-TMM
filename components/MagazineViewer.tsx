@@ -127,6 +127,17 @@ export default function MagazineViewer({ pdfUrl, title }: MagazineViewerProps) {
     if (currentPage < numPages) return i === currentPage || i === currentPage + 1;
     return i === currentPage;
   };
+  // In renderPages, use width for mobile, height for desktop
+  const getPageProps = () => {
+    if (isMobile) {
+      return {
+        width: typeof window !== 'undefined' ? window.innerWidth / 2.2 : 180,
+      };
+    }
+    return {
+      height: effectivePageHeight,
+    };
+  };
   // Pre-render current, next, and previous pages
   const renderPages = () => {
     if (showGrid) {
@@ -136,7 +147,8 @@ export default function MagazineViewer({ pdfUrl, title }: MagazineViewerProps) {
             <div key={i} className="border bg-white shadow rounded overflow-hidden cursor-pointer m-2" onClick={() => { setCurrentPage(i + 1); setShowGrid(false); }}>
               <Page
                 pageNumber={i + 1}
-                height={120}
+                width={isMobile ? (typeof window !== 'undefined' ? window.innerWidth / 2.2 : 180) : undefined}
+                height={!isMobile ? 120 : undefined}
                 renderAnnotationLayer={false}
                 renderTextLayer={false}
               />
@@ -153,7 +165,7 @@ export default function MagazineViewer({ pdfUrl, title }: MagazineViewerProps) {
           <Page
             key={currentPage}
             pageNumber={currentPage}
-            height={effectivePageHeight}
+            {...getPageProps()}
             renderAnnotationLayer={false}
             renderTextLayer={false}
             className="bg-white shadow-2xl rounded"
@@ -169,7 +181,7 @@ export default function MagazineViewer({ pdfUrl, title }: MagazineViewerProps) {
             <Page
               key={currentPage}
               pageNumber={currentPage}
-              height={effectivePageHeight}
+              {...getPageProps()}
               renderAnnotationLayer={false}
               renderTextLayer={false}
               className="bg-white shadow-2xl rounded"
@@ -180,7 +192,7 @@ export default function MagazineViewer({ pdfUrl, title }: MagazineViewerProps) {
               <Page
                 key={currentPage + 1}
                 pageNumber={currentPage + 1}
-                height={effectivePageHeight}
+                {...getPageProps()}
                 renderAnnotationLayer={false}
                 renderTextLayer={false}
                 className="bg-white shadow-2xl rounded"
