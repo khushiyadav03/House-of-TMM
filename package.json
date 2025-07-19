@@ -60,6 +60,8 @@
     "react-pageflip": "^2.0.3",
     "react-pdf": "^10.0.1",
     "react-resizable-panels": "latest",
+    "react-swipeable": "^7.0.2",
+    "react-zoom-pan-pinch": "^3.7.0",
     "recharts": "latest",
     "sonner": "latest",
     "stripe": "latest",

@@ -5,6 +5,8 @@ import { Document, Page, pdfjs } from "react-pdf";
 import { Plus, Minus, Maximize2, Copy, Grid, Share2, ChevronLeft, ChevronRight, Layout, LayoutPanelLeft } from "lucide-react";
 import HTMLFlipBook from 'react-pageflip';
 import { useIsMobile } from "@/hooks/use-mobile";
+import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
+import { useSwipeable } from 'react-swipeable';
 
 interface MagazineViewerProps {
   pdfUrl: string;
@@ -138,6 +140,12 @@ export default function MagazineViewer({ pdfUrl, title }: MagazineViewerProps) {
       height: effectivePageHeight * zoom,
     };
   };
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () => isMobile && goToNextPage(),
+    onSwipedRight: () => isMobile && goToPrevPage(),
+    trackMouse: false,
+    trackTouch: true,
+  });
   // Pre-render current, next, and previous pages
   const renderPages = () => {
     if (showGrid) {
@@ -161,15 +169,37 @@ export default function MagazineViewer({ pdfUrl, title }: MagazineViewerProps) {
     // Always single page on mobile
     if (isMobile || currentPage === 1 || currentPage === numPages || currentPage > numPages) {
       return (
-        <div className="flex-1 flex justify-center items-center" style={{ minWidth: '100%', padding:0, margin:0 }}>
-          <Page
-            key={currentPage}
-            pageNumber={currentPage}
-            {...getPageProps()}
-            renderAnnotationLayer={false}
-            renderTextLayer={false}
-            className="bg-white shadow-2xl rounded"
-          />
+        <div className="flex-1 flex justify-center items-center" style={{ minWidth: '100%', padding:0, margin:0 }} {...(isMobile ? swipeHandlers : {})}>
+          {isMobile ? (
+            <TransformWrapper
+              doubleClick={{ disabled: true }}
+              pinch={{ disabled: false }}
+              wheel={{ disabled: true }}
+              panning={{ disabled: false }}
+              minScale={1}
+              initialScale={1}
+            >
+              <TransformComponent>
+                <Page
+                  key={currentPage}
+                  pageNumber={currentPage}
+                  {...getPageProps()}
+                  renderAnnotationLayer={false}
+                  renderTextLayer={false}
+                  className="bg-white shadow-2xl rounded"
+                />
+              </TransformComponent>
+            </TransformWrapper>
+          ) : (
+            <Page
+              key={currentPage}
+              pageNumber={currentPage}
+              {...getPageProps()}
+              renderAnnotationLayer={false}
+              renderTextLayer={false}
+              className="bg-white shadow-2xl rounded"
+            />
+          )}
         </div>
       );
     }
