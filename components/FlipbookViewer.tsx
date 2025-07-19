@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
-import { ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut, RotateCw } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { Document, Page, pdfjs } from "react-pdf"
+import { X, Plus, Minus, Maximize2, Copy, ArrowUp } from "lucide-react"
 import Image from "next/image"
-import { Button } from "@/components/ui/button"
 
 interface FlipbookViewerProps {
   pdfUrl: string
@@ -13,233 +13,201 @@ interface FlipbookViewerProps {
 }
 
 export default function FlipbookViewer({ pdfUrl, isOpen, onClose, title }: FlipbookViewerProps) {
-  const [currentPage, setCurrentPage] = useState(0)
-  const [pages, setPages] = useState<string[]>([]) // Array of image URLs for pages
-  const viewerRef = useRef<HTMLDivElement>(null)
+  const [numPages, setNumPages] = useState<number>(0)
+  const [bookmark, setBookmark] = useState<number>(1)
+  const [error, setError] = useState<string | null>(null)
+  const [currentPage, setCurrentPage] = useState<number>(1)
+  const [showBackToTop, setShowBackToTop] = useState(false)
   const [zoom, setZoom] = useState(1)
-  const [rotation, setRotation] = useState(0)
   const [isFullscreen, setIsFullscreen] = useState(false)
-
-  // Mock PDF loading and page generation (replace with actual PDF rendering logic)
-  useEffect(() => {
-    // In a real application, you would use a library like pdf.js to render PDF pages to canvas/images
-    // For this example, we'll simulate pages with placeholder images
-    const mockPages = Array.from({ length: 10 }, (_, i) => `/placeholder.svg?height=800&width=600&text=Page%20${i + 1}`)
-    setPages(mockPages)
-  }, [pdfUrl])
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = "hidden"
-    } else {
-      document.body.style.overflow = "unset"
+      const saved = localStorage.getItem(`bookmark_${title}`)
+      if (saved) setBookmark(Number(saved))
     }
-
-    return () => {
-      document.body.style.overflow = "unset"
-    }
-  }, [isOpen])
+  }, [isOpen, title])
 
   useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (!isOpen) return
-
-      switch (e.key) {
-        case "ArrowLeft":
-          goToPreviousPage()
-          break
-        case "ArrowRight":
-          goToNextPage()
-          break
-        case "Escape":
-          onClose()
-          break
-        case "+":
-          setZoom((prev) => Math.min(prev + 0.2, 3))
-          break
-        case "-":
-          setZoom((prev) => Math.max(prev - 0.2, 0.5))
-          break
+    if (scrollRef.current && numPages > 0 && bookmark > 1) {
+      const pageElem = scrollRef.current.querySelector(`#pdf-page-${bookmark}`)
+      if (pageElem) {
+        (pageElem as HTMLElement).scrollIntoView({ behavior: "smooth", block: "start" })
       }
     }
+  }, [numPages, bookmark])
 
-    window.addEventListener("keydown", handleKeyPress)
-    return () => window.removeEventListener("keydown", handleKeyPress)
-  }, [isOpen])
-
-  const goToNextPage = () => {
-    setCurrentPage((prev) => Math.min(prev + 1, pages.length - 1))
-  }
-
-  const goToPreviousPage = () => {
-    setCurrentPage((prev) => Math.max(prev - 1, 0))
-  }
-
-  const zoomIn = () => setZoom((prev) => Math.min(prev + 0.2, 3))
-  const zoomOut = () => setZoom((prev) => Math.max(prev - 0.2, 0.5))
-  const rotate = () => setRotation((prev) => (prev + 90) % 360)
-
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen()
-      setIsFullscreen(true)
-    } else {
-      document.exitFullscreen()
-      setIsFullscreen(false)
+  useEffect(() => {
+    if (typeof window !== "undefined" && pdfjs.GlobalWorkerOptions) {
+      pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
     }
+  }, []);
+
+  // Disable right-click/context menu
+  useEffect(() => {
+    const node = scrollRef.current;
+    if (!node) return;
+    const preventContextMenu = (e: MouseEvent) => e.preventDefault();
+    node.addEventListener("contextmenu", preventContextMenu);
+    return () => {
+      node.removeEventListener("contextmenu", preventContextMenu);
+    };
+  }, [isOpen, numPages]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!scrollRef.current) return;
+      if (e.key === 'PageDown' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        scrollToPage(currentPage + 1);
+      } else if (e.key === 'PageUp' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        scrollToPage(currentPage - 1);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, currentPage, numPages]);
+
+  // Scroll to a specific page
+  const scrollToPage = (page: number) => {
+    if (!scrollRef.current) return;
+    const clamped = Math.max(1, Math.min(page, numPages));
+    const pageElem = scrollRef.current.querySelector(`#page-index-${clamped - 1}`);
+    if (pageElem) {
+      pageElem.scrollIntoView({ behavior: "smooth", block: "start" });
+      setCurrentPage(clamped);
+    }
+  };
+
+  // Track current page as user scrolls
+  useEffect(() => {
+    const node = scrollRef.current;
+    if (!node) return;
+    const handleScroll = () => {
+      if (!node) return;
+      const pageDivs = Array.from(node.querySelectorAll('[id^="page-index-"]'));
+      const scrollTop = node.scrollTop;
+      let found = 1;
+      for (let i = 0; i < pageDivs.length; i++) {
+        if ((pageDivs[i] as HTMLElement).offsetTop - node.offsetTop - 32 > scrollTop) {
+          break;
+        }
+        found = i + 1;
+      }
+      setCurrentPage(found);
+      setShowBackToTop(found > 2);
+    };
+    node.addEventListener('scroll', handleScroll);
+    return () => {
+      node.removeEventListener('scroll', handleScroll);
+    };
+  }, [numPages, isOpen]);
+
+  const handleBookmark = (page: number) => {
+    setBookmark(page)
+    localStorage.setItem(`bookmark_${title}`, String(page))
   }
+
+  // Fullscreen logic
+  const handleFullscreen = () => {
+    if (!isFullscreen) {
+      if (scrollRef.current?.requestFullscreen) {
+        scrollRef.current.requestFullscreen();
+        setIsFullscreen(true);
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+        setIsFullscreen(false);
+      }
+    }
+  };
+
+  // Share (copy link)
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+  };
+
+  // Back to Top
+  const handleBackToTop = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  // Zoom controls
+  const handleZoomIn = () => setZoom(z => Math.min(z + 0.1, 2));
+  const handleZoomOut = () => setZoom(z => Math.max(z - 0.1, 0.5));
 
   if (!isOpen) return null
-
-  if (pages.length === 0) {
-    return <div className="flex items-center justify-center h-full text-gray-500">Loading magazine...</div>
-  }
-
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col">
-      {/* Header */}
-      <div className="bg-white p-4 flex justify-between items-center shadow-lg">
-        <div className="flex items-center space-x-4">
-          <h2 className="text-xl font-bold text-gray-900">{title}</h2>
-          <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">TMM India Magazine</span>
-        </div>
-
-        <div className="flex items-center space-x-4">
-          <span className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded">
-            Page {currentPage + 1} of {pages.length}
-          </span>
-
-          {/* Zoom Controls */}
-          <div className="flex items-center space-x-2 border-l pl-4">
-            <button onClick={zoomOut} className="p-2 hover:bg-gray-100 rounded transition-colors" title="Zoom Out">
-              <ZoomOut size={18} />
-            </button>
-            <span className="text-sm text-gray-600 min-w-[50px] text-center">{Math.round(zoom * 100)}%</span>
-            <button onClick={zoomIn} className="p-2 hover:bg-gray-100 rounded transition-colors" title="Zoom In">
-              <ZoomIn size={18} />
-            </button>
-          </div>
-
-          {/* Rotate */}
-          <button onClick={rotate} className="p-2 hover:bg-gray-100 rounded transition-colors" title="Rotate">
-            <RotateCw size={18} />
-          </button>
-
-          {/* Fullscreen */}
-          <button
-            onClick={toggleFullscreen}
-            className="p-2 hover:bg-gray-100 rounded transition-colors text-sm"
-            title="Toggle Fullscreen"
-          >
-            {isFullscreen ? "Exit" : "Full"}
-          </button>
-
-          {/* Close */}
-          <button
-            onClick={onClose}
-            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
-            title="Close"
-          >
-            <X size={20} />
-          </button>
-        </div>
+      {/* Close Button */}
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 z-50 p-2 text-gray-300 hover:text-white bg-black/60 rounded-full shadow-lg transition-colors"
+        title="Close"
+      >
+        <X size={28} />
+      </button>
+      {/* Floating Toolbar */}
+      <div className="fixed top-1/2 right-8 z-50 flex flex-col gap-4 bg-black/60 p-3 rounded-lg shadow-lg items-center">
+        <button onClick={handleZoomIn} title="Zoom In" className="text-white hover:text-yellow-300"><Plus size={22} /></button>
+        <button onClick={handleZoomOut} title="Zoom Out" className="text-white hover:text-yellow-300"><Minus size={22} /></button>
+        <button onClick={handleFullscreen} title="Fullscreen" className="text-white hover:text-yellow-300"><Maximize2 size={22} /></button>
+        <button onClick={handleCopyLink} title="Copy Link" className="text-white hover:text-yellow-300"><Copy size={22} /></button>
       </div>
-
-      {/* Magazine Pages */}
-      <div className="flex-1 flex items-center justify-center bg-gray-900 relative overflow-hidden">
-        {/* Navigation Buttons */}
+      {/* Floating Page Indicator */}
+      <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2 bg-black/70 text-white px-4 py-1 rounded-full text-sm shadow-lg pointer-events-none select-none">
+        Page {currentPage} / {numPages}
+      </div>
+      {/* Back to Top Button */}
+      {showBackToTop && (
         <button
-          onClick={goToPreviousPage}
-          disabled={currentPage === 0}
-          className="absolute left-4 z-10 bg-white/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          title="Previous Page"
+          onClick={handleBackToTop}
+          className="fixed bottom-8 right-8 z-50 p-3 bg-black/70 text-white rounded-full shadow-lg hover:bg-gray-800 transition-colors"
+          title="Back to Top"
         >
-          <ChevronLeft size={24} />
+          <ArrowUp size={22} />
         </button>
-
-        <button
-          onClick={goToNextPage}
-          disabled={currentPage === pages.length - 1}
-          className="absolute right-4 z-10 bg-white/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          title="Next Page"
+      )}
+      {/* Fullscreen PDF Scroll View */}
+      <div
+        className="flex-1 overflow-y-auto flex flex-col items-center w-full h-full px-0 py-8 gap-8"
+        ref={scrollRef}
+        style={{ scrollSnapType: 'y mandatory' }}
+      >
+        <Document
+          file={pdfUrl}
+          onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+          loading={<div className="text-white">Loading magazine...</div>}
+          error={<div className="text-red-500">Failed to load PDF.</div>}
         >
-          <ChevronRight size={24} />
-        </button>
-
-        {/* Magazine Page Display */}
-        <div ref={viewerRef} className="relative w-full h-full max-w-[600px] max-h-[800px] overflow-hidden shadow-lg">
-          {pages.map((pageSrc, index) => (
-            <div
+          {Array.from(new Array(numPages), (el, index) => (
+            <section
               key={index}
-              className={`absolute inset-0 backface-hidden transition-transform duration-700 ease-in-out transform-gpu ${
-                index === currentPage
-                  ? "z-10 rotate-y-0"
-                  : index < currentPage
-                    ? "z-0 rotate-y-180" // Page has turned
-                    : "z-0 rotate-y-0" // Page is yet to turn
-              }`}
-              style={{
-                transformOrigin: "left center",
-                // Basic page turn effect:
-                // When current page, it's flat (rotateY(0))
-                // When it's a previous page, it's "flipped" (rotateY(180deg))
-                // This is a simplified visual. A true flipbook needs more complex 3D transforms and z-indexing.
-              }}
+              id={`page-index-${index}`}
+              className="w-full flex flex-col items-center"
+              style={{ scrollSnapAlign: 'start' }}
             >
-              <Image
-                src={pageSrc || "/placeholder.svg"}
-                alt={`Magazine Page ${index + 1}`}
-                fill
-                className="object-contain"
-                priority={index === currentPage || index === currentPage + 1} // Prioritize current and next page
+              <Page
+                pageNumber={index + 1}
+                width={Math.min(900, typeof window !== 'undefined' ? window.innerWidth - 32 : 900) * zoom}
+                renderAnnotationLayer={false}
+                renderTextLayer={false}
+                className="bg-white shadow-2xl rounded"
               />
-            </div>
+              {/* Subtle shadow between pages for premium feel */}
+              {index < numPages - 1 && (
+                <div className="w-full h-4 bg-gradient-to-b from-black/10 to-transparent" />
+              )}
+            </section>
           ))}
-        </div>
-      </div>
-
-      {/* Footer Controls */}
-      <div className="bg-white p-4 flex justify-center items-center space-x-6 shadow-lg">
-        <div className="flex items-center space-x-4">
-          <Button onClick={() => setCurrentPage(0)} disabled={currentPage === 0}>
-            <ChevronLeft className="h-5 w-5" />
-            First
-          </Button>
-          <Button onClick={goToPreviousPage} disabled={currentPage === 0}>
-            <ChevronLeft className="h-5 w-5" />
-            Previous
-          </Button>
-        </div>
-
-        <div className="flex items-center space-x-4">
-          <input
-            type="range"
-            min="1"
-            max={pages.length}
-            value={currentPage + 1}
-            onChange={(e) => setCurrentPage(Number.parseInt(e.target.value) - 1)}
-            className="w-64 accent-red-600"
-          />
-          <div className="text-sm text-gray-600 min-w-[80px] text-center">
-            {currentPage + 1} / {pages.length}
-          </div>
-        </div>
-
-        <div className="flex items-center space-x-4">
-          <Button onClick={goToNextPage} disabled={currentPage === pages.length - 1}>
-            Next
-            <ChevronRight className="h-5 w-5" />
-          </Button>
-          <Button onClick={() => setCurrentPage(pages.length - 1)} disabled={currentPage === pages.length - 1}>
-            Last
-            <ChevronRight className="h-5 w-5" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Keyboard shortcuts info */}
-      <div className="absolute bottom-20 left-4 bg-black/70 text-white text-xs p-2 rounded opacity-50 hover:opacity-100 transition-opacity">
-        <div>← → Navigate | + - Zoom | ESC Close</div>
+        </Document>
       </div>
     </div>
   )

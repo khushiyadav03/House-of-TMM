@@ -3,9 +3,11 @@
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogTrigger, DialogTitle } from "@/components/ui/dialog"
 import MagazinePaymentModal from "../../components/MagazinePaymentModal"
-import FlipbookViewer from "../../components/FlipbookViewer"
+import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
+const FlipbookViewer = dynamic(() => import('../../components/FlipbookViewer'), { ssr: false });
 // Removed Header and Footer imports as they are now in app/layout.tsx
 
 interface Magazine {
@@ -13,7 +15,7 @@ interface Magazine {
   title: string
   issue_date: string
   cover_image_url: string
-  pdf_url: string
+  pdf_file_path: string // Use this field for the PDF URL
   price: number
 }
 
@@ -21,16 +23,13 @@ export default function MagazinePage() {
   const [magazines, setMagazines] = useState<Magazine[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedMagazine, setSelectedMagazine] = useState<Magazine | null>(null)
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
-  const [purchasedMagazines, setPurchasedMagazines] = useState<number[]>([]) // Store IDs of purchased magazines
+  const [isFlipbookOpen, setIsFlipbookOpen] = useState(false)
+  // const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
+  // const [purchasedMagazines, setPurchasedMagazines] = useState<number[]>([])
+  const router = useRouter();
 
   useEffect(() => {
     fetchMagazines()
-    // Load purchased magazines from local storage
-    const storedPurchases = localStorage.getItem("purchasedMagazines")
-    if (storedPurchases) {
-      setPurchasedMagazines(JSON.parse(storedPurchases))
-    }
   }, [])
 
   const fetchMagazines = async () => {
@@ -53,22 +52,25 @@ export default function MagazinePage() {
     }
   }
 
-  const handlePurchaseClick = (magazine: Magazine) => {
-    setSelectedMagazine(magazine)
-    setIsPaymentModalOpen(true)
+  // const handlePurchaseClick = (magazine: Magazine) => {
+  //   setSelectedMagazine(magazine)
+  //   setIsPaymentModalOpen(true)
+  // }
+  const handleOpenFlipbook = (magazine: Magazine) => {
+    router.push(`/magazine/view/${magazine.id}`);
   }
 
-  const handlePaymentSuccess = (magazineId: number) => {
-    const updatedPurchases = [...purchasedMagazines, magazineId]
-    setPurchasedMagazines(updatedPurchases)
-    localStorage.setItem("purchasedMagazines", JSON.stringify(updatedPurchases))
-    setIsPaymentModalOpen(false)
-    setSelectedMagazine(null) // Clear selected magazine after purchase
-  }
+  // const handlePaymentSuccess = (magazineId: number) => {
+  //   const updatedPurchases = [...purchasedMagazines, magazineId]
+  //   setPurchasedMagazines(updatedPurchases)
+  //   localStorage.setItem("purchasedMagazines", JSON.stringify(updatedPurchases))
+  //   setIsPaymentModalOpen(false)
+  //   setSelectedMagazine(null) // Clear selected magazine after purchase
+  // }
 
-  const isMagazinePurchased = (magazineId: number) => {
-    return purchasedMagazines.includes(magazineId)
-  }
+  // const isMagazinePurchased = (magazineId: number) => {
+  //   return purchasedMagazines.includes(magazineId)
+  // }
 
   if (loading) {
     return (
@@ -113,25 +115,9 @@ export default function MagazinePage() {
                   <h2 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">{magazine.title}</h2>
                   <p className="text-gray-600 mb-3 text-sm">Issue Date: {magazine.issue_date}</p>
                   <div className="flex items-center justify-between">
-                    {isMagazinePurchased(magazine.id) ? (
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button className="w-full bg-green-600 hover:bg-green-700 text-white">Read Magazine</Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-4xl h-[90vh] p-0">
-                          <FlipbookViewer
-                            pdfUrl={magazine.pdf_url}
-                            isOpen={true}
-                            onClose={() => {}}
-                            title={magazine.title}
-                          />
-                        </DialogContent>
-                      </Dialog>
-                    ) : (
-                      <Button onClick={() => handlePurchaseClick(magazine)} className="w-full">
-                        Purchase for ₹{magazine.price.toFixed(2)}
-                      </Button>
-                    )}
+                    <Button onClick={() => handleOpenFlipbook(magazine)} className="w-full bg-green-600 hover:bg-green-700 text-white">
+                      Read Magazine
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -140,6 +126,24 @@ export default function MagazinePage() {
         )}
       </div>
 
+      {/* Flipbook Viewer Dialog */}
+      {/*
+      {selectedMagazine && isFlipbookOpen && (
+        <Dialog open={isFlipbookOpen} onOpenChange={setIsFlipbookOpen}>
+          <DialogContent className="max-w-4xl h-[90vh] p-0">
+            <DialogTitle className="sr-only">{selectedMagazine.title}</DialogTitle>
+            <FlipbookViewer
+              pdfUrl={selectedMagazine.pdf_file_path}
+              isOpen={isFlipbookOpen}
+              onClose={() => setIsFlipbookOpen(false)}
+              title={selectedMagazine.title}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+      */}
+
+      {/*
       {selectedMagazine && (
         <MagazinePaymentModal
           isOpen={isPaymentModalOpen}
@@ -148,6 +152,7 @@ export default function MagazinePage() {
           onPaymentSuccess={handlePaymentSuccess}
         />
       )}
+      */}
     </div>
   )
 }

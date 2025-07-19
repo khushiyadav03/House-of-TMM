@@ -92,3 +92,42 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+.page-flip-next {
+  animation: pageFlipNext 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+  transform-style: preserve-3d;
+  perspective: 1200px;
+}
+.page-flip-prev {
+  animation: pageFlipPrev 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+  transform-style: preserve-3d;
+  perspective: 1200px;
+}
+@keyframes pageFlipNext {
+  0% {
+    transform: rotateY(0deg) scale(1);
+    opacity: 1;
+  }
+  40% {
+    transform: rotateY(-60deg) scale(0.98);
+    opacity: 0.7;
+  }
+  100% {
+    transform: rotateY(-120deg) scale(0.96);
+    opacity: 0;
+  }
+}
+@keyframes pageFlipPrev {
+  0% {
+    transform: rotateY(0deg) scale(1);
+    opacity: 1;
+  }
+  40% {
+    transform: rotateY(60deg) scale(0.98);
+    opacity: 0.7;
+  }
+  100% {
+    transform: rotateY(120deg) scale(0.96);
+    opacity: 0;
+  }
+}
