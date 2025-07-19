@@ -145,7 +145,7 @@ export default function MagazineViewer({ pdfUrl, title }: MagazineViewerProps) {
   const renderPages = () => {
     if (showGrid) {
       return (
-        <div className="flex flex-wrap justify-center items-center w-full h-full overflow-y-auto" style={{padding:0,margin:0}}>
+        <div className="flex flex-wrap justify-center items-center w-full overflow-y-auto" style={{ maxHeight: 'calc(100vh - 64px)', padding:0, margin:0 }}>
           {Array.from({ length: numPages }, (_, i) => (
             <div key={i} className="border bg-white shadow rounded overflow-hidden cursor-pointer m-2" onClick={() => { setCurrentPage(i + 1); setShowGrid(false); }}>
               <Page
