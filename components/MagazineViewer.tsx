@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { Plus, Minus, Maximize2, Copy, Grid, Share2, ChevronLeft, ChevronRight, Layout, LayoutPanelLeft } from "lucide-react";
 import HTMLFlipBook from 'react-pageflip';
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface MagazineViewerProps {
   pdfUrl: string;
@@ -23,6 +24,7 @@ export default function MagazineViewer({ pdfUrl, title }: MagazineViewerProps) {
   // Add state for animation direction
   const [flipDirection, setFlipDirection] = useState<'next' | 'prev' | null>(null);
   const [isFlipping, setIsFlipping] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (typeof window !== "undefined" && pdfjs.GlobalWorkerOptions) {
@@ -144,12 +146,13 @@ export default function MagazineViewer({ pdfUrl, title }: MagazineViewerProps) {
         </div>
       );
     }
-    if (currentPage === 1) {
+    // Always single page on mobile
+    if (isMobile || currentPage === 1 || currentPage === numPages || currentPage > numPages) {
       return (
         <div className="flex-1 flex justify-center items-center" style={{ minWidth: '100%', padding:0, margin:0 }}>
           <Page
-            key={1}
-            pageNumber={1}
+            key={currentPage}
+            pageNumber={currentPage}
             height={effectivePageHeight}
             renderAnnotationLayer={false}
             renderTextLayer={false}
@@ -158,6 +161,7 @@ export default function MagazineViewer({ pdfUrl, title }: MagazineViewerProps) {
         </div>
       );
     }
+    // Double page for desktop
     if (currentPage < numPages) {
       return (
         <div className="flex flex-row" style={{ minWidth: '100%', padding:0, margin:0 }}>
@@ -186,32 +190,11 @@ export default function MagazineViewer({ pdfUrl, title }: MagazineViewerProps) {
         </div>
       );
     }
-    return (
-      <div className="flex-1 flex justify-center items-center" style={{ minWidth: '100%', padding:0, margin:0 }}>
-        <Page
-          key={currentPage}
-          pageNumber={currentPage}
-          height={effectivePageHeight}
-          renderAnnotationLayer={false}
-          renderTextLayer={false}
-          className="bg-white shadow-2xl rounded"
-        />
-      </div>
-    );
+    return null;
   };
 
   return (
-    <div ref={viewerRef} className="fixed inset-0 bg-neutral-900 flex flex-row w-full h-full z-50" style={{padding:0,margin:0}}>
-      {/* Toolbar */}
-      <div className="flex flex-col gap-4 py-0 px-2 bg-black/80 text-white items-center justify-start min-w-[56px] max-w-[56px] h-full z-50">
-        <button onClick={goToPrevPage} title="Previous Page" className="p-2 hover:bg-white/10 rounded"><ChevronLeft size={22} /></button>
-        <button onClick={goToNextPage} title="Next Page" className="p-2 hover:bg-white/10 rounded"><ChevronRight size={22} /></button>
-        <button onClick={handleZoomIn} title="Zoom In" className="p-2 hover:bg-white/10 rounded"><Plus size={22} /></button>
-        <button onClick={handleZoomOut} title="Zoom Out" className="p-2 hover:bg-white/10 rounded"><Minus size={22} /></button>
-        <button onClick={handleFullscreen} title="Fullscreen" className="p-2 hover:bg-white/10 rounded"><Maximize2 size={22} /></button>
-        <button onClick={handleGridToggle} title="Grid View" className={`p-2 hover:bg-white/10 rounded ${showGrid ? 'bg-white/20' : ''}`}><Grid size={22} /></button>
-        <button onClick={handleCopyLink} title="Copy Link" className="p-2 hover:bg-white/10 rounded"><Share2 size={22} /></button>
-      </div>
+    <div ref={viewerRef} className="fixed inset-0 bg-neutral-900 flex flex-col w-full h-full z-50" style={{padding:0,margin:0}}>
       {/* Main Viewer */}
       <div className="flex-1 flex flex-col items-center justify-center w-full h-full overflow-hidden relative" style={{padding:0,margin:0}}>
         <Document
@@ -224,9 +207,31 @@ export default function MagazineViewer({ pdfUrl, title }: MagazineViewerProps) {
         </Document>
         {/* Floating page indicator */}
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 bg-black/80 text-white px-4 py-1 rounded-full text-sm shadow-lg pointer-events-none select-none">
-          Page {currentPage}{currentPage !== 1 && currentPage < numPages && currentPage + 1 <= numPages ? `-${currentPage + 1}` : ''} / {numPages}
+          Page {currentPage}{!isMobile && currentPage !== 1 && currentPage < numPages && currentPage + 1 <= numPages ? `-${currentPage + 1}` : ''} / {numPages}
         </div>
       </div>
+      {/* Toolbar: bottom on mobile, left on desktop */}
+      {isMobile ? (
+        <div className="flex flex-row gap-2 py-2 px-0 bg-black/80 text-white items-center justify-center w-full z-50">
+          <button onClick={goToPrevPage} title="Previous Page" className="p-2 hover:bg-white/10 rounded"><ChevronLeft size={22} /></button>
+          <button onClick={goToNextPage} title="Next Page" className="p-2 hover:bg-white/10 rounded"><ChevronRight size={22} /></button>
+          <button onClick={handleZoomIn} title="Zoom In" className="p-2 hover:bg-white/10 rounded"><Plus size={22} /></button>
+          <button onClick={handleZoomOut} title="Zoom Out" className="p-2 hover:bg-white/10 rounded"><Minus size={22} /></button>
+          <button onClick={handleFullscreen} title="Fullscreen" className="p-2 hover:bg-white/10 rounded"><Maximize2 size={22} /></button>
+          <button onClick={handleGridToggle} title="Grid View" className={`p-2 hover:bg-white/10 rounded ${showGrid ? 'bg-white/20' : ''}`}><Grid size={22} /></button>
+          <button onClick={handleCopyLink} title="Copy Link" className="p-2 hover:bg-white/10 rounded"><Share2 size={22} /></button>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4 py-0 px-2 bg-black/80 text-white items-center justify-start min-w-[56px] max-w-[56px] h-full z-50 absolute left-0 top-0">
+          <button onClick={goToPrevPage} title="Previous Page" className="p-2 hover:bg-white/10 rounded"><ChevronLeft size={22} /></button>
+          <button onClick={goToNextPage} title="Next Page" className="p-2 hover:bg-white/10 rounded"><ChevronRight size={22} /></button>
+          <button onClick={handleZoomIn} title="Zoom In" className="p-2 hover:bg-white/10 rounded"><Plus size={22} /></button>
+          <button onClick={handleZoomOut} title="Zoom Out" className="p-2 hover:bg-white/10 rounded"><Minus size={22} /></button>
+          <button onClick={handleFullscreen} title="Fullscreen" className="p-2 hover:bg-white/10 rounded"><Maximize2 size={22} /></button>
+          <button onClick={handleGridToggle} title="Grid View" className={`p-2 hover:bg-white/10 rounded ${showGrid ? 'bg-white/20' : ''}`}><Grid size={22} /></button>
+          <button onClick={handleCopyLink} title="Copy Link" className="p-2 hover:bg-white/10 rounded"><Share2 size={22} /></button>
+        </div>
+      )}
     </div>
   );
 } 
