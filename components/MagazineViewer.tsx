@@ -27,6 +27,7 @@ export default function MagazineViewer({ pdfUrl, title }: MagazineViewerProps) {
   const [flipDirection, setFlipDirection] = useState<'next' | 'prev' | null>(null);
   const [isFlipping, setIsFlipping] = useState(false);
   const isMobile = useIsMobile();
+  const [currentScale, setCurrentScale] = useState(1);
 
   useEffect(() => {
     if (typeof window !== "undefined" && pdfjs.GlobalWorkerOptions) {
@@ -141,10 +142,11 @@ export default function MagazineViewer({ pdfUrl, title }: MagazineViewerProps) {
     };
   };
   const swipeHandlers = useSwipeable({
-    onSwipedLeft: () => isMobile && goToNextPage(),
-    onSwipedRight: () => isMobile && goToPrevPage(),
+    onSwipedLeft: () => isMobile && currentScale === 1 && goToNextPage(),
+    onSwipedRight: () => isMobile && currentScale === 1 && goToPrevPage(),
     trackMouse: false,
     trackTouch: true,
+    delta: 10,
   });
   // Pre-render current, next, and previous pages
   const renderPages = () => {
@@ -169,7 +171,7 @@ export default function MagazineViewer({ pdfUrl, title }: MagazineViewerProps) {
     // Always single page on mobile
     if (isMobile || currentPage === 1 || currentPage === numPages || currentPage > numPages) {
       return (
-        <div className="flex-1 flex justify-center items-center" style={{ minWidth: '100%', padding:0, margin:0 }} {...(isMobile ? swipeHandlers : {})}>
+        <div className="flex-1 flex justify-center items-center" style={{ minWidth: '100%', padding:0, margin:0 }} {...swipeHandlers}>
           {isMobile ? (
             <TransformWrapper
               doubleClick={{ disabled: true }}
@@ -178,6 +180,7 @@ export default function MagazineViewer({ pdfUrl, title }: MagazineViewerProps) {
               panning={{ disabled: false }}
               minScale={1}
               initialScale={1}
+              onZoomStop={({ state }) => setCurrentScale(state.scale)}
             >
               <TransformComponent>
                 <Page
