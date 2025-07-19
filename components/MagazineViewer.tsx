@@ -131,11 +131,11 @@ export default function MagazineViewer({ pdfUrl, title }: MagazineViewerProps) {
   const getPageProps = () => {
     if (isMobile) {
       return {
-        width: typeof window !== 'undefined' ? window.innerWidth / 2.2 : 180,
+        width: typeof window !== 'undefined' ? window.innerWidth * zoom * 0.98 : 360,
       };
     }
     return {
-      height: effectivePageHeight,
+      height: effectivePageHeight * zoom,
     };
   };
   // Pre-render current, next, and previous pages
