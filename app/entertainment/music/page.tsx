@@ -5,7 +5,7 @@ export default function MusicPage() {
     <CategoryLayout
       categoryName="Music"
       categorySlug="music"
-      description="Music news, artist interviews, and album reviews."
+      description="Latest music news, artist interviews, and album reviews."
     />
   );
 } 
