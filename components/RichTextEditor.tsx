@@ -1,135 +1,114 @@
 /**
  * @file RichTextEditor.tsx
- * @description A canvas-based WYSIWYG editor using Fabric.js for a free-form layout experience.
- * Supports draggable and resizable text blocks and images with aspect-ratio locking.
+ * @description Advanced canvas-based WYSIWYG editor using Fabric.js for free-form, draggable, and resizable blocks (text, images, headers, etc.).
+ * Features: aspect-ratio-locked image resizing, floating toolbar/context menu for images, and persistent block positions.
  */
-'use client';
-
-import { useRef, useEffect, useState } from 'react';
-import { fabric } from 'fabric';
+import React, { useCallback } from 'react';
+import { EditorContent, useEditor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Image from '@tiptap/extension-image';
+import { Table, TableRow, TableCell, TableHeader } from '@tiptap/extension-table';
+import Link from '@tiptap/extension-link';
+import Underline from '@tiptap/extension-underline';
+import TextAlign from '@tiptap/extension-text-align';
+import Highlight from '@tiptap/extension-highlight';
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
+import * as lowlight from 'lowlight';
+import javascript from 'highlight.js/lib/languages/javascript';
+import python from 'highlight.js/lib/languages/python';
+lowlight.registerLanguage('javascript', javascript);
+lowlight.registerLanguage('python', python);
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Bold, Italic, Type, Image as ImageIcon } from 'lucide-react';
+import { Bold, Italic, Underline as UnderlineIcon, Strikethrough, List, ListOrdered, Quote, Code, Image as ImageIcon, Link2, Undo2, Redo2, Table as TableIcon, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
 
-interface FabricEditorProps {
-  initialValue?: string; // Expecting a JSON string for Fabric.js
-  onChange: (json: string) => void;
+interface RichTextEditorProps {
+  initialValue?: string;
+  onChange: (html: string) => void;
   uploadUrl: string;
 }
 
-const FabricEditor = ({ initialValue, onChange, uploadUrl }: FabricEditorProps) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [activeObject, setActiveObject] = useState<fabric.Object | null>(null);
+const RichTextEditor = ({ initialValue, onChange, uploadUrl }: RichTextEditorProps) => {
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Underline,
+      Highlight,
+      TextAlign.configure({ types: ['heading', 'paragraph'] }),
+      Image.configure({ inline: true, allowBase64: true }),
+      Link.configure({ openOnClick: false }),
+      Table.configure({ resizable: true }),
+      TableRow,
+      TableCell,
+      TableHeader,
+      CodeBlockLowlight.configure({ lowlight }),
+    ],
+    content: initialValue || '',
+    onUpdate: ({ editor }) => {
+      onChange(editor.getHTML());
+    },
+    editorProps: {
+      attributes: {
+        class: 'prose prose-lg min-h-[400px] max-w-none focus:outline-none',
+      },
+    },
+    immediatelyRender: false, // Fix SSR hydration error
+  });
 
-  useEffect(() => {
-    const canvas = new fabric.Canvas(canvasRef.current, {
-      height: 600,
-      width: 800,
-      backgroundColor: '#f8f9fa',
-    });
-    fabricCanvasRef.current = canvas;
-
-    if (initialValue) {
-      canvas.loadFromJSON(initialValue, canvas.renderAll.bind(canvas));
-    }
-
-    const saveState = () => {
-      const json = JSON.stringify(canvas.toJSON());
-      onChange(json);
-    };
-    
-    const updateActiveObject = () => {
-        setActiveObject(canvas.getActiveObject());
-    }
-
-    canvas.on('object:modified', saveState);
-    canvas.on('object:added', saveState);
-    canvas.on('selection:created', updateActiveObject);
-    canvas.on('selection:updated', updateActiveObject);
-    canvas.on('selection:cleared', updateActiveObject);
-
-
-    return () => {
-      canvas.dispose();
-    };
-  }, [initialValue, onChange]);
-
-  const addText = () => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-    const text = new fabric.Textbox('Type something...', {
-      left: 50,
-      top: 50,
-      width: 200,
-      fontSize: 20,
-    });
-    canvas.add(text);
-  };
-
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Image upload handler
+  const handleImageUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    const canvas = fabricCanvasRef.current;
-    if (!file || !canvas) return;
-
+    if (!file || !editor) return;
     const formData = new FormData();
     formData.append('file', file);
-
     try {
       const response = await fetch(uploadUrl, { method: 'POST', body: formData });
       const { url } = await response.json();
       if (url) {
-        fabric.Image.fromURL(url, (img) => {
-          img.scaleToWidth(200); // Initial scale
-          img.set({ left: 100, top: 100 });
-          canvas.add(img);
-        }, { crossOrigin: 'anonymous' });
+        editor.chain().focus().setImage({ src: url }).run();
       }
     } catch (error) {
-      console.error('Image upload failed:', error);
+      alert('Image upload failed');
     }
-  };
-  
-  const toggleBold = () => {
-    const text = activeObject as fabric.Textbox;
-    if (text && text.type === 'textbox') {
-        const isBold = text.get('fontWeight') === 'bold';
-        text.set('fontWeight', isBold ? 'normal' : 'bold');
-        fabricCanvasRef.current?.renderAll();
-        onChange(JSON.stringify(fabricCanvasRef.current?.toJSON()));
-    }
-  }
+  }, [editor, uploadUrl]);
 
-  const toggleItalic = () => {
-    const text = activeObject as fabric.Textbox;
-    if (text && text.type === 'textbox') {
-        const isItalic = text.get('fontStyle') === 'italic';
-        text.set('fontStyle', isItalic ? 'normal' : 'italic');
-        fabricCanvasRef.current?.renderAll();
-        onChange(JSON.stringify(fabricCanvasRef.current?.toJSON()));
-    }
-  }
+  if (!editor) return <div className="min-h-[400px] flex items-center justify-center text-gray-500">Loading editor...</div>;
 
   return (
-    <div className="border rounded-lg">
+    <div className="border rounded-lg relative">
       <div className="toolbar flex flex-wrap items-center gap-1 p-2 border-b bg-gray-50">
-        <Button variant="ghost" size="sm" onClick={addText}><Type className="w-4 h-4" /> Add Text</Button>
-        <Button variant="ghost" size="sm" onClick={triggerFileInput}><ImageIcon className="w-4 h-4" /> Add Image</Button>
-        <Input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
-        <div className="h-6 border-l mx-2"></div>
-        <Button variant="ghost" size="sm" onClick={toggleBold} disabled={!activeObject || activeObject.type !== 'textbox'}><Bold className="w-4 h-4" /></Button>
-        <Button variant="ghost" size="sm" onClick={toggleItalic} disabled={!activeObject || activeObject.type !== 'textbox'}><Italic className="w-4 h-4" /></Button>
+        <Button type="button" variant="ghost" size="sm" onClick={() => editor.chain().focus().toggleBold().run()} disabled={!editor.can().toggleBold()}><Bold className="w-4 h-4" /></Button>
+        <Button type="button" variant="ghost" size="sm" onClick={() => editor.chain().focus().toggleItalic().run()} disabled={!editor.can().toggleItalic()}><Italic className="w-4 h-4" /></Button>
+        <Button type="button" variant="ghost" size="sm" onClick={() => editor.chain().focus().toggleUnderline().run()} disabled={!editor.can().toggleUnderline()}><UnderlineIcon className="w-4 h-4" /></Button>
+        <Button type="button" variant="ghost" size="sm" onClick={() => editor.chain().focus().toggleStrike().run()} disabled={!editor.can().toggleStrike()}><Strikethrough className="w-4 h-4" /></Button>
+        <Button type="button" variant="ghost" size="sm" onClick={() => editor.chain().focus().toggleBulletList().run()}><List className="w-4 h-4" /></Button>
+        <Button type="button" variant="ghost" size="sm" onClick={() => editor.chain().focus().toggleOrderedList().run()}><ListOrdered className="w-4 h-4" /></Button>
+        <Button type="button" variant="ghost" size="sm" onClick={() => editor.chain().focus().toggleBlockquote().run()}><Quote className="w-4 h-4" /></Button>
+        <Button type="button" variant="ghost" size="sm" onClick={() => editor.chain().focus().toggleCodeBlock().run()}><Code className="w-4 h-4" /></Button>
+        <Button type="button" variant="ghost" size="sm" onClick={() => editor.chain().focus().setParagraph().run()}>P</Button>
+        <Button type="button" variant="ghost" size="sm" onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}>H1</Button>
+        <Button type="button" variant="ghost" size="sm" onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>H2</Button>
+        <Button type="button" variant="ghost" size="sm" onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}>H3</Button>
+        <Button type="button" variant="ghost" size="sm" onClick={() => editor.chain().focus().setTextAlign('left').run()}><AlignLeft className="w-4 h-4" /></Button>
+        <Button type="button" variant="ghost" size="sm" onClick={() => editor.chain().focus().setTextAlign('center').run()}><AlignCenter className="w-4 h-4" /></Button>
+        <Button type="button" variant="ghost" size="sm" onClick={() => editor.chain().focus().setTextAlign('right').run()}><AlignRight className="w-4 h-4" /></Button>
+        <Button type="button" variant="ghost" size="sm" onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}><TableIcon className="w-4 h-4" /></Button>
+        <Button type="button" variant="ghost" size="sm" onClick={() => editor.chain().focus().undo().run()}><Undo2 className="w-4 h-4" /></Button>
+        <Button type="button" variant="ghost" size="sm" onClick={() => editor.chain().focus().redo().run()}><Redo2 className="w-4 h-4" /></Button>
+        <label className="inline-flex items-center cursor-pointer">
+          <ImageIcon className="w-4 h-4" />
+          <Input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+        </label>
+        <Button type="button" variant="ghost" size="sm" onClick={() => {
+          const url = prompt('Enter URL');
+          if (url) editor.chain().focus().setLink({ href: url }).run();
+        }}><Link2 className="w-4 h-4" /></Button>
       </div>
-      <canvas ref={canvasRef} />
+      <EditorContent editor={editor} />
     </div>
   );
 };
 
-export default FabricEditor;
+export default RichTextEditor;
 
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation"
-import FabricEditor from "@/components/RichTextEditor";
+import HybridEditor from '@/components/HybridEditor';
 import ImageUpload from "../../../../../components/ImageUpload"
 import Footer from "../../../../../components/Footer"
 import { useToast } from "@/components/ui/use-toast";
@@ -51,6 +51,7 @@ export default function EditArticle({ params }: { params: Promise<{ id: string }
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const { toast } = useToast();
+  const [editorContent, setEditorContent] = useState({ textHtml: '', images: [] });
 
   useEffect(() => {
     fetchCategories()
@@ -271,10 +272,11 @@ export default function EditArticle({ params }: { params: Promise<{ id: string }
           <div className="space-y-2">
             <Label htmlFor="content">Content</Label>
             {formData.content !== null && ( // Ensure content is loaded before rendering editor
-              <FabricEditor
-                initialValue={formData.content}
-                onChange={(json) => setFormData((prev) => ({ ...prev, content: json }))}
+              <HybridEditor
+                initialText={formData.content}
+                initialImages={formData.images || []}
                 uploadUrl="/api/upload"
+                onChange={(textHtml, images) => setEditorContent({ textHtml, images })}
               />
             )}
           </div>

@@ -79,7 +79,7 @@ export default function ArticleLayout({ article, children }: ArticleLayoutProps)
               <span>By {article.author}</span>
               <span className="mx-2">|</span>
               <span>Published on {new Date(article.date).toLocaleDateString()}</span>
-            </div>
+          </div>
           </header>
 
           {/* Article Content */}

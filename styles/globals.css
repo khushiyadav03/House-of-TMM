@@ -131,3 +131,20 @@ body {
     opacity: 0;
   }
 }
+
+.inline-image {
+  display: inline-block;
+  max-width: 100%;
+}
+.float-left-image {
+  float: left;
+  margin: 0 16px 16px 0;
+  max-width: 50%;
+  display: block;
+}
+.float-right-image {
+  float: right;
+  margin: 0 0 16px 16px;
+  max-width: 50%;
+  display: block;
+}

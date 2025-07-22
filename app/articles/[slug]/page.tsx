@@ -6,13 +6,18 @@ import ArticleLayout from "../../../components/ArticleLayout"
 import ArticleRenderer from "@/components/ArticleRenderer"; // Import the new renderer
 
 interface Article {
-  id: string
-  title: string
-  author: string
-  publish_date: string
-  image_url: string
-  content: string
-  relatedArticles: { id: string; title: string; imageUrl: string; author: string; date: string }[]
+  id: string;
+  title: string;
+  slug: string;
+  image_url: string;
+  author: string;
+  publish_date: string;
+  excerpt: string;
+  category: string;
+  categories?: { name: string; slug: string }[];
+  images?: any;
+  content: string;
+  relatedArticles: { id: string; title: string; imageUrl: string; author: string; date: string }[];
 }
 
 export default function ArticlePage() {
@@ -83,6 +88,14 @@ export default function ArticlePage() {
     )
   }
 
+  // Parse images JSON if present
+  let images = [];
+  try {
+    images = article.images ? (typeof article.images === 'string' ? JSON.parse(article.images) : article.images) : [];
+  } catch {
+    images = [];
+  }
+
   return (
     <ArticleLayout
       article={{
@@ -92,7 +105,7 @@ export default function ArticlePage() {
       }}
     >
       {/* Replace the old content div with the new renderer */}
-      <ArticleRenderer content={article.content} />
+      <ArticleRenderer content={article.content} images={images} />
     </ArticleLayout>
   )
 }

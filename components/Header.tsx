@@ -25,7 +25,7 @@ const navItems = [
     href: "/cover",
     subItems: [
       { name: "Digital Cover", href: "/cover/digital-cover" },
-      { name: "Editorial Shoot", href: "/cover/editorial-shoot" },      
+      { name: "Editorial Shoot", href: "/cover/editorial-shoot" },
       { name: "PEP Talk", href: "/cover/pep-talk" },
     ],
   },
@@ -47,26 +47,31 @@ const navItems = [
     name: "Entertainment",
     href: "/entertainment",
     subItems: [
-      { name: "Music", href: "/lifestyle/music" },
-      { name: "Movies", href: "/lifestyle/movies" },
-      { name: "Events", href: "/lifestyle/events" },
+      { name: "Music", href: "/BrandFeature/music" },
+      { name: "Movies", href: "/BrandFeature/movies" },
+      { name: "Events", href: "/BrandFeature/events" },
     ],
   },
   {
     name: "Technology",
     href: "/technology",
     subItems: [
-      { name: "Music", href: "/lifestyle/music" },
-      { name: "Movies", href: "/lifestyle/movies" },
-      { name: "Events", href: "/lifestyle/events" },
+      { name: "Auto", href: "/BrandFeature/auto" },
+      { name: "Gadgets", href: "/BrandFeature/gadgets" },
+      { name: "AI", href: "/BrandFeature/ai" },
+    ],
+  },
+  { name: "Sports", href: "/sports" },
+  {
+    name: "Finance",
+    href: "/finance",
+    subItems: [
+      { name: "Crypto", href: "/BrandFeature/crypto" },
+      { name: "Stock Market", href: "/BrandFeature/stock-market" },
+      { name: "Budget", href: "/BrandFeature/budget" },
     ],
   },
   { name: "Interviews", href: "/interviews" },
-
-  {
-    name: "Sports",
-    href: "/sports",
-  },
   { name: "Trending", href: "/trending" },
   { name: "Magazine", href: "/magazine" },
 ]
