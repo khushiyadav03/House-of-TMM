@@ -1,12 +1,13 @@
 "use client"
 
-import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation"
-import { use } from "react"
-import RichTextEditor from "../../../../../components/RichTextEditor"
+import FabricEditor from "@/components/RichTextEditor";
 import ImageUpload from "../../../../../components/ImageUpload"
 import Footer from "../../../../../components/Footer"
+import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/lib/supabase";
+import { Label } from "@/components/ui/label";
 
 interface Category {
   id: number
@@ -49,6 +50,7 @@ export default function EditArticle({ params }: { params: Promise<{ id: string }
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchCategories()
@@ -266,13 +268,15 @@ export default function EditArticle({ params }: { params: Promise<{ id: string }
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Content *</label>
-            <RichTextEditor
-              value={formData.content}
-              onChange={(value) => setFormData((prev) => ({ ...prev, content: value }))}
-              placeholder="Write your article content here..."
-            />
+          <div className="space-y-2">
+            <Label htmlFor="content">Content</Label>
+            {formData.content !== null && ( // Ensure content is loaded before rendering editor
+              <FabricEditor
+                initialValue={formData.content}
+                onChange={(json) => setFormData((prev) => ({ ...prev, content: json }))}
+                uploadUrl="/api/upload"
+              />
+            )}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

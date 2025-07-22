@@ -25,37 +25,47 @@ const navItems = [
     href: "/cover",
     subItems: [
       { name: "Digital Cover", href: "/cover/digital-cover" },
-      { name: "Editorial Shoot", href: "/cover/editorial-shoot" },
-    ],
-  },
-  {
-    name: "Brand Feature",
-    href: "/brand_feature",
-    subItems: [
-      { name: "Fashion", href: "/BrandFeature/fashion" },
-      { name: "Tech & Auto", href: "/BrandFeature/tech-auto" },
+      { name: "Editorial Shoot", href: "/cover/editorial-shoot" },      
+      { name: "PEP Talk", href: "/cover/pep-talk" },
     ],
   },
   {
     name: "Lifestyle",
     href: "/lifestyle",
     subItems: [
-      { name: "Food & Drinks", href: "/lifestyle/food-drinks" },
-      { name: "Health & Wellness", href: "/lifestyle/health-wellness" },
-      { name: "Fitness & Selfcare", href: "/lifestyle/fitness-selfcare" },
+      { name: "Interior", href: "/lifestyle/interior" },
+      { name: "Fashion", href: "/lifestyle/fashion" },
+      { name: "Good Work", href: "/lifestyle/good-work" },
       { name: "Travel", href: "/lifestyle/travel" },
-      { name: "Finance", href: "/lifestyle/finance" },
+      { name: "Food", href: "/lifestyle/food" },
+      { name: "Reads", href: "/lifestyle/reads" },
+      { name: "Health & Wellness", href: "/lifestyle/health-wellness" },
+      { name: "Art & Culture", href: "/lifestyle/art-culture" },
+    ],
+  },
+  {
+    name: "Entertainment",
+    href: "/entertainment",
+    subItems: [
+      { name: "Music", href: "/lifestyle/music" },
+      { name: "Movies", href: "/lifestyle/movies" },
+      { name: "Events", href: "/lifestyle/events" },
+    ],
+  },
+  {
+    name: "Technology",
+    href: "/technology",
+    subItems: [
+      { name: "Music", href: "/lifestyle/music" },
+      { name: "Movies", href: "/lifestyle/movies" },
+      { name: "Events", href: "/lifestyle/events" },
     ],
   },
   { name: "Interviews", href: "/interviews" },
+
   {
     name: "Sports",
     href: "/sports",
-    subItems: [
-      { name: "Cricket", href: "/sports/cricket" },
-      { name: "Golf", href: "/sports/golf" },
-      { name: "Other Sports", href: "/sports/other-sports" },
-    ],
   },
   { name: "Trending", href: "/trending" },
   { name: "Magazine", href: "/magazine" },

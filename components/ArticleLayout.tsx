@@ -19,13 +19,19 @@ interface Article {
 }
 
 interface ArticleLayoutProps {
-  article: Article
-  showHeader?: boolean // This prop is now effectively ignored as Header is in root layout
+  article: Article;
+  children: React.ReactNode; // Allow children to be passed
 }
 
-const ArticleLayout: React.FC<ArticleLayoutProps> = ({ article }) => {
-  // Removed showHeader from destructuring
+/**
+ * Renders the full page layout for a single article.
+ * @param {ArticleLayoutProps} props - The component props.
+ * @param {Article} props.article - The article data to be displayed.
+ * @param {React.ReactNode} props.children - The main content of the article (e.g., the renderer).
+ */
+export default function ArticleLayout({ article, children }: ArticleLayoutProps) {
   const [isLoading, setIsLoading] = useState(true)
+  const [currentUrl, setCurrentUrl] = useState("");
 
   useEffect(() => {
     setIsLoading(false)
@@ -63,94 +69,87 @@ const ArticleLayout: React.FC<ArticleLayoutProps> = ({ article }) => {
     <div className="flex flex-col min-h-screen bg-gray-50">
       {/* Removed showHeader && <Header /> */}
       <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <article className="p-6">
-          <div className="relative w-full h-[400px] overflow-hidden mb-6">
-            <Image
-              src={article.imageUrl || "/placeholder.svg"}
-              alt={article.title}
-              width={1000}
-              height={400}
-              className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
-              loading="lazy"
-              onContextMenu={(e) => e.preventDefault()}
-              draggable="false"
-            />
+        <article className="max-w-3xl mx-auto">
+          {/* Article Header */}
+          <header className="mb-8">
+            <h1 className="text-3xl md:text-5xl font-extrabold text-gray-900 mb-4 leading-tight">
+              {article.title}
+            </h1>
+            <div className="flex items-center text-sm text-gray-500">
+              <span>By {article.author}</span>
+              <span className="mx-2">|</span>
+              <span>Published on {new Date(article.date).toLocaleDateString()}</span>
+            </div>
+          </header>
+
+          {/* Article Content */}
+          <div className="md:col-span-11">
+            {children} {/* Render the children here */}
           </div>
-          <h1 className="text-4xl font-montserrat font-extrabold text-gray-900 mb-4">{article.title}</h1>
-          <div className="flex gap-4 text-sm text-gray-600 mb-6">
-            <span>By {article.author}</span>
-            <span>{article.date}</span>
-          </div>
-          <div
-            className="prose prose-lg text-gray-700 mb-8 article-content"
-            dangerouslySetInnerHTML={{ __html: article.content }}
-          />
-          <div className="css-175oi2r m-8">
-            <p className="text-center font-bold">Share this article</p>
-            <div className="flex flex-row justify-center mt-4 flex-wrap">
+
+          {/* Share Bar (always at the end, centered) */}
+          <div className="mt-12 pt-8 border-t flex flex-col items-center">
+            <h3 className="text-center text-lg font-semibold mb-4">Share this article</h3>
+            <div className="flex justify-center space-x-6">
               <button
                 onClick={() => handleShare("facebook")}
-                className="flex items-center hover:bg-slate-100 text-left text-base px-2 py-1"
+                className="text-gray-600 hover:text-blue-600"
+                aria-label="Share on Facebook"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   x="0px"
                   y="0px"
-                  width="20"
-                  height="20"
+                  width="24"
+                  height="24"
                   viewBox="0 0 50 50"
-                  className="mr-1 ml-1"
                 >
                   <path d="M41,4H9C6.24,4,4,6.24,4,9v32c0,2.76,2.24,5,5,5h32c2.76,0,5-2.24,5-5V9C46,6.24,43.76,4,41,4z M37,19h-2c-2.14,0-3,0.5-3,2 v3h5l-1,5h-4v15h-5V29h-4v-5h4v-3c0-4,2-7,6-7c2.9,0,4,1,4,1V19z"></path>
                 </svg>
-                Share
               </button>
               <button
                 onClick={() => handleShare("twitter")}
-                className="flex items-center hover:bg-slate-100 text-left text-base px-2 py-1"
+                className="text-gray-600 hover:text-blue-600"
+                aria-label="Share on Twitter"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   x="0px"
                   y="0px"
-                  width="20"
-                  height="20"
+                  width="24"
+                  height="24"
                   viewBox="0 0 50 50"
-                  className="mr-1 ml-1"
                 >
                   <path d="M 11 4 C 7.134 4 4 7.134 4 11 L 4 39 C 4 42.866 7.134 46 11 46 L 39 46 C 42.866 46 46 42.866 46 39 L 46 11 C 46 7.134 42.866 4 39 4 L 11 4 z M 13.085938 13 L 21.023438 13 L 26.660156 21.009766 L 33.5 13 L 36 13 L 27.789062 22.613281 L 37.914062 37 L 29.978516 37 L 23.4375 27.707031 L 15.5 37 L 13 37 L 22.308594 26.103516 L 13.085938 13 z M 16.914062 15 L 31.021484 35 L 34.085938 35 L 19.978516 15 L 16.914062 15 z"></path>
                 </svg>
-                Tweet
               </button>
               <button
                 onClick={() => handleShare("linkedin")}
-                className="flex items-center hover:bg-slate-100 text-left text-base px-2 py-1"
+                className="text-gray-600 hover:text-blue-600"
+                aria-label="Share on LinkedIn"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   x="0px"
                   y="0px"
-                  width="20"
-                  height="20"
+                  width="24"
+                  height="24"
                   viewBox="0 0 50 50"
-                  className="mr-1 ml-1"
                 >
                   <path d="M41,4H9C6.24,4,4,6.24,4,9v32c0,2.76,2.24,5,5,5h32c2.76,0,5-2.24,5-5V9C46,6.24,43.76,4,41,4z M39,39h-6c0,0,0-9.26,0-10 c0-2-1-4-3.5-4.04h-0.08C27,24.96,26,27.02,26,29c0,0.91,0,10,0,10h-6V20h6v2.56c0,0,1.93-2.56,5.81-2.56 c3.97,0,7.19,2.73,7.19,8.26V39z"></path>
                 </svg>
-                Share
               </button>
               <button
                 onClick={() => handleShare("copy")}
-                className="flex items-center hover:bg-slate-100 text-left text-base px-2 py-1"
+                className="text-gray-600 hover:text-blue-600"
+                aria-label="Copy link"
               >
                 <img
                   src="https://img.icons8.com/?size=100&id=toMU85oCiTAB&format=png&color=000000"
                   alt=""
-                  width="20"
-                  height="20"
-                  className="mr-1 ml-1"
+                  width="24"
+                  height="24"
                 />
-                Copy
               </button>
             </div>
           </div>
@@ -191,5 +190,3 @@ const ArticleLayout: React.FC<ArticleLayoutProps> = ({ article }) => {
     </div>
   )
 }
-
-export default ArticleLayout

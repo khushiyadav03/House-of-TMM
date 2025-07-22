@@ -123,8 +123,8 @@ export default function FlipbookViewer({ pdfUrl, isOpen, onClose, title }: Flipb
       if (document.exitFullscreen) {
         document.exitFullscreen();
         setIsFullscreen(false);
-      }
     }
+  }
   };
 
   // Share (copy link)
@@ -147,20 +147,20 @@ export default function FlipbookViewer({ pdfUrl, isOpen, onClose, title }: Flipb
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col">
       {/* Close Button */}
-      <button
-        onClick={onClose}
+          <button
+            onClick={onClose}
         className="absolute top-4 right-4 z-50 p-2 text-gray-300 hover:text-white bg-black/60 rounded-full shadow-lg transition-colors"
-        title="Close"
-      >
+            title="Close"
+          >
         <X size={28} />
-      </button>
+          </button>
       {/* Floating Toolbar */}
       <div className="fixed top-1/2 right-8 z-50 flex flex-col gap-4 bg-black/60 p-3 rounded-lg shadow-lg items-center">
         <button onClick={handleZoomIn} title="Zoom In" className="text-white hover:text-yellow-300"><Plus size={22} /></button>
         <button onClick={handleZoomOut} title="Zoom Out" className="text-white hover:text-yellow-300"><Minus size={22} /></button>
         <button onClick={handleFullscreen} title="Fullscreen" className="text-white hover:text-yellow-300"><Maximize2 size={22} /></button>
         <button onClick={handleCopyLink} title="Copy Link" className="text-white hover:text-yellow-300"><Copy size={22} /></button>
-      </div>
+        </div>
       {/* Floating Page Indicator */}
       <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2 bg-black/70 text-white px-4 py-1 rounded-full text-sm shadow-lg pointer-events-none select-none">
         Page {currentPage} / {numPages}
@@ -180,7 +180,7 @@ export default function FlipbookViewer({ pdfUrl, isOpen, onClose, title }: Flipb
         className="flex-1 overflow-y-auto flex flex-col items-center w-full h-full px-0 py-8 gap-8"
         ref={scrollRef}
         style={{ scrollSnapType: 'y mandatory' }}
-      >
+        >
         <Document
           file={pdfUrl}
           onLoadSuccess={({ numPages }) => setNumPages(numPages)}

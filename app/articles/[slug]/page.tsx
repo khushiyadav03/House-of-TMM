@@ -3,6 +3,7 @@
 import { useParams } from "next/navigation"
 import { useState, useEffect } from "react"
 import ArticleLayout from "../../../components/ArticleLayout"
+import ArticleRenderer from "@/components/ArticleRenderer"; // Import the new renderer
 
 interface Article {
   id: string
@@ -89,6 +90,9 @@ export default function ArticlePage() {
         imageUrl: article.image_url,
         date: article.publish_date,
       }}
-    />
+    >
+      {/* Replace the old content div with the new renderer */}
+      <ArticleRenderer content={article.content} />
+    </ArticleLayout>
   )
 }

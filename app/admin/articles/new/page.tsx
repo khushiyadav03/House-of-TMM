@@ -3,10 +3,14 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import RichTextEditor from "../../../../components/RichTextEditor"
-import ImageUpload from "../../../../components/ImageUpload"
-import { useToast, ToastContainer } from "../../../../components/Toast"
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import FabricEditor from "@/components/RichTextEditor"; // Changed import
+import ImageUpload from "@/components/ImageUpload";
+import { useToast } from "@/components/ui/use-toast";
 import AdminRoute from "../../../../components/AdminRoute"
+import { supabase } from "@/lib/supabase";
 
 interface Category {
   id: number
@@ -31,8 +35,9 @@ export default function NewArticle() {
   const [saving, setSaving] = useState(false)
   const [autoSaving, setAutoSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
+  const [loading, setLoading] = useState(false);
 
-  const { toasts, showSuccess, showError, showInfo, removeToast } = useToast()
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchCategories()
@@ -56,7 +61,11 @@ export default function NewArticle() {
       setCategories(data)
     } catch (error) {
       console.error("Failed to fetch categories:", error)
-      showError("Failed to fetch categories")
+      toast({
+        title: "Error",
+        description: "Failed to fetch categories.",
+        variant: "destructive",
+      });
     }
   }
 
@@ -104,7 +113,10 @@ export default function NewArticle() {
 
       if (response.ok) {
         setLastSaved(new Date())
-        showInfo("Draft auto-saved")
+        toast({
+          title: "Info",
+          description: "Draft auto-saved.",
+        });
       }
     } catch (error) {
       console.error("Auto-save failed:", error)
@@ -114,53 +126,71 @@ export default function NewArticle() {
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setSaving(true)
+    e.preventDefault();
+    setLoading(true);
 
     // Validate required fields
     if (!formData.title.trim()) {
-      showError("Title is required")
-      setSaving(false)
-      return
+      toast({
+        title: "Error",
+        description: "Title is required.",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
     }
 
     if (!formData.content.trim()) {
-      showError("Content is required")
-      setSaving(false)
-      return
+      toast({
+        title: "Error",
+        description: "Content is required.",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
     }
 
     if (formData.categories.length === 0) {
-      showError("Please select at least one category")
-      setSaving(false)
-      return
+      toast({
+        title: "Error",
+        description: "Please select at least one category.",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
     }
 
     try {
-      const response = await fetch("/api/articles", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      })
+      const { data, error } = await supabase.from("articles").insert([
+        { ...formData, image_url: formData.image_url, content: formData.content }, // formData.content is now JSON
+      ]);
 
-      if (response.ok) {
-        showSuccess("Article created successfully!")
-        setTimeout(() => {
-        router.push("/admin/articles")
-        }, 1500)
-      } else {
-        const errorData = await response.json()
-        showError(errorData.error || "Failed to create article")
-      }
+      if (error) throw error;
+
+      toast({
+        title: "Success!",
+        description: "Article created successfully.",
+      });
+      router.push("/admin/articles");
     } catch (error) {
-      console.error("Failed to create article:", error)
-      showError("Failed to create article")
+      console.error("Error creating article:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create article.",
+        variant: "destructive",
+      });
     } finally {
-      setSaving(false)
+      setLoading(false);
     }
-  }
+  };
+
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
   return (
     <AdminRoute>
@@ -266,12 +296,12 @@ export default function NewArticle() {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Content *</label>
-            <RichTextEditor
-              value={formData.content}
-              onChange={(value) => setFormData((prev) => ({ ...prev, content: value }))}
-              placeholder="Write your article content here..."
+          <div className="space-y-2">
+            <Label htmlFor="content">Content</Label>
+            <FabricEditor
+              initialValue={formData.content}
+              onChange={(json) => setFormData((prev) => ({ ...prev, content: json }))} // Simplified onChange
+              uploadUrl="/api/upload"
             />
           </div>
 
@@ -299,10 +329,10 @@ export default function NewArticle() {
             </button>
             <button
               type="submit"
-                disabled={saving || autoSaving}
+                disabled={saving || autoSaving || loading}
                 className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
-                {saving ? (
+                {loading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                     Saving...
@@ -316,7 +346,6 @@ export default function NewArticle() {
       </div>
 
         {/* Toast Notifications */}
-        <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>
     </AdminRoute>
   )
