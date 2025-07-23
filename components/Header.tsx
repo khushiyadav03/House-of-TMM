@@ -71,7 +71,6 @@ const navItems = [
       { name: "Budget", href: "/finance/budget" },
     ],
   },
-  { name: "Interviews", href: "/interviews" },
   { name: "Trending", href: "/trending" },
   { name: "Magazine", href: "/magazine" },
 ]

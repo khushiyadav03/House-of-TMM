@@ -148,3 +148,13 @@ body {
   max-width: 50%;
   display: block;
 }
+
+/* Article Card Image: 3:4 aspect ratio, portrait, smooth hover */
+.card-image {
+  aspect-ratio: 3 / 4;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s cubic-bezier(0.4,0,0.2,1), box-shadow 0.3s cubic-bezier(0.4,0,0.2,1);
+  border-radius: 0; /* square edges */
+}

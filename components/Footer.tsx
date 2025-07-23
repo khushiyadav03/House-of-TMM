@@ -18,7 +18,7 @@ const navItems = [
   { name: "SPORTS", href: "/sports" },
   { name: "TRAVEL", href: "/Lifestyle/travel" },
   { name: "COVER", href: "/cover" },
-  { name: "MEDIA KIT", href: "/TMM Media Kit 2025.pdf", download: true },
+  { name: "MEDIA KIT", href: "/TMM Media Kit 2025 (1).pdf", download: true },
 ]
 
 export default function Footer() {

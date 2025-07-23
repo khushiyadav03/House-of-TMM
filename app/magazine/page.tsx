@@ -117,7 +117,7 @@ export default function MagazinePage() {
                   <div className="flex items-center justify-between">
                     <Button onClick={() => handleOpenFlipbook(magazine)} className="w-full bg-green-600 hover:bg-green-700 text-white">
                       Read Magazine
-                    </Button>
+                      </Button>
                   </div>
                 </div>
               </div>

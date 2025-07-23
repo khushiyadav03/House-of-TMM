@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation"
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import HybridEditor from '@/components/HybridEditor';
+import dynamic from 'next/dynamic';
+const WordLikeEditor = dynamic(() => import('@/components/WordLikeEditor'), { ssr: false });
 import ImageUpload from "@/components/ImageUpload";
 import { useToast } from "@/components/ui/use-toast";
 import AdminRoute from "../../../../components/AdminRoute"
@@ -36,7 +37,6 @@ export default function NewArticle() {
   const [autoSaving, setAutoSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [loading, setLoading] = useState(false);
-  const [editorContent, setEditorContent] = useState({ textHtml: '', images: [] });
 
   const { toast } = useToast();
 
@@ -163,7 +163,7 @@ export default function NewArticle() {
 
     try {
       const { data, error } = await supabase.from("articles").insert([
-        { ...formData, image_url: formData.image_url, content: editorContent.textHtml, images: editorContent.images }, // formData.content is now JSON
+        { ...formData, image_url: formData.image_url }, // Content is HTML string; images are embedded in content
       ]);
 
       if (error) throw error;
@@ -299,12 +299,13 @@ export default function NewArticle() {
 
           <div className="space-y-2">
             <Label htmlFor="content">Content</Label>
-            <HybridEditor
-              initialText={formData.content}
-              initialImages={formData.images || []}
-              uploadUrl="/api/upload"
-              onChange={(textHtml, images) => setEditorContent({ textHtml, images })}
-            />
+            <div style={{ minHeight: 450 }}>
+  <WordLikeEditor
+    value={formData.content}
+    onChange={val => setFormData(prev => ({ ...prev, content: val }))}
+  />
+</div>
+
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
