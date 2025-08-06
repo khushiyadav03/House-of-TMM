@@ -77,6 +77,90 @@ export async function GET(request: NextRequest) {
   }
 }
 
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { id, title, slug, content, excerpt, image_url, author, publish_date, featured, categories = [], status } = body
+
+    if (!id) {
+      return NextResponse.json({ error: "Missing required field: id" }, { status: 400 })
+    }
+
+    // Update article
+    const updateData = {
+      title,
+      slug,
+      content,
+      excerpt,
+      image_url,
+      author,
+      publish_date: status === 'scheduled' ? publish_date : (status === 'published' ? new Date().toISOString() : null),
+      featured,
+      status,
+      updated_at: new Date().toISOString(),
+    }
+
+    const { data: article, error: articleError } = await supabaseAdmin
+      .from("articles")
+      .update(updateData)
+      .eq("id", id)
+      .select()
+      .single()
+
+    if (articleError) {
+      console.error("Article update error:", articleError)
+      return NextResponse.json({ error: "Failed to update article" }, { status: 500 })
+    }
+
+    // Update categories: delete existing and insert new
+    await supabaseAdmin.from("article_categories").delete().eq("article_id", id)
+
+    if (categories.length > 0) {
+      const categoryRelations = categories.map((categoryId: number) => ({
+        article_id: id,
+        category_id: categoryId,
+      }))
+
+      const { error: categoryError } = await supabaseAdmin.from("article_categories").insert(categoryRelations)
+
+      if (categoryError) {
+        console.error("Category relation error:", categoryError)
+      }
+    }
+
+    return NextResponse.json(article)
+  } catch (error) {
+    console.error("API error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { id } = await request.json()
+
+    if (!id) {
+      return NextResponse.json({ error: "Missing required field: id" }, { status: 400 })
+    }
+
+    // Delete category relations first
+    await supabaseAdmin.from("article_categories").delete().eq("article_id", id)
+
+    // Delete article
+    const { error } = await supabaseAdmin.from("articles").delete().eq("id", id)
+
+    if (error) {
+      console.error("Delete error:", error)
+      return NextResponse.json({ error: "Failed to delete article" }, { status: 500 })
+    }
+
+    return NextResponse.json({ message: "Article deleted successfully" })
+  } catch (error) {
+    console.error("API error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -91,7 +175,6 @@ export async function POST(request: NextRequest) {
       featured = false,
       categories = [],
       status = "draft", // default to draft
-      scheduled_date = null,
     } = body
 
     // Validate required fields
@@ -119,7 +202,7 @@ export async function POST(request: NextRequest) {
         publish_date,
         featured,
         status, // store status
-        scheduled_date,
+        publish_date: status === 'scheduled' ? publish_date : (status === 'published' ? new Date().toISOString() : null)
       })
       .select()
       .single()

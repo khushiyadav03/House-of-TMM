@@ -4,6 +4,7 @@ import { useParams } from "next/navigation"
 import { useState, useEffect } from "react"
 import ArticleLayout from "../../../components/ArticleLayout"
 import ArticleRenderer from "@/components/ArticleRenderer"; // Import the new renderer
+import { Metadata } from 'next';
 
 interface Article {
   id: string;
@@ -29,6 +30,17 @@ export default function ArticlePage() {
   useEffect(() => {
     if (slug) {
       fetchArticle()
+      // Track view
+      fetch('/api/analytics/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content_type: 'article',
+          content_id: slug, // Assuming slug can identify, or change to id after fetch
+          event_type: 'view',
+          event_data: { user_agent: navigator.userAgent }
+        })
+      }).catch(error => console.error('Failed to track view:', error));
     }
   }, [slug])
 
@@ -108,4 +120,23 @@ export default function ArticlePage() {
       <ArticleRenderer content={article.content} images={images} />
     </ArticleLayout>
   )
+}
+
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/articles/${params.slug}`);
+  const data = await response.json();
+  const article = data.article;
+
+  if (!article) {
+    return {
+      title: 'Article Not Found',
+      description: 'The requested article could not be found.',
+    };
+  }
+
+  return {
+    title: article.seo_title || article.title,
+    description: article.seo_description || article.excerpt,
+    keywords: article.seo_keywords || article.categories?.map(cat => cat.name),
+  };
 }

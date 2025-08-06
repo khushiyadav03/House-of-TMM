@@ -15,6 +15,8 @@ interface BrandImage {
   display_order: number
   is_active: boolean
   created_at: string
+  status: string
+  scheduled_date?: string | null
 }
 
 export default function AdminBrandImages() {
@@ -26,6 +28,8 @@ export default function AdminBrandImages() {
     image_url: "",
     display_order: 0,
     is_active: true,
+    status: "draft",
+    scheduled_date: "",
   })
   const [loading, setLoading] = useState(true)
 
@@ -57,7 +61,10 @@ export default function AdminBrandImages() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          scheduled_date: formData.status === "scheduled" ? formData.scheduled_date : null,
+        }),
       })
 
       if (response.ok) {
@@ -90,6 +97,8 @@ export default function AdminBrandImages() {
       image_url: image.image_url,
       display_order: image.display_order,
       is_active: image.is_active,
+      status: image.status ?? "draft",
+      scheduled_date: image.scheduled_date ?? "",
     })
     setIsEditing(true)
   }
@@ -202,6 +211,29 @@ export default function AdminBrandImages() {
                     Active (Show in carousel)
                   </label>
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, status: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                  >
+                    <option value="draft">Draft</option>
+                    <option value="published">Published</option>
+                    <option value="scheduled">Scheduled</option>
+                  </select>
+                </div>
+                {formData.status === "scheduled" && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Scheduled Date</label>
+                    <input
+                      type="datetime-local"
+                      value={formData.scheduled_date}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, scheduled_date: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                    />
+                  </div>
+                )}
 
                 <div className="flex space-x-4">
                   <button
@@ -248,6 +280,11 @@ export default function AdminBrandImages() {
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between">
+                          <div>
+                            <h3 className="font-semibold text-lg">{image.title}</h3>
+                            <p className="text-sm text-gray-500">Order: {image.display_order}</p>
+                            <p className="text-sm text-gray-500">Status: {image.status.charAt(0).toUpperCase() + image.status.slice(1)}{image.status === "scheduled" && image.scheduled_date ? ` on ${new Date(image.scheduled_date).toLocaleDateString()}` : ""}</p>
+                          </div>
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
                               <h3 className="text-lg font-semibold text-gray-900">{image.title}</h3>

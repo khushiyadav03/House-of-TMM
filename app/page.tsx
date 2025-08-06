@@ -321,7 +321,7 @@ export default function Home() {
               <div className="flex items-center mb-4">
                 <h2 className="text-3xl font-montserrat font-extrabold text-gray-800">Latest News</h2>
                 <hr className="fashion-section-line"></hr>
-                <Link href="/latest-news" className="text-sm text-gray-500 hover:text-gray-700 whitespace-nowrap">
+                <Link href="/trending" className="text-sm text-gray-500 hover:text-gray-700 whitespace-nowrap">
                   View All Posts
                 </Link>
               </div>
@@ -364,7 +364,7 @@ export default function Home() {
               <div className="flex items-center mb-4">
                 <h2 className="text-3xl font-montserrat font-extrabold text-gray-800">Fashion</h2>
                 <hr className="fashion-section-line"></hr>
-                <Link href="/fashion" className="text-sm text-gray-500 hover:text-gray-700 whitespace-nowrap">
+                <Link href="/lifestyle/fashion" className="text-sm text-gray-500 hover:text-gray-700 whitespace-nowrap">
                   View All Posts
                 </Link>
               </div>
@@ -514,7 +514,7 @@ export default function Home() {
             <div className="flex items-center mb-8">
               <h2 className="text-3xl font-montserrat font-extrabold text-gray-800">Tech & Auto</h2>
               <hr className="fashion-section-line" />
-              <Link href="/tech-auto" className="text-sm text-gray-500 hover:text-gray-700 whitespace-nowrap">
+              <Link href="/technology/gadgets" className="text-sm text-gray-500 hover:text-gray-700 whitespace-nowrap">
                 View All Posts
               </Link>
             </div>
@@ -643,7 +643,7 @@ export default function Home() {
             <div className="flex items-center mb-4">
               <h2 className="text-3xl font-montserrat font-extrabold text-gray-800 finance-section-heading">Finance</h2>
               <hr className="fashion-section-line" />
-              <Link href="/finance" className="text-sm text-gray-500 hover:text-gray-700 whitespace-nowrap">
+              <Link href="/finance/stock-market" className="text-sm text-gray-500 hover:text-gray-700 whitespace-nowrap">
                 View All Posts
               </Link>
             </div>

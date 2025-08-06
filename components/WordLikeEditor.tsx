@@ -30,7 +30,7 @@ const WordLikeEditor: React.FC<WordLikeEditorProps> = ({ value, onChange }) => {
           'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
           'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
           'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount',
-          'emoticons', 'template', 'save', 'print', 'imagetools',
+          'emoticons', 'template', 'save', 'print',
         ],
         toolbar:
           'undo redo | blocks | fontsize | fontfamily | ' +
@@ -74,8 +74,7 @@ const WordLikeEditor: React.FC<WordLikeEditorProps> = ({ value, onChange }) => {
           });
         },
         object_resizing: 'img',
-        imagetools_toolbar:
-          'rotateleft rotateright | flipv fliph | editimage imageoptions',
+        
         contextmenu: 'link image table | delete replace align',
         draggable_modal: true,
         paste_data_images: true,

@@ -1,14 +1,18 @@
 /**
  * @file app/api/razorpay/order/route.ts
- * @description API route to create a Razorpay payment order (mock version).
+ * @description API route to create a Razorpay payment order.
  * This endpoint is called by the frontend before initiating the payment process.
- * It creates a 'pending' purchase record in the Supabase database and returns a mock order object.
- * When ready for real integration, uncomment the Razorpay logic and add your keys.
+ * It creates a 'pending' purchase record in the Supabase database and returns the order object.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
-// import Razorpay from 'razorpay'; // Uncomment for real integration
+import { createClient } from '@supabase/supabase-js';
+import Razorpay from 'razorpay';
+
+// Initialize Supabase client
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 export async function POST(req: NextRequest) {
   const { magazineId, userEmail, amount } = await req.json();
@@ -17,27 +21,31 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
-  // --- REAL RAZORPAY LOGIC (UNCOMMENT WHEN READY) ---
-  /*
+  // Initialize Razorpay with your API keys
   const razorpay = new Razorpay({
     key_id: process.env.RAZORPAY_KEY_ID!,
     key_secret: process.env.RAZORPAY_KEY_SECRET!,
   });
+  
+  // Create payment options
   const options = {
-    amount: amount * 100, // in paise
+    amount: amount, // amount in smallest currency unit (paise for INR)
     currency: 'INR',
-    receipt: `receipt_mag_${magazineId}_${Date.now()}`,
+    receipt: `receipt_${Date.now()}`,
+    notes: {
+      magazineId: magazineId.toString(),
+      userEmail: userEmail
+    }
   };
-  const order = await razorpay.orders.create(options);
-  */
-
-  // --- MOCK ORDER FOR DEVELOPMENT ---
-  const order = {
-    id: `mock_order_${Date.now()}`,
-    amount: amount * 100,
-    currency: 'INR',
-    receipt: `receipt_mag_${magazineId}_${Date.now()}`,
-  };
+  
+  // Create the order in Razorpay
+  let order;
+  try {
+    order = await razorpay.orders.create(options);
+  } catch (error) {
+    console.error('Razorpay order creation error:', error);
+    return NextResponse.json({ error: 'Failed to create Razorpay order' }, { status: 500 });
+  }
 
   // Insert a pending purchase record into the database
   const { error } = await supabase
@@ -45,9 +53,10 @@ export async function POST(req: NextRequest) {
     .insert({
       magazine_id: magazineId,
       user_email: userEmail,
-      amount: amount,
+      purchase_date: new Date().toISOString(),
+      amount: amount / 100, // Convert from paisa to rupees for storage
       payment_status: 'pending',
-      razorpay_order_id: order.id,
+      payment_id: order.id,
     });
 
   if (error) {
@@ -56,4 +65,4 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json(order);
-} 
+}

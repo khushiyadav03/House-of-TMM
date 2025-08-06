@@ -247,6 +247,13 @@ export default function AdminDashboard() {
                     <span>Create New Article</span>
                   </Link>
                   <Link
+                    href="/admin/pep-talk"
+                    className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <Plus className="h-5 w-5 text-blue-600 mr-3" />
+                    <span>Manage PEP Talk Videos</span>
+                  </Link>
+                  <Link
                     href="/admin/articles"
                     className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                   >
