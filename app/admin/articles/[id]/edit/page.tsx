@@ -2,9 +2,10 @@
 
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation"
-import HybridEditor from '@/components/HybridEditor';
+import dynamic from 'next/dynamic';
+const WordLikeEditor = dynamic(() => import('@/components/WordLikeEditor'), { ssr: false });
 import ImageUpload from "../../../../../components/ImageUpload"
-import Footer from "../../../../../components/Footer"
+import AdminRoute from "../../../../../components/AdminRoute"
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/lib/supabase";
 import { Label } from "@/components/ui/label";
@@ -55,7 +56,7 @@ export default function EditArticle({ params }: { params: Promise<{ id: string }
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const { toast } = useToast();
-  const [editorContent, setEditorContent] = useState({ textHtml: '', images: [] });
+
 
   useEffect(() => {
     fetchCategories()
@@ -96,12 +97,20 @@ export default function EditArticle({ params }: { params: Promise<{ id: string }
           alt_text: data.article.alt_text || "",
         })
       } else {
-        alert("Article not found")
+        toast({
+          title: "Error",
+          description: "Article not found.",
+          variant: "destructive",
+        });
         router.push("/admin/articles")
       }
     } catch (error) {
       console.error("Failed to fetch article:", error)
-      alert("Failed to load article")
+      toast({
+        title: "Error",
+        description: "Failed to load article.",
+        variant: "destructive",
+      });
       router.push("/admin/articles")
     } finally {
       setLoading(false)
@@ -155,13 +164,26 @@ export default function EditArticle({ params }: { params: Promise<{ id: string }
       })
 
       if (response.ok) {
+        toast({
+          title: "Success!",
+          description: "Article updated successfully.",
+        });
         router.push("/admin/articles")
       } else {
-        alert("Failed to update article")
+        const errorData = await response.json();
+        toast({
+          title: "Error",
+          description: errorData.error || "Failed to update article.",
+          variant: "destructive",
+        });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to update article:", error)
-      alert("Failed to update article")
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update article.",
+        variant: "destructive",
+      });
     } finally {
       setSaving(false)
     }
@@ -189,6 +211,7 @@ export default function EditArticle({ params }: { params: Promise<{ id: string }
   }
 
   return (
+    <AdminRoute>
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-8">
@@ -285,14 +308,12 @@ export default function EditArticle({ params }: { params: Promise<{ id: string }
 
           <div className="space-y-2">
             <Label htmlFor="content">Content</Label>
-            {formData.content !== null && ( // Ensure content is loaded before rendering editor
-              <HybridEditor
-                initialText={formData.content}
-                initialImages={formData.images || []}
-                uploadUrl="/api/upload"
-                onChange={(textHtml, images) => setEditorContent({ textHtml, images })}
+            <div style={{ minHeight: 450 }}>
+              <WordLikeEditor
+                value={formData.content}
+                onChange={(val) => setFormData(prev => ({ ...prev, content: val }))}
               />
-            )}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -402,7 +423,7 @@ export default function EditArticle({ params }: { params: Promise<{ id: string }
           </div>
         </form>
       </div>
-      <Footer />
     </div>
+    </AdminRoute>
   )
 }

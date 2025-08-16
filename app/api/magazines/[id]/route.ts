@@ -9,7 +9,21 @@ const supabase = createClient(
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const body = await request.json()
-    const { title, description, cover_image_url, pdf_file_path, price, issue_date, status } = body
+    const { 
+      title, 
+      description, 
+      cover_image_url, 
+      pdf_file_path, 
+      price, 
+      issue_date, 
+      status,
+      is_paid,
+      seo_title,
+      seo_description,
+      seo_keywords = [],
+      alt_text,
+      scheduled_date
+    } = body
 
     const { error } = await supabase
       .from("magazines")
@@ -21,6 +35,11 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         price,
         issue_date,
         status,
+        is_paid,
+        seo_title,
+        seo_description,
+        seo_keywords,
+        alt_text,
         updated_at: new Date().toISOString(),
       })
       .eq("id", params.id)

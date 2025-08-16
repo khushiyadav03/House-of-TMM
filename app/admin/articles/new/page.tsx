@@ -173,20 +173,31 @@ export default function NewArticle() {
         status: 'published'
       };
 
-      const { data, error } = await supabase.from("articles").insert([articleData]);
+      const response = await fetch("/api/articles", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(articleData),
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create article');
+      }
+
+      const result = await response.json();
 
       toast({
         title: "Success!",
         description: "Article created successfully.",
       });
       router.push("/admin/articles");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating article:", error);
       toast({
         title: "Error",
-        description: "Failed to create article.",
+        description: error.message || "Failed to create article.",
         variant: "destructive",
       });
     } finally {

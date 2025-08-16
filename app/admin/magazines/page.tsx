@@ -4,9 +4,9 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Upload, Edit, Trash2, DollarSign, Calendar, TrendingUp } from "lucide-react"
-import Footer from "../../../components/Footer"
+import AdminRoute from "../../../components/AdminRoute"
 import ImageUpload from "../../../components/ImageUpload"
-import { useToast, ToastContainer } from "../../../components/Toast"
+import { useToast } from "@/components/ui/use-toast"
 
 interface Magazine {
   id: number
@@ -43,7 +43,7 @@ export default function AdminMagazines() {
     alt_text: "",
   })
   const [pdfUploading, setPdfUploading] = useState(false)
-  const { showSuccess, showError, toasts, removeToast } = useToast()
+  const { toast } = useToast()
 
   useEffect(() => {
     fetchMagazines()
@@ -75,11 +75,19 @@ export default function AdminMagazines() {
         const data = await response.json()
         setFormData((prev) => ({ ...prev, pdf_file_path: data.url }))
       } else {
-        alert("Failed to upload PDF")
+        toast({
+          title: "Error",
+          description: "Failed to upload PDF.",
+          variant: "destructive",
+        });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to upload PDF:", error)
-      alert("Failed to upload PDF")
+      toast({
+        title: "Error",
+        description: error.message || "Failed to upload PDF.",
+        variant: "destructive",
+      });
     } finally {
       setPdfUploading(false)
     }
@@ -107,11 +115,27 @@ export default function AdminMagazines() {
       })
 
       if (response.ok) {
+        toast({
+          title: "Success!",
+          description: `Magazine ${isEditing ? 'updated' : 'created'} successfully.`,
+        });
         fetchMagazines()
         resetForm()
+      } else {
+        const errorData = await response.json();
+        toast({
+          title: "Error",
+          description: errorData.error || `Failed to ${isEditing ? 'update' : 'create'} magazine.`,
+          variant: "destructive",
+        });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to save magazine:", error)
+      toast({
+        title: "Error",
+        description: error.message || `Failed to ${isEditing ? 'update' : 'create'} magazine.`,
+        variant: "destructive",
+      });
     }
   }
 
@@ -163,14 +187,26 @@ export default function AdminMagazines() {
         })
 
         if (response.ok) {
-          showSuccess("Magazine deleted successfully")
+          toast({
+            title: "Success!",
+            description: "Magazine deleted successfully.",
+          });
           setMagazines(prev => prev.filter(mag => mag.id !== id))
         } else {
-          showError("Failed to delete magazine")
+          const errorData = await response.json();
+          toast({
+            title: "Error",
+            description: errorData.error || "Failed to delete magazine.",
+            variant: "destructive",
+          });
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Failed to delete magazine:", error)
-        showError("Failed to delete magazine")
+        toast({
+          title: "Error",
+          description: error.message || "Failed to delete magazine.",
+          variant: "destructive",
+        });
       }
     }
   }
@@ -179,6 +215,7 @@ export default function AdminMagazines() {
   const totalRevenue = magazines.reduce((sum, mag) => sum + (mag.sales_count || 0) * mag.price, 0)
 
   return (
+    <AdminRoute>
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-8">
@@ -514,7 +551,7 @@ export default function AdminMagazines() {
           </div>
         </div>
       </div>
-      <Footer />
     </div>
+    </AdminRoute>
   )
 }

@@ -52,15 +52,29 @@ export async function GET(request: NextRequest) {
 
 /**
  * POST /api/magazines
- * Creates a new magazine.  Required fields: title, price, issue_date.
+ * Creates a new magazine. Required fields: title, price, issue_date.
  */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { title, description, cover_image_url, pdf_file_path, price, issue_date } = body
+    const { 
+      title, 
+      description, 
+      cover_image_url, 
+      pdf_file_path, 
+      price, 
+      issue_date,
+      status = "draft",
+      is_paid = false,
+      seo_title,
+      seo_description,
+      seo_keywords = [],
+      alt_text,
+      scheduled_date
+    } = body
 
-    if (!title || !price || !issue_date) {
-      return NextResponse.json({ error: "Missing required fields: title, price, issue_date" }, { status: 400 })
+    if (!title || !issue_date) {
+      return NextResponse.json({ error: "Missing required fields: title, issue_date" }, { status: 400 })
     }
 
     const { data, error } = await supabaseAdmin
@@ -70,74 +84,14 @@ export async function POST(request: NextRequest) {
         description,
         cover_image_url,
         pdf_file_path,
-        price: Number(price),
+        price: Number(price) || 0,
         issue_date,
-      })
-      .select()
-      .single()
-
-    if (error) {
-      console.error("Database error:", error)
-      return NextResponse.json({ error: "Failed to create magazine" }, { status: 500 })
-    }
-
-    return NextResponse.json(data, { status: 201 })
-  } catch (err) {
-    console.error("API error:", err)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
-  }
-}
-export async function PUT(request: NextRequest) {
-  try {
-    const body = await request.json()
-    const { title, description, cover_image_url, pdf_file_path, price, issue_date } = body
-
-    if (!title || !price || !issue_date) {
-      return NextResponse.json({ error: "Missing required fields: title, price, issue_date" }, { status: 400 })
-    }
-
-    const { data, error } = await supabaseAdmin
-      .from("magazines")
-      .insert({
-        title,
-        description,
-        cover_image_url,
-        pdf_file_path,
-        price: Number(price),
-        issue_date,
-      })
-      .select()
-      .single()
-
-    if (error) {
-      console.error("Database error:", error)
-      return NextResponse.json({ error: "Failed to create magazine" }, { status: 500 })
-    }
-
-    return NextResponse.json(data, { status: 201 })
-  } catch (err) {
-    console.error("API error:", err)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
-  }
-}
-export async function DELETE(request: NextRequest) {
-  try {
-    const body = await request.json()
-    const { title, description, cover_image_url, pdf_file_path, price, issue_date } = body
-
-    if (!title || !price || !issue_date) {
-      return NextResponse.json({ error: "Missing required fields: title, price, issue_date" }, { status: 400 })
-    }
-
-    const { data, error } = await supabaseAdmin
-      .from("magazines")
-      .insert({
-        title,
-        description,
-        cover_image_url,
-        pdf_file_path,
-        price: Number(price),
-        issue_date,
+        status,
+        is_paid,
+        seo_title,
+        seo_description,
+        seo_keywords,
+        alt_text,
       })
       .select()
       .single()

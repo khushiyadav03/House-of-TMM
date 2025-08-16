@@ -3,7 +3,7 @@
 import type React from "react"
 import { useEffect, useState, useRef } from "react"
 import { Pencil, Trash2, EyeOff, Eye, Upload, X, Camera, Plus } from "lucide-react"
-import { useToast, ToastContainer } from "../../../components/Toast"
+import { useToast } from "@/components/ui/use-toast"
 import AdminRoute from "../../../components/AdminRoute"
 
 import { Button } from "@/components/ui/button"
@@ -55,7 +55,7 @@ export default function AdminCoverPhotos() {
 
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const { toasts, showSuccess, showError, showInfo, removeToast } = useToast()
+  const { toast } = useToast()
 
   const categories = [
     { value: "digital-cover", label: "Digital Cover" },
@@ -73,7 +73,11 @@ export default function AdminCoverPhotos() {
       setCoverPhotos(data.sort((a, b) => a.display_order - b.display_order))
     } catch (e) {
       console.error("Failed to fetch cover photos", e)
-      showError("Failed to fetch cover photos")
+      toast({
+        title: "Error",
+        description: "Failed to fetch cover photos",
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
     }
@@ -85,13 +89,21 @@ export default function AdminCoverPhotos() {
     files.forEach(file => {
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        showError(`${file.name} is not an image file`)
+        toast({
+          title: "Error",
+          description: `${file.name} is not an image file`,
+          variant: "destructive",
+        })
         return
       }
 
       // Validate file size (10MB limit)
       if (file.size > 10 * 1024 * 1024) {
-        showError(`${file.name} is too large. Maximum size is 10MB`)
+        toast({
+          title: "Error",
+          description: `${file.name} is too large. Maximum size is 10MB`,
+          variant: "destructive",
+        })
         return
       }
 
@@ -164,49 +176,93 @@ export default function AdminCoverPhotos() {
     setUploading(true)
 
     try {
-      // Upload all files first
-      const uploadedUrls = await uploadFiles()
-      
-      if (uploadedUrls.length === 0) {
-        showError("Please select at least one image to upload")
-        setUploading(false)
-        return
-      }
-
-      // Create cover photos for each uploaded image
-      const createPromises = uploadedUrls.map((imageUrl, index) => {
+      if (isEditing && currentPhoto) {
+        // Edit mode - update existing photo
         const photoData = {
           ...formData,
-          image_url: imageUrl,
-          title: formData.title || `Cover Photo ${index + 1}`,
-          display_order: formData.display_order + index,
+          title: formData.title || currentPhoto.title,
           status: formData.status,
           scheduled_date: formData.status === "scheduled" ? formData.scheduled_date : null,
         }
 
-    const url = isEditing ? `/api/cover-photos/${currentPhoto?.id}` : "/api/cover-photos"
-    const method = isEditing ? "PUT" : "POST"
-
-        return fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
+        const response = await fetch(`/api/cover-photos/${currentPhoto.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(photoData),
         })
-      })
 
-      const results = await Promise.all(createPromises)
-      const allSuccessful = results.every(res => res.ok)
-
-      if (allSuccessful) {
-        showSuccess(`Successfully ${isEditing ? 'updated' : 'created'} ${uploadedUrls.length} cover photo(s)`)
-      resetForm()
-      fetchCoverPhotos()
+        if (response.ok) {
+          toast({
+            title: "Success!",
+            description: "Cover photo updated successfully",
+          })
+          resetForm()
+          fetchCoverPhotos()
+        } else {
+          const errorData = await response.json()
+          toast({
+            title: "Error",
+            description: errorData.error || "Failed to update cover photo",
+            variant: "destructive",
+          })
+        }
       } else {
-        showError("Some cover photos failed to save")
+        // Create mode - upload files and create new photos
+        const uploadedUrls = await uploadFiles()
+        
+        if (uploadedUrls.length === 0) {
+          toast({
+            title: "Error",
+            description: "Please select at least one image to upload",
+            variant: "destructive",
+          })
+          setUploading(false)
+          return
+        }
+
+        // Create cover photos for each uploaded image
+        const createPromises = uploadedUrls.map((imageUrl, index) => {
+          const photoData = {
+            ...formData,
+            image_url: imageUrl,
+            title: formData.title || `Cover Photo ${index + 1}`,
+            display_order: formData.display_order + index,
+            status: formData.status,
+            scheduled_date: formData.status === "scheduled" ? formData.scheduled_date : null,
+          }
+
+          return fetch("/api/cover-photos", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(photoData),
+          })
+        })
+
+        const results = await Promise.all(createPromises)
+        const allSuccessful = results.every(res => res.ok)
+
+        if (allSuccessful) {
+          toast({
+            title: "Success!",
+            description: `Successfully created ${uploadedUrls.length} cover photo(s)`,
+          })
+          resetForm()
+          fetchCoverPhotos()
+        } else {
+          toast({
+            title: "Error",
+            description: "Some cover photos failed to save",
+            variant: "destructive",
+          })
+        }
       }
     } catch (error) {
       console.error("Failed to save cover photos", error)
-      showError("Failed to save cover photos")
+      toast({
+        title: "Error",
+        description: "Failed to save cover photos",
+        variant: "destructive",
+      })
     } finally {
       setUploading(false)
     }
@@ -219,6 +275,8 @@ export default function AdminCoverPhotos() {
       category: "",
       is_active: true,
       display_order: 0,
+      status: "draft",
+      scheduled_date: "",
     })
     setUploadedFiles([])
     setCurrentPhoto(null)
@@ -247,27 +305,44 @@ export default function AdminCoverPhotos() {
     try {
       const res = await fetch(`/api/cover-photos/${id}`, { method: "DELETE" })
       if (!res.ok) throw new Error("Delete failed")
-      showSuccess("Cover photo deleted successfully")
+      toast({
+        title: "Success!",
+        description: "Cover photo deleted successfully",
+      })
       setCoverPhotos(prev => prev.filter(photo => photo.id !== id))
-    } catch (e) {
+    } catch (e: any) {
       console.error("Failed to delete cover photo", e)
-      showError("Failed to delete cover photo")
+      toast({
+        title: "Error",
+        description: e.message || "Failed to delete cover photo",
+        variant: "destructive",
+      })
     }
   }
 
   async function toggleActive(id: number, isActive: boolean) {
     try {
       const res = await fetch(`/api/cover-photos/${id}`, {
-        method: "PATCH",
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ is_active: !isActive }),
       })
-      if (!res.ok) throw new Error("Toggle failed")
-      showSuccess(`Cover photo ${isActive ? 'disabled' : 'enabled'} successfully`)
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.error || "Toggle failed")
+      }
+      toast({
+        title: "Success!",
+        description: `Cover photo ${isActive ? 'disabled' : 'enabled'} successfully`,
+      })
       fetchCoverPhotos()
-    } catch (e) {
+    } catch (e: any) {
       console.error("Failed to update cover photo", e)
-      showError("Failed to update cover photo")
+      toast({
+        title: "Error",
+        description: e.message || "Failed to update cover photo",
+        variant: "destructive",
+      })
     }
   }
 
@@ -440,7 +515,7 @@ export default function AdminCoverPhotos() {
                   <Button 
                     type="submit" 
                     className="flex-1"
-                    disabled={uploading || uploadedFiles.length === 0}
+                    disabled={uploading || (!isEditing && uploadedFiles.length === 0)}
                   >
                     {uploading ? (
                       <>
@@ -475,7 +550,10 @@ export default function AdminCoverPhotos() {
                   onClick={() => {
                     const digitalCover = coverPhotos.filter(p => p.category === 'digital-cover')
                     const editorialShoot = coverPhotos.filter(p => p.category === 'editorial-shoot')
-                    showInfo(`Digital Cover: ${digitalCover.length}, Editorial Shoot: ${editorialShoot.length}`)
+                    toast({
+                      title: "Cover Photos Stats",
+                      description: `Digital Cover: ${digitalCover.length}, Editorial Shoot: ${editorialShoot.length}`,
+                    })
                   }}
                 >
                   View Stats
@@ -565,8 +643,7 @@ export default function AdminCoverPhotos() {
         </section>
       </div>
 
-        {/* Toast Notifications */}
-        <ToastContainer toasts={toasts} onRemove={removeToast} />
+
     </main>
     </AdminRoute>
   )

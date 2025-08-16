@@ -80,7 +80,24 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { id, title, slug, content, excerpt, image_url, author, publish_date, featured, categories = [], status } = body
+    const { 
+      id, 
+      title, 
+      slug, 
+      content, 
+      excerpt, 
+      image_url, 
+      author, 
+      publish_date, 
+      featured, 
+      categories = [], 
+      status,
+      seo_title,
+      seo_description,
+      seo_keywords = [],
+      alt_text,
+      scheduled_date
+    } = body
 
     if (!id) {
       return NextResponse.json({ error: "Missing required field: id" }, { status: 400 })
@@ -94,9 +111,14 @@ export async function PUT(request: NextRequest) {
       excerpt,
       image_url,
       author,
-      publish_date: status === 'scheduled' ? publish_date : (status === 'published' ? new Date().toISOString() : null),
+      publish_date: status === 'scheduled' ? scheduled_date : (status === 'published' ? new Date().toISOString() : publish_date),
       featured,
       status,
+      seo_title,
+      seo_description,
+      seo_keywords,
+      alt_text,
+      scheduled_date: status === 'scheduled' ? scheduled_date : null,
       updated_at: new Date().toISOString(),
     }
 
@@ -175,6 +197,11 @@ export async function POST(request: NextRequest) {
       featured = false,
       categories = [],
       status = "draft", // default to draft
+      seo_title,
+      seo_description,
+      seo_keywords = [],
+      alt_text,
+      scheduled_date
     } = body
 
     // Validate required fields
@@ -199,10 +226,14 @@ export async function POST(request: NextRequest) {
         excerpt,
         image_url,
         author,
-        publish_date,
+        publish_date: status === 'scheduled' ? scheduled_date : (status === 'published' ? new Date().toISOString() : publish_date),
         featured,
-        status, // store status
-        publish_date: status === 'scheduled' ? publish_date : (status === 'published' ? new Date().toISOString() : null)
+        status,
+        seo_title,
+        seo_description,
+        seo_keywords,
+        alt_text,
+        scheduled_date: status === 'scheduled' ? scheduled_date : null
       })
       .select()
       .single()

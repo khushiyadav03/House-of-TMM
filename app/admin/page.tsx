@@ -5,16 +5,11 @@ import Link from "next/link"
 import { 
   FileText, 
   BookOpen, 
-  Users, 
   Eye, 
   Heart, 
-  TrendingUp, 
   Plus, 
   Edit, 
-  Calendar,
-  Activity,
-  BarChart3,
-  Clock
+  BarChart3
 } from "lucide-react"
 import AdminRoute from "../../components/AdminRoute"
 import { useToast, ToastContainer } from "../../components/Toast"
@@ -24,15 +19,6 @@ interface DashboardStats {
   totalMagazines: number
   totalViews: number
   totalLikes: number
-  recentActivity: ActivityItem[]
-}
-
-interface ActivityItem {
-  id: string
-  type: "article_created" | "article_updated" | "article_published" | "magazine_created" | "view" | "like"
-  title: string
-  timestamp: string
-  user?: string
 }
 
 export default function AdminDashboard() {
@@ -40,8 +26,7 @@ export default function AdminDashboard() {
     totalArticles: 0,
     totalMagazines: 0,
     totalViews: 0,
-    totalLikes: 0,
-    recentActivity: []
+    totalLikes: 0
   })
   const [loading, setLoading] = useState(true)
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
@@ -61,19 +46,16 @@ export default function AdminDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const [articlesRes, magazinesRes, activityRes] = await Promise.all([
+      const [articlesRes, magazinesRes] = await Promise.all([
         fetch("/api/articles?limit=1000"),
-        fetch("/api/magazines"),
-        fetch("/api/activity") // You'll need to create this endpoint
+        fetch("/api/magazines")
       ])
 
       const articlesData = await articlesRes.json()
       const magazinesData = await magazinesRes.json()
-      const activityData = await activityRes.json().catch(() => ({ activities: [] }))
 
       const articles = articlesData.articles || []
       const magazines = magazinesData || []
-      const activities = activityData.activities || []
 
       // Calculate statistics
       const totalViews = articles.reduce((sum: number, article: any) => sum + (article.views || 0), 0)
@@ -83,8 +65,7 @@ export default function AdminDashboard() {
         totalArticles: articles.length,
         totalMagazines: magazines.length,
         totalViews,
-        totalLikes,
-        recentActivity: activities.slice(0, 10)
+        totalLikes
       })
 
       setLastUpdated(new Date())
@@ -101,43 +82,7 @@ export default function AdminDashboard() {
     window.location.href = "/admin/login"
   }
 
-  const getActivityIcon = (type: string) => {
-    switch (type) {
-      case "article_created":
-        return <Plus className="h-4 w-4 text-green-500" />
-      case "article_updated":
-        return <Edit className="h-4 w-4 text-blue-500" />
-      case "article_published":
-        return <FileText className="h-4 w-4 text-purple-500" />
-      case "magazine_created":
-        return <BookOpen className="h-4 w-4 text-orange-500" />
-      case "view":
-        return <Eye className="h-4 w-4 text-gray-500" />
-      case "like":
-        return <Heart className="h-4 w-4 text-red-500" />
-      default:
-        return <Activity className="h-4 w-4 text-gray-500" />
-    }
-  }
 
-  const getActivityText = (activity: ActivityItem) => {
-    switch (activity.type) {
-      case "article_created":
-        return `New article "${activity.title}" created`
-      case "article_updated":
-        return `Article "${activity.title}" updated`
-      case "article_published":
-        return `Article "${activity.title}" published`
-      case "magazine_created":
-        return `New magazine "${activity.title}" added`
-      case "view":
-        return `Article "${activity.title}" viewed`
-      case "like":
-        return `Article "${activity.title}" liked`
-      default:
-        return activity.title
-    }
-  }
 
   if (loading) {
     return (
@@ -233,87 +178,53 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Quick Actions */}
-            <div className="lg:col-span-1">
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-                <div className="space-y-3">
-                  <Link
-                    href="/admin/articles/new"
-                    className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    <Plus className="h-5 w-5 text-green-600 mr-3" />
-                    <span>Create New Article</span>
-                  </Link>
-                  <Link
-                    href="/admin/pep-talk"
-                    className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    <Plus className="h-5 w-5 text-blue-600 mr-3" />
-                    <span>Manage PEP Talk Videos</span>
-                  </Link>
-                  <Link
-                    href="/admin/articles"
-                    className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    <FileText className="h-5 w-5 text-blue-600 mr-3" />
-                    <span>Manage Articles</span>
-                  </Link>
-                  <Link
-                    href="/admin/magazines"
-                    className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    <BookOpen className="h-5 w-5 text-blue-600 mr-3" />
-                    <span>Manage Magazines</span>
-                  </Link>
-                  <Link
-                    href="/admin/homepage"
-                    className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    <Edit className="h-5 w-5 text-purple-600 mr-3" />
-                    <span>Edit Homepage</span>
-                  </Link>
-                  <Link
-                    href="/admin/cover-photos"
-                    className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    <FileText className="h-5 w-5 text-orange-600 mr-3" />
-                    <span>Manage Cover Photos</span>
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            {/* Recent Activity */}
-            <div className="lg:col-span-2">
-              <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
-                  <Clock className="h-5 w-5 text-gray-400" />
-                </div>
-                <div className="space-y-4">
-                  {stats.recentActivity.length > 0 ? (
-                    stats.recentActivity.map((activity) => (
-                      <div key={activity.id} className="flex items-start space-x-3">
-                        <div className="flex-shrink-0 mt-1">
-                          {getActivityIcon(activity.type)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-gray-900">{getActivityText(activity)}</p>
-                          <p className="text-xs text-gray-500">
-                            {new Date(activity.timestamp).toLocaleString()}
-                          </p>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-8">
-                      <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-500">No recent activity</p>
-                    </div>
-                  )}
-                </div>
+          {/* Quick Actions */}
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-6">Quick Actions</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <Link
+                  href="/admin/articles/new"
+                  className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <Plus className="h-5 w-5 text-green-600 mr-3" />
+                  <span>Create New Article</span>
+                </Link>
+                <Link
+                  href="/admin/pep-talks"
+                  className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <Plus className="h-5 w-5 text-blue-600 mr-3" />
+                  <span>Manage PEP Talks</span>
+                </Link>
+                <Link
+                  href="/admin/articles"
+                  className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <FileText className="h-5 w-5 text-blue-600 mr-3" />
+                  <span>Manage Articles</span>
+                </Link>
+                <Link
+                  href="/admin/magazines"
+                  className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <BookOpen className="h-5 w-5 text-green-600 mr-3" />
+                  <span>Manage Magazines</span>
+                </Link>
+                <Link
+                  href="/admin/cover-photos"
+                  className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <FileText className="h-5 w-5 text-orange-600 mr-3" />
+                  <span>Manage Cover Photos</span>
+                </Link>
+                <Link
+                  href="/admin/homepage"
+                  className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <Edit className="h-5 w-5 text-purple-600 mr-3" />
+                  <span>Edit Homepage</span>
+                </Link>
               </div>
             </div>
           </div>
