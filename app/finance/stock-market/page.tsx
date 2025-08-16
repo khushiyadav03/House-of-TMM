@@ -1,11 +1,5 @@
-import CategoryLayout from "../../../components/CategoryLayout";
+import CategoryClientPage from '../../[category]/CategoryClientPage';
 
 export default function StockMarketPage() {
-  return (
-    <CategoryLayout
-      categoryName="Stock Market"
-      categorySlug="stock-market"
-      description="Stock market news, analysis, and investment strategies."
-    />
-  );
-} 
+  return <CategoryClientPage categorySlug="stock-market" />
+}

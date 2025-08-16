@@ -1,5 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import { getYouTubeThumbnail } from "../../../utils/youtube"
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
@@ -20,7 +22,13 @@ export async function GET() {
       return NextResponse.json({ error: "Failed to fetch videos" }, { status: 500 })
     }
 
-    return NextResponse.json(data || [])
+    // Auto-generate thumbnails for videos that don't have them
+    const videosWithThumbnails = (data || []).map((video: any) => ({
+      ...video,
+      thumbnail_url: video.thumbnail_url || getYouTubeThumbnail(video.video_url) || "/placeholder.svg?height=80&width=120"
+    }))
+
+    return NextResponse.json(videosWithThumbnails)
   } catch (error) {
     console.error("API error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

@@ -10,6 +10,9 @@ import "swiper/css"
 import "swiper/css/pagination"
 import "swiper/css/scrollbar"
 import Footer from "../components/Footer"
+import YouTubeEmbed from "../components/YouTubeEmbed"
+import LazySection from "../components/LazySection"
+import { getYouTubeEmbedUrl, getYouTubeThumbnail } from "../utils/youtube"
 
 interface Article {
   id: number
@@ -81,25 +84,26 @@ export default function Home() {
     try {
       setLoading(true)
 
-      // Fetch all data in parallel
-      const [articlesResponse, magazinesResponse, videosResponse, brandsResponse, homepageContentResponse] = await Promise.all([
-        fetch("/api/articles?limit=100"),
-        fetch("/api/magazines"),
-        fetch("/api/youtube-videos"),
-        fetch("/api/brand-images"),
+      // Fetch all data in parallel with error handling
+      const [articlesResponse, magazinesResponse, videosResponse, brandsResponse, homepageContentResponse] = await Promise.allSettled([
+        fetch("/api/articles?limit=50"), // Reduced limit for better performance
+        fetch("/api/magazines?limit=10"), // Add limit for magazines
+        fetch("/api/youtube-videos?limit=10"), // Add limit for videos
+        fetch("/api/brand-images?limit=20"), // Add limit for brands
         fetch("/api/homepage-content"),
       ])
 
-      const articlesData = await articlesResponse.json()
-      const magazinesData = await magazinesResponse.json()
-      const videosData = await videosResponse.json()
-      const brandsData = await brandsResponse.json()
-      const homepageContentData = await homepageContentResponse.json()
+      // Handle Promise.allSettled results
+      const articlesData = articlesResponse.status === 'fulfilled' ? await articlesResponse.value.json() : { articles: [] }
+      const magazinesData = magazinesResponse.status === 'fulfilled' ? await magazinesResponse.value.json() : []
+      const videosData = videosResponse.status === 'fulfilled' ? await videosResponse.value.json() : []
+      const brandsData = brandsResponse.status === 'fulfilled' ? await brandsResponse.value.json() : []
+      const homepageContentData = homepageContentResponse.status === 'fulfilled' ? await homepageContentResponse.value.json() : []
 
       const allArticles = articlesData.articles || []
-      const allMagazines = magazinesData || []
-      const allVideos = videosData || []
-      const allBrands = brandsData || []
+      const allMagazines = Array.isArray(magazinesData) ? magazinesData : []
+      const allVideos = Array.isArray(videosData) ? videosData : []
+      const allBrands = Array.isArray(brandsData) ? brandsData : []
 
       // Convert homepage content to object
       const homepageContent: any = {}
@@ -216,11 +220,20 @@ export default function Home() {
       setFeaturedMagazine(allMagazines[0] || null)
       }
 
-      // Set videos
-      const mainVideo = allVideos.find((video: YoutubeVideo) => video.is_main_video)
-      setMainVideo(mainVideo || allVideos[0] || null)
+      // Set videos - select the most recent main video
+      const mainVideos = allVideos.filter((video: YoutubeVideo) => video.is_main_video)
+      const selectedMainVideo = mainVideos.length > 0 ? mainVideos[0] : allVideos[0] || null
+      
+      console.log('Homepage - All videos:', allVideos.length)
+      console.log('Homepage - Main videos found:', mainVideos.length)
+      console.log('Homepage - Selected main video:', selectedMainVideo)
+      
+      setMainVideo(selectedMainVideo)
 
-      const recommendedVideos = allVideos.filter((video: YoutubeVideo) => !video.is_main_video)
+      // For recommended videos, exclude the selected main video
+      const recommendedVideos = allVideos.filter((video: YoutubeVideo) => 
+        video.id !== selectedMainVideo?.id
+      )
       setRecommendedVideos(recommendedVideos.slice(0, 7))
 
       // Set brand images
@@ -442,7 +455,7 @@ export default function Home() {
                     sizes="350px"
                   />
                   <Link
-                    href="/magazine"
+                    href={`/magazine/purchase/${featuredMagazine.id}`}
                     className="inline-block w-full text-center py-3 bg-black text-white font-montserrat font-semibold hover:bg-gray-800 transition-colors !rounded-none"
                   >
                     Get It - ₹{featuredMagazine.price}
@@ -553,42 +566,52 @@ export default function Home() {
           <div className="flex flex-col lg:flex-row gap-6 items-start">
             <div className="lg:w-[780px] w-full">
               <div className="relative w-full h-0 pb-[56.25%]">
-                <iframe
-                  className="absolute top-0 left-0 w-full h-full"
-                  src={mainVideo?.video_url || "https://www.youtube.com/embed/dQw4w9WgXcQ"}
-                  title={mainVideo?.title || "Featured Video"}
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                ></iframe>
+                {mainVideo ? (
+                  <YouTubeEmbed
+                    videoUrl={mainVideo.video_url}
+                    title={mainVideo.title}
+                    className="absolute top-0 left-0 w-full h-full"
+                  />
+                ) : (
+                  <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-gray-800">
+                    <p className="text-white text-lg">No videos available</p>
+                  </div>
+                )}
               </div>
             </div>
             <div className="lg:w-[380px] w-full recommended-videos-container">
               <div className="recommended-videos-slider">
-                {recommendedVideos.map((video) => (
-                  <div key={video.id} className="recommended-video-item mb-4">
-                    <a
-                      href={video.video_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-start gap-3"
-                    >
-                      <div className="relative w-[120px] h-[80px] flex-shrink-0">
-                        <Image
-                          src={video.thumbnail_url || "/placeholder.svg?height=80&width=120"}
-                          alt={video.title}
-                          width={120}
-                          height={80}
-                          className="absolute top-0 left-0 w-full h-full object-cover"
-                          sizes="120px"
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="text-sm font-semibold text-white line-clamp-2">{video.title}</h4>
-                      </div>
-                    </a>
+                {recommendedVideos.length > 0 ? (
+                  recommendedVideos.map((video) => (
+                    <div key={video.id} className="recommended-video-item mb-4">
+                      <button
+                        onClick={() => {
+                          const embedUrl = getYouTubeEmbedUrl(video.video_url);
+                          setMainVideo({...video, video_url: embedUrl});
+                        }}
+                        className="flex items-start gap-3 w-full text-left hover:bg-gray-800 p-2 rounded transition-colors"
+                      >
+                        <div className="relative w-[120px] h-[80px] flex-shrink-0">
+                          <Image
+                            src={video.thumbnail_url || getYouTubeThumbnail(video.video_url) || "/placeholder.svg?height=80&width=120"}
+                            alt={video.title}
+                            width={120}
+                            height={80}
+                            className="absolute top-0 left-0 w-full h-full object-cover rounded"
+                            sizes="120px"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="text-sm font-semibold text-white line-clamp-2">{video.title}</h4>
+                        </div>
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-white text-center py-4">
+                    <p>No recommended videos available</p>
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </div>

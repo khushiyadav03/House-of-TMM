@@ -8,6 +8,7 @@ import RazorpayPaymentModal from "../../components/RazorpayPaymentModal"
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { ChevronUp } from "lucide-react";
+import { supabase } from "../../lib/supabase";
 const FlipbookViewer = dynamic(() => import('../../components/FlipbookViewer'), { ssr: false });
 
 interface Magazine {
@@ -99,7 +100,16 @@ export default function MagazineClientPage() {
         }
     }
 
-    const handlePurchaseClick = (magazine: Magazine) => {
+    const handlePurchaseClick = async (magazine: Magazine) => {
+        // Check if user is authenticated first
+        const { data: { user } } = await supabase.auth.getUser()
+        
+        if (!user) {
+            // Redirect to login with magazine purchase intent
+            router.push(`/auth/login?redirect=/magazine/purchase/${magazine.id}`)
+            return
+        }
+        
         setSelectedMagazine(magazine)
         setIsPaymentModalOpen(true)
     }
@@ -208,13 +218,33 @@ export default function MagazineClientPage() {
                                                 <div className="p-4">
                                                     <h2 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">{magazine.title}</h2>
                                                     <p className="text-gray-600 mb-3 text-sm">Issue Date: {magazine.issue_date}</p>
-                                                    <div className="flex items-center justify-between">
-                                                        <Button
-                                                            onClick={() => handleOpenFlipbook(magazine)}
-                                                            className={`w-full ${!magazine.is_paid ? 'bg-green-600 hover:bg-green-700' : isMagazinePurchased(magazine.id) ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'} text-white`}
-                                                        >
-                                                            {!magazine.is_paid ? 'Read Free' : isMagazinePurchased(magazine.id) ? 'Read Magazine' : `Buy ₹${magazine.price.toFixed(2)}`}
-                                                        </Button>
+                                                    <div className="flex flex-col gap-2 w-full">
+                                                        {!magazine.is_paid ? (
+                                                            <Button
+                                                                onClick={() => router.push(`/magazine/view/${magazine.id}`)}
+                                                                className="w-full bg-green-600 hover:bg-green-700 text-white"
+                                                            >
+                                                                Read Magazine for Free
+                                                            </Button>
+                                                        ) : (
+                                                            <>
+                                                                {isMagazinePurchased(magazine.id) ? (
+                                                                    <Button
+                                                                        onClick={() => router.push(`/magazine/view/${magazine.id}`)}
+                                                                        className="w-full bg-green-600 hover:bg-green-700 text-white"
+                                                                    >
+                                                                        Read Magazine
+                                                                    </Button>
+                                                                ) : (
+                                                                    <Button
+                                                                        onClick={() => handlePurchaseClick(magazine)}
+                                                                        className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                                                                    >
+                                                                        Buy Magazine - ₹{magazine.price.toFixed(2)}
+                                                                    </Button>
+                                                                )}
+                                                            </>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>

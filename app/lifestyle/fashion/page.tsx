@@ -1,11 +1,5 @@
-import CategoryLayout from "../../../components/CategoryLayout";
+import CategoryClientPage from '../../[category]/CategoryClientPage';
 
 export default function FashionPage() {
-  return (
-    <CategoryLayout
-      categoryName="Fashion"
-      categorySlug="fashion"
-      description="Latest trends, style guides, and fashion inspiration."
-    />
-  );
-} 
+  return <CategoryClientPage categorySlug="fashion" />
+}

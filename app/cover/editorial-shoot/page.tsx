@@ -1,13 +1,5 @@
-"use client"
-
-import CategoryLayout from "../../../components/CategoryLayout";
+import CategoryClientPage from '../../[category]/CategoryClientPage';
 
 export default function EditorialShootPage() {
-  return (
-    <CategoryLayout
-      categoryName="Editorial Shoot"
-      categorySlug="editorial-shoot"
-      description="Behind the scenes of our most stunning editorial shoots."
-    />
-  );
+  return <CategoryClientPage categorySlug="editorial-shoot" />
 }

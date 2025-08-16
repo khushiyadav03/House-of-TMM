@@ -6,7 +6,9 @@
     "build": "next build",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "next start"
+    "start": "next start",
+    "validate-env": "node scripts/validate-environment.js",
+    "setup-payment": "node scripts/validate-environment.js && echo '\n✅ Environment validated! Start your server with: npm run dev'"
   },
   "dependencies": {
     "@ckeditor/ckeditor5-build-classic": "^44.3.0",

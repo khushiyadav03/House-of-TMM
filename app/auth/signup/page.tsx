@@ -9,13 +9,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Mail, Lock, Eye, EyeOff, User, CheckCircle } from "lucide-react";
+import { Loader2, Mail, Lock, Eye, EyeOff, User, CheckCircle, Phone } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 
 function SignupForm() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    phone: "",
     password: "",
     confirmPassword: ""
   });
@@ -52,6 +53,14 @@ function SignupForm() {
       setError("Email is required");
       return false;
     }
+    if (!formData.phone.trim()) {
+      setError("Phone number is required");
+      return false;
+    }
+    if (formData.phone.length < 10) {
+      setError("Phone number must be at least 10 digits");
+      return false;
+    }
     if (formData.password.length < 6) {
       setError("Password must be at least 6 characters long");
       return false;
@@ -79,7 +88,8 @@ function SignupForm() {
       password: formData.password,
       options: {
         data: {
-          name: formData.name.trim()
+          name: formData.name.trim(),
+          phone: formData.phone.trim()
         }
       }
     });
@@ -150,6 +160,24 @@ function SignupForm() {
                     value={formData.email}
                     onChange={handleInputChange}
                     placeholder="your@example.com"
+                    className="pl-10"
+                    required
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    placeholder="+91 9876543210"
                     className="pl-10"
                     required
                     disabled={loading}

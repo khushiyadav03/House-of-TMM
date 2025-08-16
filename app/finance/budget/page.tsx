@@ -1,11 +1,5 @@
-import CategoryLayout from "../../../components/CategoryLayout";
+import CategoryClientPage from '../../[category]/CategoryClientPage';
 
 export default function BudgetPage() {
-  return (
-    <CategoryLayout
-      categoryName="Budget"
-      categorySlug="budget"
-      description="Budgeting tips, personal finance, and money management."
-    />
-  );
-} 
+  return <CategoryClientPage categorySlug="budget" />
+}

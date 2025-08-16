@@ -1,11 +1,5 @@
-import CategoryLayout from "../../../components/CategoryLayout";
+import CategoryClientPage from '../../[category]/CategoryClientPage';
 
 export default function MoviesPage() {
-  return (
-    <CategoryLayout
-      categoryName="Movies"
-      categorySlug="movies"
-      description="Movie news, reviews, and features from Bollywood and beyond."
-    />
-  );
-} 
+  return <CategoryClientPage categorySlug="movies" />
+}

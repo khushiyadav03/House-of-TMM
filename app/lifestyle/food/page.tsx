@@ -1,11 +1,5 @@
-import CategoryLayout from "../../../components/CategoryLayout";
+import CategoryClientPage from '../../[category]/CategoryClientPage';
 
 export default function FoodPage() {
-  return (
-    <CategoryLayout
-      categoryName="Food"
-      categorySlug="food"
-      description="Delicious recipes, culinary tips, and food stories."
-    />
-  );
-} 
+  return <CategoryClientPage categorySlug="food" />
+}

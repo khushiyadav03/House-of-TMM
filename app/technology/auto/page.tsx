@@ -1,11 +1,5 @@
-import CategoryLayout from "../../../components/CategoryLayout";
+import CategoryClientPage from '../../[category]/CategoryClientPage';
 
 export default function AutoPage() {
-  return (
-    <CategoryLayout
-      categoryName="Auto"
-      categorySlug="auto"
-      description="Automotive news, reviews, and innovations."
-    />
-  );
-} 
+  return <CategoryClientPage categorySlug="auto" />
+}

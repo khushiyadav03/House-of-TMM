@@ -47,6 +47,10 @@ export default function EditArticle({ params }: { params: Promise<{ id: string }
     status: "draft" as "published" | "draft" | "scheduled",
     scheduled_date: "",
     featured: false,
+    seo_title: "",
+    seo_description: "",
+    seo_keywords: "",
+    alt_text: "",
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -86,6 +90,10 @@ export default function EditArticle({ params }: { params: Promise<{ id: string }
           status: data.article.status,
           scheduled_date: data.article.scheduled_date || "",
           featured: data.article.featured || false,
+          seo_title: data.article.seo_title || "",
+          seo_description: data.article.seo_description || "",
+          seo_keywords: data.article.seo_keywords?.join(', ') || "",
+          alt_text: data.article.alt_text || "",
         })
       } else {
         alert("Article not found")
@@ -132,12 +140,18 @@ export default function EditArticle({ params }: { params: Promise<{ id: string }
     setSaving(true)
 
     try {
+      // Prepare data with SEO fields
+      const articleData = {
+        ...formData,
+        seo_keywords: formData.seo_keywords ? formData.seo_keywords.split(',').map(k => k.trim()).filter(k => k) : [],
+      };
+
       const response = await fetch(`/api/articles/${resolvedParams.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(articleData),
       })
 
       if (response.ok) {
@@ -317,6 +331,56 @@ export default function EditArticle({ params }: { params: Promise<{ id: string }
                 />
                 Featured Article
               </label>
+            </div>
+          </div>
+
+          {/* SEO Fields Section */}
+          <div className="border-t pt-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">SEO Settings</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">SEO Title</label>
+                <input
+                  type="text"
+                  value={formData.seo_title}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, seo_title: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                  placeholder="SEO optimized title (leave empty to use article title)"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">SEO Description</label>
+                <textarea
+                  value={formData.seo_description}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, seo_description: e.target.value }))}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                  placeholder="Meta description for search engines (leave empty to use excerpt)"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">SEO Keywords</label>
+                <input
+                  type="text"
+                  value={formData.seo_keywords}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, seo_keywords: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                  placeholder="Comma-separated keywords (e.g., fashion, style, trends)"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Image Alt Text</label>
+                <input
+                  type="text"
+                  value={formData.alt_text}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, alt_text: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                  placeholder="Alt text for the featured image"
+                />
+              </div>
             </div>
           </div>
 

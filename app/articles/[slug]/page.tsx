@@ -16,12 +16,14 @@ interface Article {
   relatedArticles: { id: string; title: string; imageUrl: string; author: string; date: string }[];
 }
 
-export default function ArticlePage({ params }: { params: { slug: string } }) {
-  return <ArticleClientPage slug={params.slug} />
+export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  return <ArticleClientPage slug={slug} />
 }
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/articles/${params.slug}`);
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params
+  const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/articles/${slug}`);
   const data = await response.json();
   const article = data.article;
 

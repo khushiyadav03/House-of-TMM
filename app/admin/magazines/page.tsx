@@ -37,6 +37,10 @@ export default function AdminMagazines() {
     status: "draft" as "published" | "draft" | "scheduled",
     scheduled_date: "",
     is_paid: false,
+    seo_title: "",
+    seo_description: "",
+    seo_keywords: "",
+    alt_text: "",
   })
   const [pdfUploading, setPdfUploading] = useState(false)
   const { showSuccess, showError, toasts, removeToast } = useToast()
@@ -87,6 +91,7 @@ export default function AdminMagazines() {
     const magazineData = {
       ...formData,
       price: Number.parseFloat(formData.price),
+      seo_keywords: formData.seo_keywords ? formData.seo_keywords.split(',').map(k => k.trim()).filter(k => k) : [],
     }
 
     try {
@@ -119,6 +124,12 @@ export default function AdminMagazines() {
       price: "",
       issue_date: "",
       status: "draft",
+      scheduled_date: "",
+      is_paid: false,
+      seo_title: "",
+      seo_description: "",
+      seo_keywords: "",
+      alt_text: "",
     })
     setIsEditing(false)
     setCurrentMagazine(null)
@@ -136,6 +147,10 @@ export default function AdminMagazines() {
       status: magazine.status,
       scheduled_date: magazine.scheduled_date || "",
       is_paid: magazine.is_paid,
+      seo_title: (magazine as any).seo_title || "",
+      seo_description: (magazine as any).seo_description || "",
+      seo_keywords: (magazine as any).seo_keywords?.join(', ') || "",
+      alt_text: (magazine as any).alt_text || "",
     })
     setIsEditing(true)
   }
@@ -268,26 +283,32 @@ export default function AdminMagazines() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Price (₹) *</label>
-                  <input
-                    type="number"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-                    required
-                    min="0"
-                    step="0.01"
-                  />
-                </div>
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={formData.is_paid}
-                    onChange={(e) => setFormData({ ...formData, is_paid: e.target.checked })}
-                    className="mr-2"
-                  />
-                  <label className="text-sm font-medium text-gray-700">Is Paid</label>
+                <div className="space-y-4">
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.is_paid}
+                      onChange={(e) => setFormData({ ...formData, is_paid: e.target.checked, price: e.target.checked ? formData.price : "0" })}
+                      className="mr-2"
+                    />
+                    <label className="text-sm font-medium text-gray-700">Is Paid Magazine</label>
+                  </div>
+                  
+                  {formData.is_paid && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Price (₹) *</label>
+                      <input
+                        type="number"
+                        value={formData.price}
+                        onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                        required={formData.is_paid}
+                        min="0"
+                        step="0.01"
+                        placeholder="Enter price for paid magazine"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -334,6 +355,56 @@ export default function AdminMagazines() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
                     placeholder="Brief description of the magazine issue..."
                   />
+                </div>
+
+                {/* SEO Fields Section */}
+                <div className="border-t pt-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">SEO Settings</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">SEO Title</label>
+                      <input
+                        type="text"
+                        value={formData.seo_title}
+                        onChange={(e) => setFormData({ ...formData, seo_title: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                        placeholder="SEO optimized title (leave empty to use magazine title)"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">SEO Description</label>
+                      <textarea
+                        value={formData.seo_description}
+                        onChange={(e) => setFormData({ ...formData, seo_description: e.target.value })}
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                        placeholder="Meta description for search engines (leave empty to use description)"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">SEO Keywords</label>
+                      <input
+                        type="text"
+                        value={formData.seo_keywords}
+                        onChange={(e) => setFormData({ ...formData, seo_keywords: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                        placeholder="Comma-separated keywords (e.g., magazine, fashion, lifestyle)"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Cover Image Alt Text</label>
+                      <input
+                        type="text"
+                        value={formData.alt_text}
+                        onChange={(e) => setFormData({ ...formData, alt_text: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                        placeholder="Alt text for the cover image"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex space-x-4">

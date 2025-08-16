@@ -1,11 +1,5 @@
-import CategoryLayout from "../../../components/CategoryLayout";
+import CategoryClientPage from '../../[category]/CategoryClientPage';
 
 export default function GoodWorkPage() {
-  return (
-    <CategoryLayout
-      categoryName="Good Work"
-      categorySlug="good-work"
-      description="Celebrating impactful work and positive change in society."
-    />
-  );
-} 
+  return <CategoryClientPage categorySlug="good-work" />
+}

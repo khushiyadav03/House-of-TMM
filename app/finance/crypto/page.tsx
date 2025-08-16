@@ -1,11 +1,5 @@
-import CategoryLayout from "../../../components/CategoryLayout";
+import CategoryClientPage from '../../[category]/CategoryClientPage';
 
 export default function CryptoPage() {
-  return (
-    <CategoryLayout
-      categoryName="Crypto"
-      categorySlug="crypto"
-      description="Cryptocurrency news, trends, and investment tips."
-    />
-  );
-} 
+  return <CategoryClientPage categorySlug="crypto" />
+}

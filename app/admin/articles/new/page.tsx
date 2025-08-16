@@ -32,6 +32,10 @@ export default function NewArticle() {
     publish_date: new Date().toISOString().split("T")[0],
     categories: [] as number[],
     featured: false,
+    seo_title: "",
+    seo_description: "",
+    seo_keywords: "",
+    alt_text: "",
   })
   const [saving, setSaving] = useState(false)
   const [autoSaving, setAutoSaving] = useState(false)
@@ -162,9 +166,14 @@ export default function NewArticle() {
     }
 
     try {
-      const { data, error } = await supabase.from("articles").insert([
-        { ...formData, image_url: formData.image_url }, // Content is HTML string; images are embedded in content
-      ]);
+      // Prepare data with SEO fields
+      const articleData = {
+        ...formData,
+        seo_keywords: formData.seo_keywords ? formData.seo_keywords.split(',').map(k => k.trim()).filter(k => k) : [],
+        status: 'published'
+      };
+
+      const { data, error } = await supabase.from("articles").insert([articleData]);
 
       if (error) throw error;
 
@@ -306,6 +315,56 @@ export default function NewArticle() {
   />
 </div>
 
+          </div>
+
+          {/* SEO Fields Section */}
+          <div className="border-t pt-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">SEO Settings</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">SEO Title</label>
+                <input
+                  type="text"
+                  value={formData.seo_title}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, seo_title: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                  placeholder="SEO optimized title (leave empty to use article title)"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">SEO Description</label>
+                <textarea
+                  value={formData.seo_description}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, seo_description: e.target.value }))}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                  placeholder="Meta description for search engines (leave empty to use excerpt)"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">SEO Keywords</label>
+                <input
+                  type="text"
+                  value={formData.seo_keywords}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, seo_keywords: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                  placeholder="Comma-separated keywords (e.g., fashion, style, trends)"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Image Alt Text</label>
+                <input
+                  type="text"
+                  value={formData.alt_text}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, alt_text: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                  placeholder="Alt text for the featured image"
+                />
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -1,11 +1,5 @@
-import CategoryLayout from "../../../components/CategoryLayout";
+import CategoryClientPage from '../../[category]/CategoryClientPage';
 
 export default function EventsPage() {
-  return (
-    <CategoryLayout
-      categoryName="Events"
-      categorySlug="events"
-      description="Coverage of the hottest events, parties, and launches."
-    />
-  );
-} 
+  return <CategoryClientPage categorySlug="events" />
+}

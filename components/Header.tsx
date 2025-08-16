@@ -130,19 +130,16 @@ export default function Header() {
           className="flex flex-col justify-center items-center w-8 h-8 focus:outline-none"
         >
           <span
-            className={`bg-black h-[2px] w-6 my-[3px] transition-all duration-300 ease-in-out ${
-              menuOpen ? "rotate-45 translate-y-2" : ""
-            }`}
+            className={`bg-black h-[2px] w-6 my-[3px] transition-all duration-300 ease-in-out ${menuOpen ? "rotate-45 translate-y-2" : ""
+              }`}
           />
           <span
-            className={`bg-black h-[2px] w-6 my-[3px] transition-all duration-300 ease-in-out ${
-              menuOpen ? "opacity-0" : ""
-            }`}
+            className={`bg-black h-[2px] w-6 my-[3px] transition-all duration-300 ease-in-out ${menuOpen ? "opacity-0" : ""
+              }`}
           />
           <span
-            className={`bg-black h-[2px] w-6 my-[3px] transition-all duration-300 ease-in-out ${
-              menuOpen ? "-rotate-45 -translate-y-2" : ""
-            }`}
+            className={`bg-black h-[2px] w-6 my-[3px] transition-all duration-300 ease-in-out ${menuOpen ? "-rotate-45 -translate-y-2" : ""
+              }`}
           />
         </button>
 
@@ -243,9 +240,8 @@ export default function Header() {
       )}
 
       <div
-        className={`fixed top-0 left-0 h-full w-full sm:w-[280px] bg-black text-white z-50 transition-transform duration-500 ease-in-out ${
-          menuOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed top-0 left-0 h-full w-full sm:w-[280px] bg-black text-white z-50 transition-transform duration-500 ease-in-out ${menuOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
       >
         <div className="absolute top-6 right-6 z-50">
           <button onClick={() => setMenuOpen(false)} aria-label="Close menu">

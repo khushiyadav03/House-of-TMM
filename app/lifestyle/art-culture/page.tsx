@@ -1,11 +1,5 @@
-import CategoryLayout from "../../../components/CategoryLayout";
+import CategoryClientPage from '../../[category]/CategoryClientPage';
 
 export default function ArtCulturePage() {
-  return (
-    <CategoryLayout
-      categoryName="Art & Culture"
-      categorySlug="art-culture"
-      description="Exploring the world of art, creativity, and cultural movements."
-    />
-  );
-} 
+  return <CategoryClientPage categorySlug="art-culture" />
+}

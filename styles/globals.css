@@ -158,3 +158,107 @@ body {
   transition: transform 0.3s cubic-bezier(0.4,0,0.2,1), box-shadow 0.3s cubic-bezier(0.4,0,0.2,1);
   border-radius: 0; /* square edges */
 }
+
+/* Video Playlist Styles - Matching the provided example */
+.video-playlist-wrap {
+  @apply w-full;
+}
+
+.video-playlist-iframe {
+  @apply w-full;
+}
+
+.video-playlist-iframe-el {
+  @apply w-full;
+}
+
+.post-thumb.is-video.video-iframe {
+  @apply w-full relative;
+}
+
+.video-playlist-iframe-nav {
+  @apply w-full;
+}
+
+.video-playlist-iframe-nav-el {
+  @apply transition-all duration-200 hover:shadow-md;
+}
+
+.post-wrap.post-list-small {
+  @apply border border-gray-100 rounded-lg overflow-hidden;
+}
+
+.post-wrap.post-list-small:hover {
+  @apply border-gray-200 shadow-sm;
+}
+
+.post-thumb-outer {
+  @apply relative;
+}
+
+.post-thumb.is-image {
+  @apply relative overflow-hidden;
+}
+
+.thumbnail-resize {
+  @apply block w-full h-full;
+}
+
+.post-format-info.is-video-format {
+  @apply absolute top-2 left-2 z-10;
+}
+
+.post-format-icon {
+  @apply flex items-center justify-center w-6 h-6 rounded-full;
+}
+
+.post-header {
+  @apply flex-1;
+}
+
+.entry-header {
+  @apply mb-2;
+}
+
+.post-title.is-mini-title {
+  @apply text-sm font-semibold text-gray-900 leading-tight;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.post-meta-info {
+  @apply text-xs text-gray-500;
+}
+
+.meta-date {
+  @apply text-xs text-gray-500;
+}
+
+/* Line clamp utility */
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Scrollbar styling for video playlist */
+.video-playlist-iframe-nav > div::-webkit-scrollbar {
+  width: 4px;
+}
+
+.video-playlist-iframe-nav > div::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 2px;
+}
+
+.video-playlist-iframe-nav > div::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 2px;
+}
+
+.video-playlist-iframe-nav > div::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}

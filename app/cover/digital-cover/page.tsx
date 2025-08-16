@@ -1,13 +1,5 @@
-"use client"
-
-import CategoryLayout from "../../../components/CategoryLayout";
+import CategoryClientPage from '../../[category]/CategoryClientPage';
 
 export default function DigitalCoverPage() {
-  return (
-    <CategoryLayout
-      categoryName="Digital Cover"
-      categorySlug="digital-cover"
-      description="Featured digital cover stories."
-    />
-  );
+  return <CategoryClientPage categorySlug="digital-cover" />
 }

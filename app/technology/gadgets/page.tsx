@@ -1,11 +1,5 @@
-import CategoryLayout from "../../../components/CategoryLayout";
+import CategoryClientPage from '../../[category]/CategoryClientPage';
 
 export default function GadgetsPage() {
-  return (
-    <CategoryLayout
-      categoryName="Gadgets"
-      categorySlug="gadgets"
-      description="Latest gadgets, reviews, and tech accessories."
-    />
-  );
-} 
+  return <CategoryClientPage categorySlug="gadgets" />
+}
