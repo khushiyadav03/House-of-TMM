@@ -1,13 +1,12 @@
 {
-  "installCommand": "npm install",
   "crons": [
     {
       "path": "/api/scheduled-jobs/publish-cover-photos",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 0 * * *"
     },
     {
       "path": "/api/scheduled-jobs/publish-articles",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }
