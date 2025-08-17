@@ -73,7 +73,7 @@
     "cmdk": "latest",
     "date-fns": "4.1.0",
     "embla-carousel-react": "latest",
-    "fabric": "^6.7.0",
+    
     "highlight.js": "^11.11.1",
     "input-otp": "latest",
     "lowlight": "^3.3.0",
@@ -99,7 +99,6 @@
     "recharts": "latest",
     "sonner": "latest",
     "stripe": "latest",
-    "razorpay": "^2.9.2",
     "swiper": "latest",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
