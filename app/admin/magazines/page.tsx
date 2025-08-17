@@ -95,21 +95,28 @@ export default function AdminMagazines() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
+    const token = localStorage.getItem('adminToken');
+    if (!token) {
+      toast({
+        title: "Error",
+        description: "No admin token found. Please log in again.",
+        variant: "destructive",
+      });
+      return;
+    }
     const magazineData = {
       ...formData,
       price: Number.parseFloat(formData.price),
       seo_keywords: formData.seo_keywords ? formData.seo_keywords.split(',').map(k => k.trim()).filter(k => k) : [],
     }
-
     try {
       const url = isEditing ? `/api/magazines/${currentMagazine?.id}` : "/api/magazines"
       const method = isEditing ? "PUT" : "POST"
-
       const response = await fetch(url, {
         method,
         headers: {
           "Content-Type": "application/json",
+          "x-admin-token": token
         },
         body: JSON.stringify(magazineData),
       })
@@ -180,10 +187,22 @@ export default function AdminMagazines() {
   }
 
   const handleDelete = async (id: number) => {
+    const token = localStorage.getItem('adminToken');
+    if (!token) {
+      toast({
+        title: "Error",
+        description: "No admin token found. Please log in again.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (confirm("Are you sure you want to delete this magazine?")) {
       try {
         const response = await fetch(`/api/magazines/${id}`, {
           method: "DELETE",
+          headers: {
+            "x-admin-token": token
+          }
         })
 
         if (response.ok) {

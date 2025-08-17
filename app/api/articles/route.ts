@@ -184,8 +184,10 @@ export async function DELETE(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  console.log('Received POST request to create article');
   try {
     const body = await request.json()
+    console.log('Request body:', body);
     const {
       title,
       slug,
@@ -196,7 +198,7 @@ export async function POST(request: NextRequest) {
       publish_date,
       featured = false,
       categories = [],
-      status = "draft", // default to draft
+      status = "draft",
       seo_title,
       seo_description,
       seo_keywords = [],
@@ -204,19 +206,20 @@ export async function POST(request: NextRequest) {
       scheduled_date
     } = body
 
-    // Validate required fields
     if (!title || !slug || !publish_date) {
+      console.log('Missing required fields');
       return NextResponse.json({ error: "Missing required fields: title, slug, publish_date" }, { status: 400 })
     }
 
-    // Check if slug already exists
+    console.log('Checking for existing slug:', slug);
     const { data: existingArticle } = await supabase.from("articles").select("id").eq("slug", slug).single()
 
     if (existingArticle) {
+      console.log('Slug already exists');
       return NextResponse.json({ error: "Article with this slug already exists" }, { status: 400 })
     }
 
-    // Insert article
+    console.log('Inserting new article');
     const { data: article, error: articleError } = await supabaseAdmin
       .from("articles")
       .insert({
@@ -243,8 +246,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to create article" }, { status: 500 })
     }
 
-    // Insert category relationships
+    console.log('Article inserted successfully, id:', article.id);
+
     if (categories.length > 0) {
+      console.log('Inserting category relations');
       const categoryRelations = categories.map((categoryId: number) => ({
         article_id: article.id,
         category_id: categoryId,
@@ -254,13 +259,14 @@ export async function POST(request: NextRequest) {
 
       if (categoryError) {
         console.error("Category relation error:", categoryError)
-        // Don't fail the request, just log the error
+      } else {
+        console.log('Category relations inserted successfully');
       }
     }
 
     return NextResponse.json(article, { status: 201 })
   } catch (error) {
-    console.error("API error:", error)
+    console.error("API error in POST:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

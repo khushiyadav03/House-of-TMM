@@ -56,12 +56,20 @@ export default function AdminPepTalk() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    const token = localStorage.getItem('admin-token')
+    if (!token) {
+      showError("Admin token not found. Please log in again.")
+      return
+    }
     try {
       const url = isEditing ? `/api/pep-talk?id=${currentVideo?.id}` : "/api/pep-talk"
       const method = isEditing ? "PUT" : "POST"
       const response = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          'x-admin-token': token 
+        },
         body: JSON.stringify({
           ...formData,
           scheduled_date: formData.status === "scheduled" ? formData.scheduled_date : null,
@@ -82,6 +90,8 @@ export default function AdminPepTalk() {
   const resetForm = () => {
     setFormData({
       title: "",
+      status: "draft",
+      scheduled_date: "",
       youtube_url: "",
       description: "",
       thumbnail_url: "",
@@ -107,10 +117,18 @@ export default function AdminPepTalk() {
 
   const handleDelete = async (id: number) => {
     if (confirm("Delete this video?")) {
+      const token = localStorage.getItem('admin-token')
+      if (!token) {
+        showError("Admin token not found. Please log in again.")
+        return
+      }
       try {
         const response = await fetch(`/api/pep-talk`, {
           method: "DELETE",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            'x-admin-token': token 
+          },
           body: JSON.stringify({ id }),
         })
         if (response.ok) {

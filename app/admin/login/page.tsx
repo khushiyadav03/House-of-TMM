@@ -14,17 +14,29 @@ export default function AdminLogin() {
   const [error, setError] = useState("")
   const router = useRouter()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Simple authentication - in real app, this would be more secure
-    if (credentials.username === "admin" && credentials.password === "tmm2025") {
-      localStorage.setItem("adminAuth", "true")
-      router.push("/admin")
-    } else {
-      setError("Invalid credentials")
+    try {
+      const response = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(credentials),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Invalid credentials");
+      }
+
+      const data = await response.json();
+      localStorage.setItem("adminToken", data.token);
+      localStorage.setItem("adminAuth", "true");
+      router.push("/admin");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Login failed");
     }
-  }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target

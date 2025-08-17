@@ -175,6 +175,17 @@ export default function AdminCoverPhotos() {
     e.preventDefault()
     setUploading(true)
 
+    const token = localStorage.getItem('x-admin-token')
+    if (!token) {
+      toast({
+        title: "Error",
+        description: "Authentication token not found. Please log in again.",
+        variant: "destructive",
+      })
+      setUploading(false)
+      return
+    }
+
     try {
       if (isEditing && currentPhoto) {
         // Edit mode - update existing photo
@@ -187,7 +198,10 @@ export default function AdminCoverPhotos() {
 
         const response = await fetch(`/api/cover-photos/${currentPhoto.id}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "x-admin-token": token 
+          },
           body: JSON.stringify(photoData),
         })
 
@@ -233,7 +247,10 @@ export default function AdminCoverPhotos() {
 
           return fetch("/api/cover-photos", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+              "Content-Type": "application/json",
+              "x-admin-token": token 
+            },
             body: JSON.stringify(photoData),
           })
         })
@@ -302,8 +319,22 @@ export default function AdminCoverPhotos() {
 
   async function handleDelete(id: number) {
     if (!confirm("Delete this cover photo?")) return
+
+    const token = localStorage.getItem('x-admin-token')
+    if (!token) {
+      toast({
+        title: "Error",
+        description: "Authentication token not found. Please log in again.",
+        variant: "destructive",
+      })
+      return
+    }
+
     try {
-      const res = await fetch(`/api/cover-photos/${id}`, { method: "DELETE" })
+      const res = await fetch(`/api/cover-photos/${id}`, { 
+        method: "DELETE",
+        headers: { "x-admin-token": token } 
+      })
       if (!res.ok) throw new Error("Delete failed")
       toast({
         title: "Success!",
@@ -324,7 +355,10 @@ export default function AdminCoverPhotos() {
     try {
       const res = await fetch(`/api/cover-photos/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "x-admin-token": localStorage.getItem('x-admin-token') || ''
+        },
         body: JSON.stringify({ is_active: !isActive }),
       })
       if (!res.ok) {

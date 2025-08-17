@@ -52,6 +52,12 @@ export default function AdminBrandImages() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    const token = localStorage.getItem('x-admin-token')
+    if (!token) {
+      alert('Authentication token not found. Please log in again.')
+      return
+    }
+
     try {
       const url = isEditing ? `/api/brand-images/${currentImage?.id}` : "/api/brand-images"
       const method = isEditing ? "PUT" : "POST"
@@ -60,6 +66,7 @@ export default function AdminBrandImages() {
         method,
         headers: {
           "Content-Type": "application/json",
+          "x-admin-token": token
         },
         body: JSON.stringify({
           ...formData,
@@ -85,6 +92,8 @@ export default function AdminBrandImages() {
       image_url: "",
       display_order: 0,
       is_active: true,
+      status: "draft",
+      scheduled_date: "",
     })
     setIsEditing(false)
     setCurrentImage(null)
@@ -105,9 +114,18 @@ export default function AdminBrandImages() {
 
   const handleDelete = async (id: number) => {
     if (confirm("Are you sure you want to delete this brand image?")) {
+      const token = localStorage.getItem('x-admin-token')
+      if (!token) {
+        alert('Authentication token not found. Please log in again.')
+        return
+      }
+
       try {
         const response = await fetch(`/api/brand-images/${id}`, {
           method: "DELETE",
+          headers: {
+            "x-admin-token": token
+          },
         })
 
         if (response.ok) {
@@ -123,11 +141,18 @@ export default function AdminBrandImages() {
   }
 
   const toggleActive = async (id: number, isActive: boolean) => {
+    const token = localStorage.getItem('x-admin-token')
+    if (!token) {
+      alert('Authentication token not found. Please log in again.')
+      return
+    }
+
     try {
       const response = await fetch(`/api/brand-images/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
+          "x-admin-token": token
         },
         body: JSON.stringify({ is_active: !isActive }),
       })

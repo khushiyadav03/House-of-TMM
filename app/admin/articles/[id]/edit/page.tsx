@@ -155,10 +155,15 @@ export default function EditArticle({ params }: { params: Promise<{ id: string }
         seo_keywords: formData.seo_keywords ? formData.seo_keywords.split(',').map(k => k.trim()).filter(k => k) : [],
       };
 
+      const token = localStorage.getItem("adminToken");
+      if (!token) {
+        throw new Error("No admin token found. Please log in again.");
+      }
       const response = await fetch(`/api/articles/${resolvedParams.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          "x-admin-token": token,
         },
         body: JSON.stringify(articleData),
       })

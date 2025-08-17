@@ -102,11 +102,19 @@ export default function AdminArticles() {
   }
 
   const handleDelete = async (id: number) => {
+    const token = localStorage.getItem('adminToken');
+    if (!token) {
+      showError("No admin token found. Please log in again.");
+      return;
+    }
     if (confirm("Are you sure you want to delete this article?")) {
       try {
         const response = await fetch(`/api/articles/${id}`, {
           method: "DELETE",
-        })
+          headers: {
+            "x-admin-token": token
+          }
+        });
 
         if (response.ok) {
           showSuccess("Article deleted successfully")
@@ -122,14 +130,20 @@ export default function AdminArticles() {
   }
 
   const toggleFeatured = async (id: number, featured: boolean) => {
+    const token = localStorage.getItem('adminToken');
+    if (!token) {
+      showError("No admin token found. Please log in again.");
+      return;
+    }
     try {
       const response = await fetch(`/api/articles/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
+          "x-admin-token": token
         },
         body: JSON.stringify({ featured: !featured }),
-      })
+      });
 
       if (response.ok) {
         showSuccess(featured ? "Article unfeatured" : "Article featured")
@@ -144,15 +158,21 @@ export default function AdminArticles() {
   }
 
   const toggleStatus = async (id: number, currentStatus: string) => {
+    const token = localStorage.getItem('adminToken');
+    if (!token) {
+      showError("No admin token found. Please log in again.");
+      return;
+    }
     const newStatus = currentStatus === "published" ? "draft" : "published"
     try {
       const response = await fetch(`/api/articles/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
+          "x-admin-token": token
         },
         body: JSON.stringify({ status: newStatus }),
-      })
+      });
 
       if (response.ok) {
         showSuccess(`Article ${newStatus}`)
@@ -170,6 +190,12 @@ export default function AdminArticles() {
     if (selectedArticles.length === 0) {
       showError("Please select articles first")
       return
+    }
+
+    const token = localStorage.getItem('adminToken');
+    if (!token) {
+      showError("No admin token found. Please log in again.");
+      return;
     }
 
     const confirmMessage = {
@@ -190,7 +216,7 @@ export default function AdminArticles() {
         
         switch (action) {
           case "delete":
-            return fetch(`/api/articles/${id}`, { method: "DELETE" })
+            return fetch(`/api/articles/${id}`, { method: "DELETE", headers: { "x-admin-token": token } })
           case "publish":
             body.status = "published"
             break
@@ -207,7 +233,7 @@ export default function AdminArticles() {
 
         return fetch(`/api/articles/${id}`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", "x-admin-token": token },
           body: JSON.stringify(body),
         })
       })

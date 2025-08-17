@@ -63,6 +63,12 @@ export default function AdminCategories() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    const token = localStorage.getItem('x-admin-token')
+    if (!token) {
+      alert('Authentication token not found. Please log in again.')
+      return
+    }
+
     try {
       const url = isEditing ? `/api/categories/${currentCategory?.id}` : "/api/categories"
       const method = isEditing ? "PUT" : "POST"
@@ -71,6 +77,7 @@ export default function AdminCategories() {
         method,
         headers: {
           "Content-Type": "application/json",
+          "x-admin-token": token
         },
         body: JSON.stringify(formData),
       })
@@ -109,9 +116,18 @@ export default function AdminCategories() {
 
   const handleDelete = async (id: number) => {
     if (confirm("Are you sure you want to delete this category? This will remove it from all articles.")) {
+      const token = localStorage.getItem('x-admin-token')
+      if (!token) {
+        alert('Authentication token not found. Please log in again.')
+        return
+      }
+
       try {
         const response = await fetch(`/api/categories/${id}`, {
           method: "DELETE",
+          headers: {
+            "x-admin-token": token
+          },
         })
 
         if (response.ok) {

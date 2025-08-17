@@ -108,10 +108,15 @@ export default function NewArticle() {
     try {
       // Save as draft
       const draftData = { ...formData, status: "draft" }
+      const token = localStorage.getItem("adminToken");
+      if (!token) {
+        throw new Error("No admin token found. Please log in again.");
+      }
       const response = await fetch("/api/articles", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "x-admin-token": token,
         },
         body: JSON.stringify(draftData),
       })
@@ -173,10 +178,15 @@ export default function NewArticle() {
         status: 'published'
       };
 
+      const token = localStorage.getItem("adminToken");
+      if (!token) {
+        throw new Error("No admin token found. Please log in again.");
+      }
       const response = await fetch("/api/articles", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "x-admin-token": token,
         },
         body: JSON.stringify(articleData),
       });

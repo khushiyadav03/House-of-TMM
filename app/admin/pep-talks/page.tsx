@@ -74,6 +74,16 @@ export default function PepTalksManagement() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    const token = localStorage.getItem('admin-token')
+    if (!token) {
+      toast({
+        title: "Error",
+        description: "Admin token not found. Please log in again.",
+        variant: "destructive",
+      })
+      return
+    }
+
     try {
       const payload = {
         ...formData,
@@ -86,7 +96,10 @@ export default function PepTalksManagement() {
 
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-admin-token': token 
+        },
         body: JSON.stringify(payload)
       })
 
@@ -134,9 +147,22 @@ export default function PepTalksManagement() {
   const handleDelete = async (id: number) => {
     if (!confirm('Are you sure you want to delete this pep talk?')) return
 
+    const token = localStorage.getItem('admin-token')
+    if (!token) {
+      toast({
+        title: "Error",
+        description: "Admin token not found. Please log in again.",
+        variant: "destructive",
+      })
+      return
+    }
+
     try {
       const response = await fetch(`/api/pep-talk/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          'x-admin-token': token
+        }
       })
 
       if (response.ok) {
