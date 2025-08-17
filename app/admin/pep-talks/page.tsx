@@ -15,8 +15,7 @@ interface PepTalk {
   title: string
   content: string
   author: string
-  status: 'draft' | 'published' | 'scheduled'
-  scheduled_date?: string
+  status: 'draft' | 'published'
   seo_title?: string
   seo_description?: string
   seo_keywords?: string[]
@@ -37,8 +36,7 @@ export default function PepTalksManagement() {
     title: '',
     content: '',
     author: '',
-    status: 'draft' as 'draft' | 'published' | 'scheduled',
-    scheduled_date: '',
+    status: 'draft' as 'draft' | 'published',
     seo_title: '',
     seo_description: '',
     seo_keywords: '',
@@ -87,8 +85,7 @@ export default function PepTalksManagement() {
     try {
       const payload = {
         ...formData,
-        seo_keywords: formData.seo_keywords ? formData.seo_keywords.split(',').map(k => k.trim()) : [],
-        scheduled_date: formData.scheduled_date || null
+        seo_keywords: formData.seo_keywords ? formData.seo_keywords.split(',').map(k => k.trim()) : []
       }
 
       const url = editingPepTalk ? `/api/pep-talk/${editingPepTalk.id}` : '/api/pep-talk'
@@ -132,7 +129,6 @@ export default function PepTalksManagement() {
       content: pepTalk.content,
       author: pepTalk.author,
       status: pepTalk.status,
-      scheduled_date: pepTalk.scheduled_date || '',
       seo_title: pepTalk.seo_title || '',
       seo_description: pepTalk.seo_description || '',
       seo_keywords: pepTalk.seo_keywords?.join(', ') || '',
@@ -189,7 +185,6 @@ export default function PepTalksManagement() {
       content: '',
       author: '',
       status: 'draft',
-      scheduled_date: '',
       seo_title: '',
       seo_description: '',
       seo_keywords: '',
@@ -212,6 +207,8 @@ export default function PepTalksManagement() {
       </div>
     )
   }
+
+  const displayPepTalks = Array.isArray(pepTalks) ? pepTalks : []
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -282,21 +279,10 @@ export default function PepTalksManagement() {
                     <SelectContent>
                       <SelectItem value="draft">Draft</SelectItem>
                       <SelectItem value="published">Published</SelectItem>
-                      <SelectItem value="scheduled">Scheduled</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                {formData.status === 'scheduled' && (
-                  <div>
-                    <Label htmlFor="scheduled_date">Scheduled Date</Label>
-                    <Input
-                      id="scheduled_date"
-                      type="datetime-local"
-                      value={formData.scheduled_date}
-                      onChange={(e) => handleInputChange('scheduled_date', e.target.value)}
-                    />
-                  </div>
-                )}
+                
               </div>
 
               <div>
@@ -376,12 +362,12 @@ export default function PepTalksManagement() {
       </div>
 
       <div className="grid gap-4">
-        {pepTalks.length === 0 ? (
+        {displayPepTalks.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-gray-500">No pep talks found. Create your first one!</p>
           </div>
         ) : (
-          pepTalks.map((pepTalk) => (
+          displayPepTalks.map((pepTalk) => (
             <div key={pepTalk.id} className="border rounded-lg p-6 bg-white shadow-sm">
               <div className="flex justify-between items-start">
                 <div className="flex-1">
@@ -390,9 +376,7 @@ export default function PepTalksManagement() {
                   <div className="flex items-center space-x-4 text-sm text-gray-500">
                     <span>By {pepTalk.author || 'Unknown'}</span>
                     <span className={`px-2 py-1 rounded text-xs ${
-                      pepTalk.status === 'published' ? 'bg-green-100 text-green-800' :
-                      pepTalk.status === 'scheduled' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-gray-100 text-gray-800'
+                      pepTalk.status === 'published' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                     }`}>
                       {pepTalk.status}
                     </span>

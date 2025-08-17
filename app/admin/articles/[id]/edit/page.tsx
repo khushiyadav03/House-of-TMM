@@ -151,6 +151,7 @@ export default function EditArticle({ params }: { params: Promise<{ id: string }
     try {
       // Prepare data with SEO fields
       const articleData = {
+        id: resolvedParams.id,
         ...formData,
         seo_keywords: formData.seo_keywords ? formData.seo_keywords.split(',').map(k => k.trim()).filter(k => k) : [],
       };

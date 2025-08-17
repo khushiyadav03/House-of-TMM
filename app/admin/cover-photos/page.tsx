@@ -24,7 +24,6 @@ interface CoverPhoto {
   display_order: number
   created_at: string
   status: string
-  scheduled_date?: string | null
 }
 
 interface UploadedFile {
@@ -50,7 +49,6 @@ export default function AdminCoverPhotos() {
     is_active: true,
     display_order: 0,
     status: "draft",
-    scheduled_date: "",
   })
 
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
@@ -193,7 +191,7 @@ export default function AdminCoverPhotos() {
           ...formData,
           title: formData.title || currentPhoto.title,
           status: formData.status,
-          scheduled_date: formData.status === "scheduled" ? formData.scheduled_date : null,
+          
         }
 
         const response = await fetch(`/api/cover-photos/${currentPhoto.id}`, {
@@ -242,7 +240,7 @@ export default function AdminCoverPhotos() {
             title: formData.title || `Cover Photo ${index + 1}`,
             display_order: formData.display_order + index,
             status: formData.status,
-            scheduled_date: formData.status === "scheduled" ? formData.scheduled_date : null,
+            
           }
 
           return fetch("/api/cover-photos", {
@@ -293,7 +291,6 @@ export default function AdminCoverPhotos() {
       is_active: true,
       display_order: 0,
       status: "draft",
-      scheduled_date: "",
     })
     setUploadedFiles([])
     setCurrentPhoto(null)
@@ -312,7 +309,6 @@ export default function AdminCoverPhotos() {
       is_active: photo.is_active,
       display_order: photo.display_order,
       status: photo.status ?? "draft",
-      scheduled_date: photo.scheduled_date ?? "",
     })
     setIsEditing(true)
   }
@@ -471,16 +467,8 @@ export default function AdminCoverPhotos() {
                 <SelectContent>
                   <SelectItem value="draft">Draft</SelectItem>
                   <SelectItem value="published">Published</SelectItem>
-                  <SelectItem value="scheduled">Scheduled</SelectItem>
                 </SelectContent>
               </Select>
-              {formData.status === "scheduled" && (
-                <Input
-                  type="datetime-local"
-                  value={formData.scheduled_date}
-                  onChange={(e) => setFormData({ ...formData, scheduled_date: e.target.value })}
-                />
-              )}
 
                 {/* File Upload Section */}
                 <div className="space-y-3">
@@ -612,7 +600,8 @@ export default function AdminCoverPhotos() {
                   <img
                     src={photo.image_url || "/placeholder.svg"}
                     alt={photo.title}
-                          className="h-48 w-full object-cover rounded"
+                    className="h-48 w-full object-cover rounded"
+                    style={{ width: '100%', height: 'auto' }}
                   />
                         <div className="absolute top-2 left-2">
                           <span className={cn(
@@ -626,14 +615,11 @@ export default function AdminCoverPhotos() {
                         </div>
                         <div className="absolute top-2 right-2">
                           <span className={cn(
-                          "text-xs px-2 py-1 rounded",
-                          photo.status === "published" ? "bg-green-100 text-green-800" :
-                          photo.status === "scheduled" ? "bg-blue-100 text-blue-800" :
-                          "bg-gray-100 text-gray-800"
-                        )}>
-                          {photo.status.charAt(0).toUpperCase() + photo.status.slice(1)}
-                          {photo.status === "scheduled" && photo.scheduled_date && ` on ${new Date(photo.scheduled_date).toLocaleDateString()}`}
-                        </span>
+          "text-xs px-2 py-1 rounded",
+          photo.status === "published" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+        )}>
+          {photo.status.charAt(0).toUpperCase() + photo.status.slice(1)}
+        </span>
                         </div>
                       </div>
 

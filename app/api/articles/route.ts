@@ -77,112 +77,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function PUT(request: NextRequest) {
-  try {
-    const body = await request.json()
-    const { 
-      id, 
-      title, 
-      slug, 
-      content, 
-      excerpt, 
-      image_url, 
-      author, 
-      publish_date, 
-      featured, 
-      categories = [], 
-      status,
-      seo_title,
-      seo_description,
-      seo_keywords = [],
-      alt_text,
-      scheduled_date
-    } = body
-
-    if (!id) {
-      return NextResponse.json({ error: "Missing required field: id" }, { status: 400 })
-    }
-
-    // Update article
-    const updateData = {
-      title,
-      slug,
-      content,
-      excerpt,
-      image_url,
-      author,
-      publish_date: status === 'scheduled' ? scheduled_date : (status === 'published' ? new Date().toISOString() : publish_date),
-      featured,
-      status,
-      seo_title,
-      seo_description,
-      seo_keywords,
-      alt_text,
-      scheduled_date: status === 'scheduled' ? scheduled_date : null,
-      updated_at: new Date().toISOString(),
-    }
-
-    const { data: article, error: articleError } = await supabaseAdmin
-      .from("articles")
-      .update(updateData)
-      .eq("id", id)
-      .select()
-      .single()
-
-    if (articleError) {
-      console.error("Article update error:", articleError)
-      return NextResponse.json({ error: "Failed to update article" }, { status: 500 })
-    }
-
-    // Update categories: delete existing and insert new
-    await supabaseAdmin.from("article_categories").delete().eq("article_id", id)
-
-    if (categories.length > 0) {
-      const categoryRelations = categories.map((categoryId: number) => ({
-        article_id: id,
-        category_id: categoryId,
-      }))
-
-      const { error: categoryError } = await supabaseAdmin.from("article_categories").insert(categoryRelations)
-
-      if (categoryError) {
-        console.error("Category relation error:", categoryError)
-      }
-    }
-
-    return NextResponse.json(article)
-  } catch (error) {
-    console.error("API error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
-  }
-}
-
-export async function DELETE(request: NextRequest) {
-  try {
-    const { id } = await request.json()
-
-    if (!id) {
-      return NextResponse.json({ error: "Missing required field: id" }, { status: 400 })
-    }
-
-    // Delete category relations first
-    await supabaseAdmin.from("article_categories").delete().eq("article_id", id)
-
-    // Delete article
-    const { error } = await supabaseAdmin.from("articles").delete().eq("id", id)
-
-    if (error) {
-      console.error("Delete error:", error)
-      return NextResponse.json({ error: "Failed to delete article" }, { status: 500 })
-    }
-
-    return NextResponse.json({ message: "Article deleted successfully" })
-  } catch (error) {
-    console.error("API error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
-  }
-}
-
 export async function POST(request: NextRequest) {
   console.log('Received POST request to create article');
   try {
@@ -206,17 +100,19 @@ export async function POST(request: NextRequest) {
       scheduled_date
     } = body
 
-    if (!title || !slug || !publish_date) {
+    if (!title || !publish_date) {
       console.log('Missing required fields');
-      return NextResponse.json({ error: "Missing required fields: title, slug, publish_date" }, { status: 400 })
+      return NextResponse.json({ error: "Missing required fields: title, publish_date" }, { status: 400 })
     }
 
     console.log('Checking for existing slug:', slug);
-    const { data: existingArticle } = await supabase.from("articles").select("id").eq("slug", slug).single()
+    if (slug) {
+      const { data: existingArticle } = await supabase.from("articles").select("id").eq("slug", slug).single()
 
-    if (existingArticle) {
-      console.log('Slug already exists');
-      return NextResponse.json({ error: "Article with this slug already exists" }, { status: 400 })
+      if (existingArticle) {
+        console.log('Slug already exists');
+        return NextResponse.json({ error: "Article with this slug already exists" }, { status: 400 })
+      }
     }
 
     console.log('Inserting new article');

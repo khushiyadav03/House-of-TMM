@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { title, content, author, status, scheduled_date, seo_title, seo_description, seo_keywords, image_url, excerpt, display_order, is_featured } = body;
+    const { title, content, author, status, seo_title, seo_description, seo_keywords, image_url, excerpt, display_order, is_featured } = body;
     
     const { data, error } = await supabase
       .from('pep_talks')
@@ -68,7 +68,7 @@ export async function POST(request: Request) {
         content,
         author,
         status: status || 'draft',
-        scheduled_date,
+        
         seo_title,
         seo_description,
         seo_keywords,

@@ -92,7 +92,7 @@ export async function PUT(request: NextRequest, context: { params: { slug: strin
     const value = isNumeric ? Number.parseInt(slug, 10) : slug
 
     const body = await request.json()
-    const { title, content, excerpt, image_url, author, publish_date, scheduled_date, featured, categories, status } = body
+    const { id, title, content, excerpt, image_url, author, publish_date, scheduled_date, featured, categories, status } = body
 
     // Generate slug from title if not provided
     const newSlug =
@@ -132,7 +132,7 @@ export async function PUT(request: NextRequest, context: { params: { slug: strin
         status: currentStatus,
         updated_at: new Date().toISOString(),
       })
-      .eq(column, value)
+      .eq("id", id) // Use the id from the body for the update
       .select()
       .single()
 
@@ -168,6 +168,33 @@ export async function PUT(request: NextRequest, context: { params: { slug: strin
     return NextResponse.json({ success: true, article: data })
   } catch (error) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}
+
+export async function PATCH(request: NextRequest, context: { params: { slug: string } }) {
+  const { slug } = await context.params
+  try {
+    const isNumeric = /^\d+$/.test(slug);
+    const column = isNumeric ? "id" : "slug";
+    const value = isNumeric ? Number.parseInt(slug, 10) : slug;
+
+    const body = await request.json();
+
+    const { data, error } = await supabase
+      .from("articles")
+      .update(body)
+      .eq(column, value)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("[Article Patch Error]", error);
+      return NextResponse.json({ error: error.message, details: error }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, article: data });
+  } catch (error) {
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
