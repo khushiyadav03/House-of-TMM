@@ -1,0 +1,168 @@
+import { type NextRequest, NextResponse } from "next/server"
+import { createClient } from "@supabase/supabase-js"
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+
+// Regular client for read operations
+const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+// Admin client with service role for write operations (bypasses RLS)
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
+
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const page = Number.parseInt(searchParams.get("page") || "1")
+    const limit = Number.parseInt(searchParams.get("limit") || "12")
+    const category = searchParams.get("category")
+    const subcategory = searchParams.get("subcategory") // NEW: subcategory filter
+    const status = searchParams.get("status")
+    const featured = searchParams.get("featured")
+
+    const offset = (page - 1) * limit
+
+    // Build the query
+    let query = supabase
+      .from("articles")
+      .select(`*, article_categories:article_categories(*, categories:categories(*))`, { count: "exact" })
+      .order("created_at", { ascending: false })
+
+    // If filtering by subcategory (slug), join and filter
+    if (subcategory || category) {
+      // Use categorySlug for lookup
+      const categorySlug = subcategory || category
+      // Get category id for the slug
+      const { data: catData, error: catError } = await supabase
+        .from("categories")
+        .select("id")
+        .eq("slug", categorySlug)
+        .single()
+      if (catError || !catData) {
+        return NextResponse.json({ articles: [], total: 0, page, totalPages: 0 })
+      }
+      query = query.eq('article_categories.category_id', catData.id)
+    }
+
+    // Optionally filter by status or featured
+    if (status) query = query.eq("status", status)
+    if (featured) query = query.eq("featured", featured === "true")
+
+    // Pagination
+    query = query.range(offset, offset + limit - 1)
+
+    const { data, error, count } = await query
+
+    if (error) {
+      console.error("Database error:", error)
+      return NextResponse.json({ error: "Failed to fetch articles" }, { status: 500 })
+    }
+
+    // Transform data to include all categories
+    const transformedData =
+      data?.map((article) => ({
+        ...article,
+        categories: (article.article_categories || []).map((ac: any) => ac.categories),
+      })) || []
+
+    return NextResponse.json({
+      articles: transformedData,
+      total: count || 0,
+      page,
+      totalPages: Math.ceil((count || 0) / limit),
+    })
+  } catch (error) {
+    console.error("API error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}
+
+export async function POST(request: NextRequest) {
+  console.log('Received POST request to create article');
+  try {
+    const body = await request.json()
+    console.log('Request body:', body);
+    const {
+      title,
+      slug,
+      content,
+      excerpt,
+      image_url,
+      author,
+      publish_date,
+      featured = false,
+      categories = [],
+      status = "draft",
+      seo_title,
+      seo_description,
+      seo_keywords = [],
+      alt_text,
+      scheduled_date
+    } = body
+
+    if (!title || !publish_date) {
+      console.log('Missing required fields');
+      return NextResponse.json({ error: "Missing required fields: title, publish_date" }, { status: 400 })
+    }
+
+    console.log('Checking for existing slug:', slug);
+    if (slug) {
+      const { data: existingArticle } = await supabase.from("articles").select("id").eq("slug", slug).single()
+
+      if (existingArticle) {
+        console.log('Slug already exists');
+        return NextResponse.json({ error: "Article with this slug already exists" }, { status: 400 })
+      }
+    }
+
+    console.log('Inserting new article');
+    const { data: article, error: articleError } = await supabaseAdmin
+      .from("articles")
+      .insert({
+        title,
+        slug,
+        content,
+        excerpt,
+        image_url,
+        author,
+        publish_date: status === 'scheduled' ? scheduled_date : (status === 'published' ? new Date().toISOString() : publish_date),
+        featured,
+        status,
+        seo_title,
+        seo_description,
+        seo_keywords,
+        alt_text,
+        scheduled_date: status === 'scheduled' ? scheduled_date : null
+      })
+      .select()
+      .single()
+
+    if (articleError) {
+      console.error("Article insert error:", articleError)
+      return NextResponse.json({ error: "Failed to create article" }, { status: 500 })
+    }
+
+    console.log('Article inserted successfully, id:', article.id);
+
+    if (categories.length > 0) {
+      console.log('Inserting category relations');
+      const categoryRelations = categories.map((categoryId: number) => ({
+        article_id: article.id,
+        category_id: categoryId,
+      }))
+
+      const { error: categoryError } = await supabaseAdmin.from("article_categories").insert(categoryRelations)
+
+      if (categoryError) {
+        console.error("Category relation error:", categoryError)
+      } else {
+        console.log('Category relations inserted successfully');
+      }
+    }
+
+    return NextResponse.json(article, { status: 201 })
+  } catch (error) {
+    console.error("API error in POST:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}

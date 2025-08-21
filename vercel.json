@@ -1,0 +1,13 @@
+{
+  "installCommand": "npm install --legacy-peer-deps",
+  "crons": [
+    {
+      "path": "/api/scheduled-jobs/publish-cover-photos",
+      "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/scheduled-jobs/publish-articles",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}
