@@ -1,9 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
-import Stripe from "stripe"
+import Razorpay from "razorpay"
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-06-20",
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID!,
+  key_secret: process.env.RAZORPAY_KEY_SECRET!,
 })
 
 export async function POST(request: NextRequest) {
@@ -43,71 +44,26 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Create Stripe payment intent
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(magazine.price * 100), // Convert to paise/cents
-      currency: "inr", // Change to "usd" if needed
-      payment_method: payment_method_id,
-      confirmation_method: "manual",
-      confirm: true,
-      return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/magazine?purchase=success`,
-      metadata: {
+    // Create Razorpay order
+    const order = await razorpay.orders.create({
+      amount: Math.round(magazine.price * 100), // Convert to paise
+      currency: "INR",
+      receipt: `magazine_${magazine_id}_${Date.now()}`,
+      notes: {
         magazine_id: magazine_id.toString(),
         user_email,
         magazine_title: magazine.title,
       },
     })
 
-    if (paymentIntent.status === "succeeded") {
-      // Create purchase record
-      const { data: purchase, error: purchaseError } = await supabase
-        .from("magazine_purchases")
-        .insert({
-          magazine_id,
-          user_email,
-          payment_status: "completed",
-          payment_id: paymentIntent.id,
-          amount: magazine.price,
-        })
-        .select()
-        .single()
-
-      if (purchaseError) {
-        console.error("Purchase insert error:", purchaseError)
-        return NextResponse.json({ error: "Failed to create purchase record" }, { status: 500 })
-      }
-
-      // Update magazine sales count
-      await supabase
-        .from("magazines")
-        .update({ sales_count: (magazine.sales_count || 0) + 1 })
-        .eq("id", magazine_id)
-
-      return NextResponse.json({
-        success: true,
-        message: "Purchase successful",
-        purchase,
-        magazine,
-        payment_intent: paymentIntent,
-        download_url: magazine.pdf_file_path,
-      })
-    } else if (paymentIntent.status === "requires_action") {
-      return NextResponse.json({
-        requires_action: true,
-        payment_intent: {
-          id: paymentIntent.id,
-          client_secret: paymentIntent.client_secret,
-        },
-      })
-    } else {
-      return NextResponse.json(
-        {
-          error: "Payment failed",
-          payment_intent: paymentIntent,
-        },
-        { status: 400 },
-      )
-    }
+    return NextResponse.json({
+      success: true,
+      orderId: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+      magazine,
+    })
   } catch (error: any) {
     console.error("Payment error:", error)
     return NextResponse.json(

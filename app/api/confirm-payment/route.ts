@@ -1,38 +1,34 @@
 import { type NextRequest, NextResponse } from "next/server"
-import Stripe from "stripe"
 import { supabase } from "@/lib/supabase"
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-06-20",
-})
 
 export async function POST(request: NextRequest) {
   try {
-    const { paymentIntentId } = await request.json()
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, magazineId, customerEmail } = await request.json()
 
-    if (!paymentIntentId) {
-      return NextResponse.json({ error: "Payment intent ID is required" }, { status: 400 })
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      return NextResponse.json({ error: "Missing payment verification data" }, { status: 400 })
     }
 
-    // Retrieve payment intent from Stripe
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId)
+    // Verify payment signature with Razorpay
+    const crypto = require('crypto')
+    const generated_signature = crypto
+      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET!)
+      .update(razorpay_order_id + '|' + razorpay_payment_id)
+      .digest('hex')
 
-    if (paymentIntent.status !== "succeeded") {
-      return NextResponse.json({ error: "Payment not completed" }, { status: 400 })
+    if (generated_signature !== razorpay_signature) {
+      return NextResponse.json({ error: "Payment verification failed" }, { status: 400 })
     }
-
-    const magazineId = paymentIntent.metadata.magazineId
-    const customerEmail = paymentIntent.metadata.customerEmail
 
     if (!magazineId) {
-      return NextResponse.json({ error: "Magazine ID not found in payment" }, { status: 400 })
+      return NextResponse.json({ error: "Magazine ID not found" }, { status: 400 })
     }
 
     // Check if purchase already exists
     const { data: existingPurchase } = await supabase
       .from("magazine_purchases")
       .select("id")
-      .eq("stripe_payment_intent_id", paymentIntentId)
+      .eq("razorpay_payment_id", razorpay_payment_id)
       .single()
 
     if (existingPurchase) {
@@ -60,9 +56,11 @@ export async function POST(request: NextRequest) {
       .insert({
         magazine_id: Number.parseInt(magazineId),
         customer_email: customerEmail,
-        amount: paymentIntent.amount / 100, // Convert from cents
-        currency: paymentIntent.currency,
-        stripe_payment_intent_id: paymentIntentId,
+        amount: magazine.price,
+        currency: 'INR',
+        razorpay_order_id: razorpay_order_id,
+        razorpay_payment_id: razorpay_payment_id,
+        payment_status: 'completed',
         purchase_date: new Date().toISOString(),
       })
       .select()

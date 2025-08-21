@@ -1,36 +1,37 @@
 import { type NextRequest, NextResponse } from "next/server"
-import Stripe from "stripe"
+import Razorpay from "razorpay"
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-06-20",
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID!,
+  key_secret: process.env.RAZORPAY_KEY_SECRET!,
 })
 
 export async function POST(request: NextRequest) {
   try {
-    const { amount, currency = "usd", magazineId, customerEmail } = await request.json()
+    const { amount, currency = "INR", magazineId, customerEmail } = await request.json()
 
-    if (!amount || amount < 50) {
-      return NextResponse.json({ error: "Amount must be at least $0.50" }, { status: 400 })
+    if (!amount || amount < 1) {
+      return NextResponse.json({ error: "Amount must be at least ₹1" }, { status: 400 })
     }
 
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(amount * 100), // Convert to cents
+    const order = await razorpay.orders.create({
+      amount: Math.round(amount * 100), // Convert to paise
       currency,
-      metadata: {
+      receipt: `magazine_${magazineId}_${Date.now()}`,
+      notes: {
         magazineId: magazineId?.toString() || "",
         customerEmail: customerEmail || "",
-      },
-      automatic_payment_methods: {
-        enabled: true,
       },
     })
 
     return NextResponse.json({
-      clientSecret: paymentIntent.client_secret,
-      paymentIntentId: paymentIntent.id,
+      orderId: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
     })
   } catch (error) {
-    console.error("Payment intent creation failed:", error)
-    return NextResponse.json({ error: "Failed to create payment intent" }, { status: 500 })
+    console.error("Payment order creation failed:", error)
+    return NextResponse.json({ error: "Failed to create payment order" }, { status: 500 })
   }
 }
