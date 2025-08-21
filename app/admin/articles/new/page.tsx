@@ -202,7 +202,6 @@ export default function NewArticle() {
           body: JSON.stringify(articleData),
         });
       }
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to create article');
