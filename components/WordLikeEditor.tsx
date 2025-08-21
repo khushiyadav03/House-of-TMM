@@ -19,7 +19,7 @@ const WordLikeEditor: React.FC<WordLikeEditorProps> = ({ value, onChange }) => {
 
   return (
     <Editor
-      tinymceScriptSrc="https://cdn.tiny.cloud/1/a8quqe5cb86zz2y0e5iipkvh0i6sueiqao2fjb4grp3f0dsn/tinymce/6/tinymce.min.js"
+      tinymceScriptSrc="/vendor/tinymce/tinymce.min.js"
       onInit={(_, editor) => (editorRef.current = editor)}
       value={value}
       onEditorChange={onChange}
@@ -30,7 +30,7 @@ const WordLikeEditor: React.FC<WordLikeEditorProps> = ({ value, onChange }) => {
           'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
           'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
           'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount',
-          'emoticons', 'template', 'save',
+          'emoticons', 'save',
         ],
         toolbar:
           'undo redo | blocks | fontsize | fontfamily | ' +
@@ -85,6 +85,11 @@ const WordLikeEditor: React.FC<WordLikeEditorProps> = ({ value, onChange }) => {
         quickbars_selection_toolbar:
           'bold italic | quicklink h2 h3 blockquote quickimage quicktable',
         quickbars_insert_toolbar: 'quickimage quicktable',
+        branding: false,
+        promotion: false,
+        license_key: 'gpl',
+        suffix: '.min',
+        base_url: '/vendor/tinymce',
       }}
     />
   );

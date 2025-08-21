@@ -17,13 +17,11 @@ export default function TinyMCEEditor({
   placeholder = "Start writing your article..." 
 }: TinyMCEEditorProps) {
   const editorRef = useRef<any>(null)
-  const apiKey = process.env.NEXT_PUBLIC_TINYMCE_API_KEY || "v0qgtlasbzuzc5ajt6itfh6fq1fpdjzepz31wpwt5cok8e65"
   const scriptSrc = '/vendor/tinymce/tinymce.min.js'
 
   return (
     <div className="border border-gray-300 rounded-lg overflow-hidden">
       <Editor
-        apiKey={apiKey}
         tinymceScriptSrc={scriptSrc}
         onInit={(evt, editor) => editorRef.current = editor}
         value={value}
@@ -35,7 +33,7 @@ export default function TinyMCEEditor({
             'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
             'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
             'insertdatetime', 'media', 'table', 'help', 'wordcount', 'emoticons',
-            'template', 'codesample', 'hr', 'pagebreak', 'nonbreaking', 'toc', 'imagetools'
+            'codesample', 'hr', 'pagebreak', 'nonbreaking', 'toc'
           ],
           toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | ' +
             'link image media table mergetags | addcomment showcomments | ' +
@@ -45,6 +43,9 @@ export default function TinyMCEEditor({
           placeholder: placeholder,
           branding: false,
           promotion: false,
+          license_key: 'gpl',
+          suffix: '.min',
+          base_url: '/vendor/tinymce',
           setup: (editor) => {
             editor.ui.registry.addButton('customimage', {
               text: 'Upload Image',
