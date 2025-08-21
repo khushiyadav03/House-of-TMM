@@ -1,11 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import Razorpay from "razorpay"
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID!,
-  key_secret: process.env.RAZORPAY_KEY_SECRET!,
-})
-
 export async function POST(request: NextRequest) {
   try {
     const { amount, currency = "INR", magazineId, customerEmail } = await request.json()
@@ -13,6 +8,11 @@ export async function POST(request: NextRequest) {
     if (!amount || amount < 1) {
       return NextResponse.json({ error: "Amount must be at least ₹1" }, { status: 400 })
     }
+
+    const razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID!,
+      key_secret: process.env.RAZORPAY_KEY_SECRET!,
+    })
 
     const order = await razorpay.orders.create({
       amount: Math.round(amount * 100), // Convert to paise
